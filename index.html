@@ -200,6 +200,23 @@
   .ico-ear{background:#DCEBD5;color:#2F6B34}
   .ico-gear{background:#E6DFCF;color:#5B554B}
   .lvlcard{gap:14px}
+  .rankline{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:4px 10px;margin:-6px 0 12px}
+  .rankline b{font-family:var(--display);font-weight:800;font-size:15px;color:var(--wood)}
+  .rankline span{font-size:13px;font-weight:700;color:#7a7264;text-align:right}
+  .rankline i{grid-column:1/-1;height:8px;border-radius:4px;background:#e6dcc5;overflow:hidden}
+  .rankline em{display:block;height:100%;width:0;background:var(--wood);border-radius:4px;transition:width .8s ease}
+  .ico-cup{background:#F2E2BF;color:#8A5310}
+  .legend{font-size:13px;color:#6b6457;margin:-6px 0 10px}
+  .legend .up{color:#3f8a44;font-weight:700}.legend .down{color:var(--bad);font-weight:700}
+  .lb.lg li{border-left:5px solid transparent}
+  .lb.lg li.up{border-left-color:var(--ok)}
+  .lb.lg li.down{border-left-color:var(--bad)}
+  .lb li .nm small{display:block;font-weight:500;font-size:12px;color:#8a8273}
+  .lb li.me .nm small{color:var(--muted)}
+  .lgresult{border-radius:14px;padding:14px 16px;margin:0 0 14px;font-weight:700;line-height:1.45}
+  .lgresult.up{background:#dcefd9;color:#2f6b34}
+  .lgresult.down{background:#f6dcdc;color:#9b2c2f}
+  .lgresult.same{background:#fff8ea;color:var(--ink)}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
@@ -254,6 +271,7 @@
     <div id="menuView">
       <h1>Нота на грифе</h1>
       <p class="lead">Учи гриф и соревнуйся с другими гитаристами.</p>
+      <div class="rankline" id="rankLine"><b id="rankName">Новичок</b><span id="rankXP"></span><i><em id="rankBar"></em></i></div>
       <section class="today" id="today">
         <svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" class="track"/><circle cx="28" cy="28" r="23" class="fill" id="ringFill"/></svg>
         <div class="goal"><b id="goalTitle">Цель дня</b><small id="goalText"></small></div>
@@ -262,6 +280,11 @@
       <button class="lvlcard" id="rateBtn">
         <span class="ico ico-podium" aria-hidden="true"><svg viewBox="1 1.2 22 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20.5h20"/><path d="M8.5 20.5V11h7v9.5"/><path d="M2.8 20.5v-5.5h5.7"/><path d="M15.5 16.5h5.7v4"/><path d="M12.00 2.20 L12.88 4.39 L15.23 4.55 L13.43 6.06 L14.00 8.35 L12.00 7.10 L10.00 8.35 L10.57 6.06 L8.77 4.55 L11.12 4.39Z" fill="currentColor"/></svg></span>
         <span class="t">Игра на рейтинг<small id="rateSummary"></small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <button class="lvlcard" id="leagueBtn">
+        <span class="ico ico-cup" id="leagueIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h10v5.5a5 5 0 0 1-10 0z"/><path d="M7 5.5H4.2a3 3 0 0 0 3.2 4.3"/><path d="M17 5.5h2.8a3 3 0 0 1-3.2 4.3"/><path d="M12 14v3"/><path d="M8.5 20.5h7"/><path d="M9.5 17h5l.6 3.5H8.9z"/></svg></span>
+        <span class="t">Лига недели<small id="leagueSummary">Набирай XP и поднимайся в лигах</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="levelsBtn">
@@ -292,6 +315,18 @@
       <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
       <p class="credits">Звуки гитары: <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> (CC BY 3.0): University of Iowa MIS, Karoryfer, quartertone (Freesound).</p>
       <div class="btns"><button class="btn ghost" id="setBack">В меню</button></div>
+    </div>
+    <!-- league -->
+    <div id="leagueView" hidden>
+      <h1 id="lgTitle">Лига недели</h1>
+      <p class="lead" id="lgLead"></p>
+      <div class="lgresult" id="lgResult" hidden></div>
+      <p class="legend" id="lgLegend"></p>
+      <ol class="lb lg" id="lgList"></ol>
+      <div class="btns">
+        <button class="btn big" id="lgPlay">Набрать XP</button>
+        <button class="btn ghost" id="lgBack">В меню</button>
+      </div>
     </div>
     <!-- ear trainer -->
     <div id="earView" hidden>
@@ -414,12 +449,27 @@ const store={
 async function load(){try{const v=await store.get('progress');if(v)data=Object.assign(data,JSON.parse(v));}catch(e){}}
 const save=()=>store.set('progress',JSON.stringify(data));
 
+/* ===== звания и лиги ===== */
+const RANKS=[[0,'Новичок'],[100,'Ученик'],[300,'Любитель'],[700,'Гитарист'],[1500,'Сессионщик'],[3000,'Виртуоз'],[6000,'Легенда']];
+function rankOf(xp){let i=0;while(i+1<RANKS.length&&xp>=RANKS[i+1][0])i++;return i;}
+const LEAGUES=[['Деревянная','#E6D3BC','#7A4A22'],['Медная','#F0D2C0','#9A4E28'],['Бронзовая','#F2E0BF','#8A5A16'],['Серебряная','#E0E6EC','#4E5D6B'],['Золотая','#F7E2A6','#8A6510'],['Платиновая','#D4ECF1','#2D6E7E']];
+const leagueName=(t,form)=>{const n=LEAGUES[t][0];return form==='в'?n.replace(/ая$/,'ую'):n;};
+function untilWeekEnd(){
+  const msk=Date.now()+3*3600e3,day=(new Date(msk).getUTCDay()+6)%7;
+  const left=(7-day)*864e5-(msk%864e5),d=Math.floor(left/864e5),h=Math.floor(left%864e5/3600e3);
+  return d?`${d} ${plural(d,'день','дня','дней')} ${h} ч`:`${h} ч ${Math.floor(left%3600e3/60e3)} мин`;
+}
+function syncXP(){
+  if(!API_URL||!inTg)return;
+  const add=Math.min(300,data.pendingXP||0);if(add<=0)return;
+  api({action:'xp',add,total:data.xp}).then(r=>{data.pendingXP-=add;data.league={tier:r.tier,place:r.me&&r.me.rank,xp:r.me&&r.me.xp};save();if(!$('menuView').hidden)renderMenu();if(data.pendingXP>0)syncXP();}).catch(()=>{});
+}
 const todayKey=()=>new Date().toDateString();
 function dayXP(){return data.day.date===todayKey()?data.day.xp:0;}
 // начисляет опыт; возвращает true, если именно сейчас выполнена цель дня
 function addXP(n){
   if(data.day.date!==todayKey())data.day={date:todayKey(),xp:0};
-  const before=data.day.xp;data.day.xp+=n;data.xp=(data.xp||0)+n;
+  const before=data.day.xp;data.day.xp+=n;data.xp=(data.xp||0)+n;data.pendingXP=(data.pendingXP||0)+n;
   return before<data.goal&&data.day.xp>=data.goal;
 }
 function streakNow(){const s=data.streak;return s.n&&(s.last===todayKey()||s.last===new Date(Date.now()-864e5).toDateString())?s.n:0;}
@@ -441,6 +491,15 @@ function renderMenu(){
   $('fsRow').hidden=!fsSupported;
   const pd=pathDone();
   $('lvlSummary').textContent=pd>=NODES?'Весь путь пройден!':pd?`Раздел ${Math.floor(pd/3)+1} · пройдено ${pd} из ${NODES}`:'Начни с первого урока';
+  // звание
+  const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
+  $('rankName').textContent=RANKS[ri][1];
+  $('rankXP').textContent=nx?`${tx} XP · до «${nx[1]}» ${nx[0]-tx}`:`${tx} XP · высшее звание`;
+  $('rankBar').style.width=(nx?100*(tx-RANKS[ri][0])/(nx[0]-RANKS[ri][0]):100)+'%';
+  // лига
+  const lg=data.league,lt=lg?lg.tier:0;
+  $('leagueIco').style.background=LEAGUES[lt][1];$('leagueIco').style.color=LEAGUES[lt][2];
+  $('leagueSummary').textContent=!inTg?'Доступно в Telegram':lg&&lg.place?`${leagueName(lt)} · ${lg.place}-е место · ${lg.xp} XP`:`${leagueName(lt)} лига · набирай XP`;
   // цель дня и серия
   const dx=dayXP(),gl=data.goal||20,k=Math.min(1,dx/gl);
   $('ringFill').style.strokeDashoffset=(144.5*(1-k)).toFixed(1);
@@ -512,7 +571,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(!$('boardView').hidden)loadBoard();
 }));
 
-function show(view){['menuView','resultView','boardView','levelsView','settingsView','earView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function show(view){['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
 function openLevels(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
   const cur=renderPath();
@@ -546,6 +605,45 @@ async function loadBoard(){
 }
 function openBoard(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('boardView');back(true);loadBoard();}
 function openEar(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('earView');back(true);}
+async function openLeague(){
+  clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('leagueView');back(true);
+  const lt0=data.league?data.league.tier:0;
+  $('lgTitle').textContent=`${leagueName(lt0)} лига`;
+  $('lgLead').textContent=`Набирай XP за уроки, тренажёр слуха и игру на рейтинг. До конца недели: ${untilWeekEnd()}.`;
+  $('lgResult').hidden=true;$('lgLegend').innerHTML='';
+  const list=$('lgList');
+  if(!API_URL||!inTg){list.innerHTML='<li class="empty">Лиги работают внутри Telegram: открой приложение через бота.</li>';return;}
+  list.innerHTML='<li class="empty">Загружаю лигу…</li>';
+  try{
+    syncXP();
+    const r=await api({action:'league'});
+    data.league={tier:r.tier,place:r.me&&r.me.rank,xp:r.me&&r.me.xp};
+    $('lgTitle').textContent=`${leagueName(r.tier)} лига`;
+    if(r.result&&data.lastSettled!==r.week){
+      const x=r.result,el=$('lgResult');
+      el.className='lgresult '+(x.to>x.from?'up':x.to<x.from?'down':'same');
+      el.textContent=x.to>x.from?`Ты поднялся в ${leagueName(x.to,'в')} лигу! Прошлая неделя: ${x.place}-е место, ${x.xp} XP.`
+        :x.to<x.from?`Ты опустился в ${leagueName(x.to,'в')} лигу. Прошлая неделя: ${x.place}-е место. Отыграйся!`
+        :`Ты остался в лиге: ${x.place}-е место, ${x.xp} XP на прошлой неделе.`;
+      el.hidden=false;data.lastSettled=r.week;
+      if(x.to>x.from)haptic('success');
+    }
+    save();
+    const parts=[];
+    if(r.promote)parts.push(`<span class="up">топ-${r.promote}</span> поднимутся в ${leagueName(r.tier+1,'в')}`);
+    if(r.demote)parts.push(`<span class="down">последние ${r.demote}</span> опустятся`);
+    $('lgLegend').innerHTML=parts.join(', ')+(parts.length?'.':'');
+    if(!r.rows.length){list.innerHTML='<li class="empty">На этой неделе в лиге пока никого. Пройди урок и стань первым.</li>';return;}
+    let html='',prev=0;
+    r.rows.forEach(e=>{
+      if(e.rank>prev+1)html+='<li class="gap">…</li>';prev=e.rank;
+      const zone=r.promote&&e.rank<=r.promote?'up':r.demote&&e.rank>r.players-r.demote?'down':'';
+      html+=`<li class="${zone}${e.rank===1?' top1':''}${e.me?' me':''}"><span class="p">${e.rank}</span><span class="nm">${esc(e.name)}<small>${RANKS[rankOf(e.total)][1]}</small></span><span class="sc">${e.xp} XP</span></li>`;
+    });
+    list.innerHTML=html;
+    if(!r.me)list.insertAdjacentHTML('beforeend','<li class="empty">Тебя пока нет в таблице: набери первые XP на этой неделе.</li>');
+  }catch(e){list.innerHTML='<li class="empty">Не удалось загрузить лигу. Проверь интернет и открой её ещё раз.</li>';}
+}
 function openSettings(){renderMenu();show('settingsView');back(true);}
 function submitScore(){
   const el=$('rRank');
@@ -956,14 +1054,20 @@ async function endRound(){
     nextBtn.hidden=true;$('rBoardBtn').hidden=false;
     submitScore();
   }
+  const rBefore=rankOf(data.xp||0);
   const goalNow=xp?addXP(xp):false;
-  $('rXP').innerHTML=xp?`+${xp} XP${goalNow?`<small>Цель дня выполнена · 🔥 ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд</small>`:''}`:'';
+  const rAfter=rankOf(data.xp||0);
+  const notes=[];
+  if(rAfter>rBefore)notes.push(`Новое звание: ${RANKS[rAfter][1]}!`);
+  if(goalNow)notes.push(`Цель дня выполнена · 🔥 ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд`);
+  $('rXP').innerHTML=xp?`+${xp} XP${notes.map(t=>`<small>${t}</small>`).join('')}`:'';
   await save();
+  syncXP();
   show('resultView');
   $('rTitle').classList.toggle('rec',/рекорд|пройден|сдана|Идеально/.test($('rTitle').textContent));
   if($('rTitle').classList.contains('rec'))replay($('rTitle'),'rec');
   if(xp)replay($('rXP'),'rec');
-  if(goalNow)haptic('success');
+  if(goalNow||rAfter>rBefore)haptic('success');
   $('rStats').querySelectorAll('b').forEach(countUp);
 }
 
@@ -976,6 +1080,9 @@ $('menuBtn').addEventListener('click',openMenu);
 $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
+$('leagueBtn').addEventListener('click',openLeague);
+$('lgBack').addEventListener('click',openMenu);
+$('lgPlay').addEventListener('click',openLevels);
 $('earBack').addEventListener('click',openMenu);
 $('earPlay').addEventListener('click',startEar);
 $('setBack').addEventListener('click',openMenu);
@@ -1005,6 +1112,7 @@ $('shareBtn').addEventListener('click',()=>{
   syncOrientation();
   if(fsSupported&&data.fs&&!tg.isFullscreen)setFullscreen(true);
   openMenu();
+  syncXP();
 })();
 </script>
 </body>
