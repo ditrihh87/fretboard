@@ -137,6 +137,8 @@
   #hear b{color:var(--paper);font-family:var(--display);font-weight:800;min-width:34px;text-align:left}
   #hearLvl{width:70px;height:6px;border-radius:3px;background:var(--stage-2);overflow:hidden}
   #hearLvl i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s}
+  .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
+  .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
   /* ===== анимации: только в ответ на действия игрока ===== */
   @keyframes pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
@@ -201,6 +203,7 @@
       <div class="row"><span>Гриф</span><div class="seg" data-k="orient"></div></div>
       <div class="row"><span>Звук</span><div class="seg" data-k="sound"></div></div>
       <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
+      <p class="credits">Звуки гитары: <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> (CC BY 3.0): University of Iowa MIS, Karoryfer, quartertone (Freesound).</p>
     </div>
     <!-- result -->
     <div id="resultView" hidden>
@@ -249,7 +252,7 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:true};
+const cfg={orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
 let data={find:[],name:[],best:{},streak:{last:'',n:0}};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
@@ -310,7 +313,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[[true,'Вкл'],[false,'Выкл']]};
+const SEGS={orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -339,6 +342,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(k==='max')v=+v;else if(v==='true'||v==='false')v=v==='true';
   if(k==='fs'){setFullscreen(v);return;}
   if(k==='orient'){data.orient=v;save();}
+  if(k==='sound'){data.sound=v;save();loadBank(v);setTimeout(()=>pluck(110),250);} // предпрослушка: открытая 5-я струна
   cfg[k]=v;renderMenu();
   if(!$('boardView').hidden)loadBoard();
 }));
@@ -468,10 +472,37 @@ function unlockAudio(){
 ['touchend','pointerdown','click'].forEach(ev=>document.addEventListener(ev,unlockAudio,{capture:true,passive:true}));
 // после сворачивания Telegram iOS «замораживает» звук — будим при возвращении
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running')actx.resume().catch(()=>{});});
+/* ===== семплы гитары ===== */
+const SAMPLE_SETS={acoustic:'A2 A3 A4 As2 As3 As4 B2 B3 B4 C3 C4 C5 Cs3 Cs4 Cs5 D2 D3 D4 D5 Ds2 Ds3 Ds4 E2 E3 E4 F2 F3 F4 Fs2 Fs3 Fs4 G2 G3 G4 Gs2 Gs3 Gs4',electric:'A2 A3 A4 A5 C3 C4 C5 C6 Cs2 Ds3 Ds4 Ds5 E2 Fs2 Fs3 Fs4 Fs5',nylon:'A2 A3 A4 A5 As5 B1 B2 B3 B4 Cs3 Cs4 Cs5 D2 D3 D5 Ds4 E2 E3 E4 E5 Fs2 Fs3 Fs4 Fs5 G3 G5 Gs2 Gs4 Gs5'};
+const NOTE_PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const sampleMidi=n=>{const m=n.match(/^([A-G])(s?)(\d)$/);return 12*(+m[3]+1)+NOTE_PC[m[1]]+(m[2]?1:0);};
+const bank={};
+function decode(ab){return new Promise((res,rej)=>{try{const p=getCtx().decodeAudioData(ab,res,rej);if(p&&p.catch)p.catch(rej);}catch(e){rej(e);}});}
+function loadBank(kind){
+  if(!SAMPLE_SETS[kind]||bank[kind])return;
+  bank[kind]=new Map();
+  SAMPLE_SETS[kind].split(' ').forEach(n=>{
+    fetch(`samples/${kind}/${n}.mp3`).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();})
+      .then(decode).then(buf=>bank[kind].set(sampleMidi(n),buf)).catch(()=>{});
+  });
+}
+// ближайший загруженный семпл; разница до ±2 полутонов подтягивается скоростью воспроизведения
+function playSample(freq){
+  const b=bank[cfg.sound];if(!b||!b.size)return false;
+  const midi=Math.round(69+12*Math.log2(freq/440));
+  let best=null;for(const m of b.keys())if(best===null||Math.abs(m-midi)<Math.abs(best-midi))best=m;
+  if(best===null||Math.abs(best-midi)>4)return false;
+  const ctx=getCtx(),src=ctx.createBufferSource(),gn=ctx.createGain(),t0=ctx.currentTime,DUR=0.7;
+  src.buffer=b.get(best);src.playbackRate.value=Math.pow(2,(midi-best)/12);
+  gn.gain.setValueAtTime(0.9,t0);gn.gain.setValueAtTime(0.9,t0+DUR*0.5);gn.gain.exponentialRampToValueAtTime(0.001,t0+DUR);
+  src.connect(gn).connect(ctx.destination);src.start(t0);src.stop(t0+DUR+0.05);
+  return true;
+}
 function pluck(freq){
-  if(!cfg.sound||g.mic)return;
+  if(cfg.sound==='off'||g.mic)return;
   try{
     unlockAudio();getCtx();
+    if(playSample(freq))return;   // пока семплы грузятся — синтезированная струна
     const DUR=0.5,sr=actx.sampleRate,len=Math.floor(sr*DUR),buf=actx.createBuffer(1,len,sr),d=buf.getChannelData(0);
     const N=Math.max(2,Math.round(sr/freq)),ring=new Float32Array(N);
     for(let i=0;i<N;i++)ring[i]=Math.random()*2-1;
@@ -708,6 +739,8 @@ $('shareBtn').addEventListener('click',()=>{
 (async()=>{
   await load();
   if(data.orient)cfg.orient=data.orient;
+  if(typeof data.sound==='string'&&SAMPLE_SETS[data.sound]||data.sound==='off')cfg.sound=data.sound;
+  loadBank(cfg.sound);
   syncOrientation();
   if(fsSupported&&data.fs&&!tg.isFullscreen)setFullscreen(true);
   openMenu();
