@@ -110,8 +110,6 @@
   .lvl .s .e{color:#cfc4ab}
   .lvl:disabled{background:transparent;border:1px dashed #c9bea5;cursor:default;opacity:.6}
 
-  .free{display:flex;gap:8px;align-items:stretch}
-  .free .seg{flex:1}
   .btn{border:none;border-radius:14px;background:var(--amber);color:#1b1b1b;font-family:var(--display);font-weight:800;font-size:16px;padding:14px 16px}
   .btn.ghost{background:var(--paper-2);color:var(--ink)}
   .btns{display:flex;flex-direction:column;gap:8px;margin-top:18px}
@@ -137,6 +135,20 @@
   #hear b{color:var(--paper);font-family:var(--display);font-weight:800;min-width:34px;text-align:left}
   #hearLvl{width:70px;height:6px;border-radius:3px;background:var(--stage-2);overflow:hidden}
   #hearLvl i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s}
+  .hero{background:var(--stage);color:var(--paper);border-radius:18px;padding:18px 16px 16px;margin:4px 0 12px;display:flex;flex-direction:column;gap:10px}
+  .hero h2{margin:0;font-family:var(--display);font-weight:800;font-size:20px;color:var(--amber)}
+  .hero > p{margin:-4px 0 2px;color:var(--muted);font-size:14px;line-height:1.45}
+  .hero .seg{background:var(--stage-2)}
+  .hero .seg button{color:var(--muted)}
+  .hero .seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+  .hero .best{margin:0;font-size:13px;color:var(--muted);text-align:center;min-height:1em}
+  .hero .best b{color:var(--paper)}
+  .hero .btn{width:100%;font-size:18px;padding:16px}
+  .btn.dark{background:var(--stage-2);color:var(--paper);font-size:15px!important;padding:12px!important}
+  .lvlcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;background:#fff8ea;border-radius:16px;padding:16px;margin-bottom:6px}
+  .lvlcard .t{flex:1;font-family:var(--display);font-weight:800;font-size:18px}
+  .lvlcard .t small{display:block;font-family:var(--body);font-weight:700;font-size:13px;color:#7a7264;margin-top:4px}
+  .lvlcard .chev{font-size:30px;line-height:1;color:var(--wood)}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
@@ -190,20 +202,35 @@
     <div id="menuView">
       <div class="streak" id="streakBadge" hidden></div>
       <h1>Нота на грифе</h1>
-      <p class="lead">Учи гриф по шагам: от одной струны до всех 12 ладов.</p>
-      <div class="row"><span>Режим</span><div class="seg" data-k="mode"></div></div>
-      <div class="row" id="inputRow"><span>Как отвечать</span><div class="seg" data-k="input"></div></div>
-      <h2>Уровни</h2>
-      <div class="levels" id="levels"></div>
-      <h2>Свободная игра на 60 секунд</h2>
-      <div class="free"><div class="seg" data-k="max"></div><button class="btn" id="freeBtn">Играть</button></div>
-      <div class="btns"><button class="btn ghost" id="lbBtn">Рейтинг недели</button></div>
+      <p class="lead">Учи гриф и соревнуйся с другими гитаристами.</p>
+      <section class="hero">
+        <h2>Игра на рейтинг</h2>
+        <p>60 секунд: угадай как можно больше нот. Рейтинг обновляется каждый понедельник.</p>
+        <div class="seg" data-k="mode"></div>
+        <div class="seg" data-k="max"></div>
+        <p class="best" id="bestLine"></p>
+        <button class="btn" id="freeBtn">Играть</button>
+        <button class="btn dark" id="lbBtn">Рейтинг недели</button>
+      </section>
+      <button class="lvlcard" id="levelsBtn">
+        <span class="t">Уровни<small id="lvlSummary"></small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
       <h2>Настройки</h2>
+      <div class="row" id="inputRow"><span>Как отвечать</span><div class="seg" data-k="input"></div></div>
       <div class="row"><span>Названия нот</span><div class="seg" data-k="names"></div></div>
       <div class="row"><span>Гриф</span><div class="seg" data-k="orient"></div></div>
       <div class="row"><span>Звук</span><div class="seg" data-k="sound"></div></div>
       <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
       <p class="credits">Звуки гитары: <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> (CC BY 3.0): University of Iowa MIS, Karoryfer, quartertone (Freesound).</p>
+    </div>
+    <!-- levels -->
+    <div id="levelsView" hidden>
+      <h1>Уровни</h1>
+      <p class="lead">Учи гриф по шагам: от одной струны до всех 12 ладов. 20 нот, не больше трёх ошибок.</p>
+      <div class="row"><div class="seg" data-k="mode"></div></div>
+      <div class="levels" id="levels"></div>
+      <div class="btns"><button class="btn ghost" id="lvBack">В меню</button></div>
     </div>
     <!-- result -->
     <div id="resultView" hidden>
@@ -217,7 +244,7 @@
         <button class="btn ghost" id="againBtn">Ещё раз</button>
         <button class="btn ghost" id="rBoardBtn">Рейтинг недели</button>
         <button class="btn ghost" id="shareBtn">Поделиться результатом</button>
-        <button class="btn ghost" id="toMenuBtn">К уровням</button>
+        <button class="btn ghost" id="toMenuBtn">В меню</button>
       </div>
     </div>
     <!-- leaderboard -->
@@ -323,6 +350,10 @@ function renderMenu(){
   $('inputRow').hidden=cfg.mode!=='find';
   $('fsRow').hidden=!fsSupported;
   const prog=data[cfg.mode];
+  const passed=LEVELS.filter((_,i)=>(prog[i]||0)>0).length,starsN=LEVELS.reduce((a,_,i)=>a+(prog[i]||0),0);
+  $('lvlSummary').textContent=passed?`Пройдено ${passed} из ${LEVELS.length} · ★ ${starsN} из ${LEVELS.length*3}`:`${LEVELS.length} уровней: от одной струны до всего грифа`;
+  const best=data.best[cfg.mode+cfg.max]||0;
+  $('bestLine').innerHTML=best?`Твой рекорд: <b>${best}</b>`:'Сыграй первый раунд и попади в таблицу';
   $('levels').innerHTML=LEVELS.map((L,i)=>{
     const open=i===0||(prog[i-1]||0)>0;
     return `<button class="lvl" data-i="${i}" ${open?'':'disabled'}>
@@ -349,7 +380,8 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
 $('levels').addEventListener('click',e=>{const b=e.target.closest('.lvl');if(b&&!b.disabled)startLevel(+b.dataset.i);});
 $('freeBtn').addEventListener('click',()=>startFree());
 
-function show(view){['menuView','resultView','boardView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function show(view){['menuView','resultView','boardView','levelsView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function openLevels(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);}
 function openMenu(){
   clearInterval(g.timer);g.playing=false;micStop();
   renderMenu();show('menuView');back(false);
@@ -689,6 +721,7 @@ async function endRound(){
   clearInterval(g.timer);g.playing=false;back(false);micStop();
   if(g.total>0)bumpStreak();
   const nextBtn=$('nextBtn');
+  $('toMenuBtn').textContent=g.type==='level'?'К уровням':'В меню';
   if(g.type==='level'){
     const passed=g.mistakes<=MAX_MISTAKES&&g.total>=QUESTIONS;
     const st=passed?(g.mistakes===0?3:g.mistakes===1?2:1):0;
@@ -720,7 +753,9 @@ async function endRound(){
 
 $('nextBtn').addEventListener('click',()=>startLevel(g.lvl+1));
 $('againBtn').addEventListener('click',()=>g.type==='level'?startLevel(g.lvl):startFree());
-$('toMenuBtn').addEventListener('click',openMenu);
+$('toMenuBtn').addEventListener('click',()=>g.type==='level'?openLevels():openMenu());
+$('levelsBtn').addEventListener('click',openLevels);
+$('lvBack').addEventListener('click',openMenu);
 $('menuBtn').addEventListener('click',openMenu);
 $('lbBtn').addEventListener('click',openBoard);
 $('rBoardBtn').addEventListener('click',openBoard);
