@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Нота на грифе</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stage:#1E2B3C; --stage-2:#26374C; --paper:#EEE6D3; --paper-2:#ded4bd;
+    --wood:#4A2C1D; --wood-2:#3A2215; --nickel:#C8C4BA; --pearl:#F3EDE0;
+    --amber:#F0A830; --ok:#6FBF73; --bad:#E5484D; --muted:#93A1B3; --ink:#22201c;
+    --display:'Unbounded','Arial Black',sans-serif;
+    --body:'Manrope',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--stage);color:var(--paper);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+  [hidden]{display:none!important}
+
+  :root{
+    --sa-t:calc(max(env(safe-area-inset-top),var(--tg-safe-area-inset-top,0px)) + var(--tg-content-safe-area-inset-top,0px));
+    --sa-b:max(env(safe-area-inset-bottom),var(--tg-safe-area-inset-bottom,0px));
+    --sa-l:max(env(safe-area-inset-left),var(--tg-safe-area-inset-left,0px));
+    --sa-r:max(env(safe-area-inset-right),var(--tg-safe-area-inset-right,0px));
+  }
+  #app{height:var(--tg-viewport-stable-height,100dvh);display:flex;flex-direction:column;padding:max(10px,var(--sa-t)) max(12px,var(--sa-r)) max(12px,var(--sa-b)) max(12px,var(--sa-l));max-width:520px;margin:0 auto}
+
+  .top{display:flex;align-items:center;gap:18px;min-height:36px}
+  .stat{display:flex;align-items:baseline;gap:6px}
+  .stat b{font-family:var(--display);font-weight:800;font-size:20px}
+  .stat small{color:var(--muted);font-size:13px}
+  .stat.low b{color:var(--bad)}
+  #fsBtn,#menuBtn{background:var(--stage-2);border:none;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700}
+  #fsBtn{margin-left:auto}
+  #fsBtn[hidden]+#menuBtn{margin-left:auto}
+
+  .prompt{text-align:center;padding:8px 0 12px;min-height:92px}
+  #pNote{font-family:var(--display);font-weight:800;font-size:50px;line-height:1;letter-spacing:-1px;color:var(--amber)}
+  #pSub{font-size:16px;margin-top:6px;opacity:.85}
+
+  /* fretboard */
+  #board{flex:1;min-height:0;display:grid;grid-template-columns:26px repeat(6,1fr)}
+  .wood{grid-column:2/-1;background:linear-gradient(90deg,var(--wood-2),var(--wood) 18%,var(--wood) 82%,var(--wood-2));border-radius:0 0 6px 6px}
+  .inlay{grid-column:2/-1;display:flex;justify-content:center;align-items:center;gap:28%;z-index:1;pointer-events:none}
+  .inlay i{width:14px;height:14px;border-radius:50%;background:var(--pearl);opacity:.75}
+  .fretnum{display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);font-weight:700}
+  .fretnum.marked{color:var(--paper)}
+  .cell{position:relative;background:transparent;border:none;z-index:2;display:flex;align-items:center;justify-content:center}
+  .cell::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:var(--sw);transform:translateX(-50%);background:linear-gradient(90deg,#8a7450,#d9c08e,#8a7450);transition:opacity .2s}
+  .cell.fret{border-bottom:3px solid var(--nickel)}
+  .cell.open{border-bottom:7px solid var(--pearl)}
+  .cell.dim{pointer-events:none}
+  .cell.dim::before{opacity:.25}
+  .cell.target::before{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  .dot{position:relative;z-index:1;height:min(32px,86%);aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#1b1b1b}
+  .dot.mark{background:var(--amber);box-shadow:0 0 0 3px rgba(240,168,48,.3)}
+  .dot.ok{background:var(--ok)}
+  .dot.bad{background:var(--bad);color:#fff}
+  .dot.show{background:transparent;border:3px solid var(--ok);color:var(--ok)}
+
+  /* горизонтальный гриф */
+  #board.h{grid-template-columns:none;grid-template-rows:repeat(6,1fr) 22px}
+  #board.h .wood{grid-column:auto;grid-row:1/7;background:linear-gradient(180deg,var(--wood-2),var(--wood) 14%,var(--wood) 86%,var(--wood-2));border-radius:0 6px 6px 0}
+  #board.h .inlay{grid-column:auto;grid-row:1/7;flex-direction:column}
+  #board.h .cell::before{top:50%;bottom:auto;left:0;right:0;width:auto;height:var(--sw);transform:translateY(-50%);background:linear-gradient(180deg,#8a7450,#d9c08e,#8a7450)}
+  #board.h .cell.target::before{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  #board.h .cell.fret{border-bottom:none;border-right:3px solid var(--nickel)}
+  #board.h .cell.open{border-bottom:none;border-right:7px solid var(--pearl)}
+  #board.h .dot{height:auto;width:min(30px,88%);max-height:90%}
+
+  /* альбомная ориентация: всё компактнее, гриф на всю ширину */
+  #app.land{max-width:none}
+  #app.land .prompt{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:4px 14px;min-height:0;padding:4px 0 8px}
+  #app.land #pNote{font-size:34px}
+  #app.land #pSub,#app.land #hear{margin-top:0}
+  #app.land #answers{grid-template-columns:repeat(12,1fr);padding-top:8px}
+  #app.land .ans{padding:8px 0}
+
+  #answers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding-top:12px}
+  #answers:empty{display:none}
+  .ans{background:var(--stage-2);border:none;border-radius:10px;padding:12px 0;font-weight:700;font-size:15px}
+  .ans.ok{background:var(--ok);color:#1b1b1b}
+  .ans.bad{background:var(--bad)}
+
+  /* sheet */
+  #sheet{position:fixed;inset:0;background:var(--stage);display:flex;justify-content:center;z-index:10;overflow:auto}
+  .panel{background:var(--paper);color:var(--ink);width:100%;max-width:520px;min-height:100%;padding:calc(22px + var(--sa-t)) 18px calc(24px + var(--sa-b))}
+  .panel h1{font-family:var(--display);font-weight:800;font-size:26px;line-height:1.1}
+  .lead{margin:6px 0 18px;color:#5b554b;font-size:15px;line-height:1.45}
+  h2{font-family:var(--display);font-weight:500;font-size:16px;margin:22px 0 10px}
+  .row{margin-bottom:12px}
+  .row > span{display:block;font-size:13px;font-weight:700;color:#6b6457;margin-bottom:6px}
+  .seg{display:flex;background:var(--paper-2);border-radius:12px;padding:3px}
+  .seg button{flex:1;border:none;background:transparent;border-radius:9px;padding:10px 4px;font-weight:700;font-size:14px;color:#4a443a}
+  .seg button[aria-pressed="true"]{background:var(--stage);color:var(--paper)}
+
+  .levels{display:flex;flex-direction:column;gap:6px}
+  .lvl{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;background:#fff8ea;border-radius:12px;padding:12px 14px}
+  .lvl .n{font-family:var(--display);font-weight:800;font-size:15px;width:24px;color:var(--wood)}
+  .lvl .t{flex:1;font-weight:700;font-size:15px}
+  .lvl .t small{display:block;font-weight:500;color:#7a7264;font-size:12px;margin-top:2px}
+  .lvl .s{color:var(--amber);font-size:16px;letter-spacing:1px}
+  .lvl .s .e{color:#cfc4ab}
+  .lvl:disabled{background:transparent;border:1px dashed #c9bea5;cursor:default;opacity:.6}
+
+  .free{display:flex;gap:8px;align-items:stretch}
+  .free .seg{flex:1}
+  .btn{border:none;border-radius:14px;background:var(--amber);color:#1b1b1b;font-family:var(--display);font-weight:800;font-size:16px;padding:14px 16px}
+  .btn.ghost{background:var(--paper-2);color:var(--ink)}
+  .btns{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+
+  .result{background:var(--stage);color:var(--paper);border-radius:16px;padding:20px 16px;display:flex;justify-content:space-around;text-align:center}
+  .result b{display:block;font-family:var(--display);font-size:30px;font-weight:800;color:var(--amber)}
+  .result small{color:var(--muted);font-size:13px}
+  .bigstars{font-size:44px;text-align:center;color:var(--amber);letter-spacing:6px;margin:6px 0 14px}
+  .bigstars .e{color:#cfc4ab}
+  .streak{display:inline-block;background:var(--stage);color:var(--paper);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;margin-bottom:4px}
+
+  .lb{list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:6px}
+  .lb li{display:flex;align-items:center;gap:12px;background:#fff8ea;border-radius:10px;padding:10px 14px;font-weight:700}
+  .lb li .p{font-family:var(--display);width:28px;color:var(--wood)}
+  .lb li .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lb li .sc{font-family:var(--display);color:var(--ink)}
+  .lb li.top1 .p{color:var(--amber)}
+  .lb li.me{background:var(--stage);color:var(--paper)}
+  .lb li.me .p,.lb li.me .sc{color:var(--amber)}
+  .lb li.empty{display:block;background:transparent;font-weight:500;color:#6b6457;padding:8px 0;line-height:1.45}
+  .lb li.gap{background:transparent;justify-content:center;padding:2px;color:#9b917f}
+  #hear{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;font-size:14px;color:var(--muted)}
+  #hear b{color:var(--paper);font-family:var(--display);font-weight:800;min-width:34px;text-align:left}
+  #hearLvl{width:70px;height:6px;border-radius:3px;background:var(--stage-2);overflow:hidden}
+  #hearLvl i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s}
+  .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="stat" id="s1"><b></b><small></small></div>
+    <div class="stat" id="s2"><b></b><small></small></div>
+    <div class="stat" id="s3"><b></b><small></small></div>
+    <button id="fsBtn" hidden aria-label="Полный экран">⛶</button>
+    <button id="menuBtn">Меню</button>
+  </header>
+  <section class="prompt" aria-live="polite"><div id="pNote">—</div><div id="pSub"></div>
+    <div id="hear" hidden>Слышу <b id="hearNote">—</b><span id="hearLvl"><i></i></span></div></section>
+  <div id="board"></div>
+  <div id="answers"></div>
+</div>
+
+<div id="sheet">
+  <div class="panel">
+    <!-- menu -->
+    <div id="menuView">
+      <div class="streak" id="streakBadge" hidden></div>
+      <h1>Нота на грифе</h1>
+      <p class="lead">Учи гриф по шагам: от одной струны до всех 12 ладов.</p>
+      <div class="row"><span>Режим</span><div class="seg" data-k="mode"></div></div>
+      <div class="row" id="inputRow"><span>Как отвечать</span><div class="seg" data-k="input"></div></div>
+      <h2>Уровни</h2>
+      <div class="levels" id="levels"></div>
+      <h2>Свободная игра на 60 секунд</h2>
+      <div class="free"><div class="seg" data-k="max"></div><button class="btn" id="freeBtn">Играть</button></div>
+      <div class="btns"><button class="btn ghost" id="lbBtn">Рейтинг недели</button></div>
+      <h2>Настройки</h2>
+      <div class="row"><span>Названия нот</span><div class="seg" data-k="names"></div></div>
+      <div class="row"><span>Звук</span><div class="seg" data-k="sound"></div></div>
+      <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
+    </div>
+    <!-- result -->
+    <div id="resultView" hidden>
+      <h1 id="rTitle"></h1>
+      <p class="lead" id="rLead"></p>
+      <div class="bigstars" id="rStars"></div>
+      <div class="result" id="rStats"></div>
+      <p class="rank" id="rRank" hidden></p>
+      <div class="btns">
+        <button class="btn" id="nextBtn">Следующий уровень</button>
+        <button class="btn ghost" id="againBtn">Ещё раз</button>
+        <button class="btn ghost" id="rBoardBtn">Рейтинг недели</button>
+        <button class="btn ghost" id="shareBtn">Поделиться результатом</button>
+        <button class="btn ghost" id="toMenuBtn">К уровням</button>
+      </div>
+    </div>
+    <!-- leaderboard -->
+    <div id="boardView" hidden>
+      <h1>Рейтинг недели</h1>
+      <p class="lead">Кто больше угадал за 60 секунд в свободной игре. Каждый понедельник рейтинг начинается заново.</p>
+      <div class="row"><div class="seg" data-k="mode"></div></div>
+      <div class="row"><div class="seg" data-k="max"></div></div>
+      <ol class="lb" id="lbList"></ol>
+      <div class="btns">
+        <button class="btn" id="lbPlay">Играть на рейтинг</button>
+        <button class="btn ghost" id="lbBack">В меню</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== настрой под себя ===== */
+const BOT_LINK='https://t.me/YOUR_BOT/app'; // ссылка на твой Mini App
+const API_URL=''; // адрес сервера рейтинга (см. инструкцию)
+const QUESTIONS=20, MAX_MISTAKES=3, FREE_TIME=60;
+
+const LETTERS=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const SOLFEGE=['до','до♯','ре','ре♯','ми','фа','фа♯','соль','соль♯','ля','ля♯','си'];
+const STRINGS=[{n:6,pc:4,f:82.41,w:4},{n:5,pc:9,f:110,w:3.4},{n:4,pc:2,f:146.83,w:2.8},{n:3,pc:7,f:196,w:2.2},{n:2,pc:11,f:246.94,w:1.7},{n:1,pc:4,f:329.63,w:1.3}];
+const INLAYS={3:1,5:1,7:1,9:1,12:2};
+const LEVELS=[
+  {t:'6-я струна',s:[6],m:5},{t:'5-я струна',s:[5],m:5},{t:'6-я и 5-я вместе',s:[6,5],m:5},
+  {t:'4-я струна',s:[4],m:5},{t:'3-я струна',s:[3],m:5},{t:'2-я и 1-я',s:[2,1],m:5},
+  {t:'Все струны',s:[6,5,4,3,2,1],m:5},{t:'6-я и 5-я',s:[6,5],m:12},
+  {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
+];
+
+const cfg={mode:'find',input:'tap',max:5,names:'letters',sound:true};
+let data={find:[],name:[],best:{},streak:{last:'',n:0}};
+const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
+
+const $=id=>document.getElementById(id);
+const nm=pc=>(cfg.names==='letters'?LETTERS:SOLFEGE)[pc];
+const pcAt=(c,f)=>(STRINGS[c].pc+f)%12;
+const colOf=n=>6-n;
+
+/* ===== Telegram ===== */
+const tg=window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData!==undefined?window.Telegram.WebApp:null;
+const inTg=!!(tg&&tg.initData);
+if(tg){
+  try{tg.ready();tg.expand();tg.setHeaderColor('#1E2B3C');tg.setBackgroundColor('#1E2B3C');tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}
+  try{tg.BackButton.onClick(()=>openMenu());}catch(e){}
+}
+// Полный экран: поворот разрешён только в нём; в обычном режиме ориентация закреплена
+const fsSupported=!!(inTg&&tg.isVersionAtLeast&&tg.isVersionAtLeast('8.0')&&['ios','android'].includes(tg.platform));
+function syncOrientation(){
+  if(!fsSupported)return;
+  try{tg.isFullscreen?tg.unlockOrientation():tg.lockOrientation();}catch(e){}
+  cfg.fs=!!tg.isFullscreen;
+  $('fsBtn').textContent=tg.isFullscreen?'✕':'⛶';
+  $('fsBtn').setAttribute('aria-label',tg.isFullscreen?'Выйти из полного экрана':'Полный экран');
+  if(!$('menuView').hidden)renderMenu();
+}
+function setFullscreen(on){
+  if(!fsSupported)return;
+  try{on?tg.requestFullscreen():tg.exitFullscreen();}catch(e){}
+  data.fs=on;save();
+}
+if(fsSupported){
+  $('fsBtn').hidden=false;
+  $('fsBtn').addEventListener('click',()=>setFullscreen(!tg.isFullscreen));
+  tg.onEvent('fullscreenChanged',()=>{syncOrientation();onResize();});
+  tg.onEvent('fullscreenFailed',()=>{});
+}
+function haptic(type){try{tg&&tg.HapticFeedback.notificationOccurred(type);}catch(e){}}
+function back(show){try{if(inTg)show?tg.BackButton.show():tg.BackButton.hide();}catch(e){}}
+
+/* ===== хранилище: Telegram CloudStorage → window.storage → память ===== */
+const store={
+  async get(k){
+    if(inTg&&tg.CloudStorage)return new Promise(r=>tg.CloudStorage.getItem(k,(e,v)=>r(e?null:v||null)));
+    try{const r=await window.storage.get(k,false);return r?r.value:null;}catch(e){return null;}
+  },
+  async set(k,v){
+    if(inTg&&tg.CloudStorage)return new Promise(r=>tg.CloudStorage.setItem(k,v,()=>r()));
+    try{await window.storage.set(k,v,false);}catch(e){}
+  }
+};
+async function load(){try{const v=await store.get('progress');if(v)data=Object.assign(data,JSON.parse(v));}catch(e){}}
+const save=()=>store.set('progress',JSON.stringify(data));
+
+function bumpStreak(){
+  const d=new Date(),key=d.toDateString(),y=new Date(d-864e5).toDateString();
+  if(data.streak.last===key)return;
+  data.streak.n=data.streak.last===y?data.streak.n+1:1;data.streak.last=key;
+}
+
+/* ===== меню ===== */
+const SEGS={fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[[true,'Вкл'],[false,'Выкл']]};
+function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
+function renderMenu(){
+  document.querySelectorAll('.seg[data-k]').forEach(el=>{
+    const k=el.dataset.k;
+    el.innerHTML=SEGS[k].map(([v,t])=>`<button data-v="${v}" aria-pressed="${cfg[k]===v}">${t}</button>`).join('');
+  });
+  $('inputRow').hidden=cfg.mode!=='find';
+  $('fsRow').hidden=!fsSupported;
+  const prog=data[cfg.mode];
+  $('levels').innerHTML=LEVELS.map((L,i)=>{
+    const open=i===0||(prog[i-1]||0)>0;
+    return `<button class="lvl" data-i="${i}" ${open?'':'disabled'}>
+      <span class="n">${i+1}</span>
+      <span class="t">${L.t}<small>Лады 0–${L.m}${open?'':' · откроется после уровня '+i}</small></span>
+      <span class="s">${open?stars(prog[i]||0):''}</span></button>`;
+  }).join('');
+  const s=data.streak;
+  const alive=s.n&&(s.last===new Date().toDateString()||s.last===new Date(Date.now()-864e5).toDateString());
+  $('streakBadge').hidden=!alive;
+  $('streakBadge').textContent=`Серия: ${s.n} ${plural(s.n,'день','дня','дней')} подряд`;
+}
+function plural(n,a,b,c){const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c;}
+document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const k=el.dataset.k;let v=b.dataset.v;
+  if(k==='max')v=+v;else if(v==='true'||v==='false')v=v==='true';
+  if(k==='fs'){setFullscreen(v);return;}
+  cfg[k]=v;renderMenu();
+  if(!$('boardView').hidden)loadBoard();
+}));
+$('levels').addEventListener('click',e=>{const b=e.target.closest('.lvl');if(b&&!b.disabled)startLevel(+b.dataset.i);});
+$('freeBtn').addEventListener('click',()=>startFree());
+
+function show(view){['menuView','resultView','boardView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function openMenu(){
+  clearInterval(g.timer);g.playing=false;micStop();
+  renderMenu();show('menuView');back(false);
+}
+
+/* ===== рейтинг ===== */
+function api(body){
+  return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(Object.assign({initData:tg?tg.initData:''},body))})
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();});
+}
+const esc=t=>String(t).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+function li(e){return `<li class="${e.rank===1?'top1':''}${e.me?' me':''}"><span class="p">${e.rank}</span><span class="nm">${esc(e.name)}</span><span class="sc">${e.score}</span></li>`;}
+async function loadBoard(){
+  const list=$('lbList');
+  if(!API_URL){list.innerHTML='<li class="empty">Рейтинг заработает, когда подключим сервер.</li>';return;}
+  list.innerHTML='<li class="empty">Загружаю рейтинг…</li>';
+  try{
+    const r=await api({action:'top',mode:cfg.mode,max:cfg.max});
+    if(!r.top.length){list.innerHTML='<li class="empty">На этой неделе здесь ещё никто не играл. Займи первое место.</li>';return;}
+    let html=r.top.map(li).join('');
+    if(r.me&&!r.top.some(e=>e.me))html+='<li class="gap">…</li>'+li(Object.assign({me:true},r.me));
+    list.innerHTML=html;
+  }catch(e){list.innerHTML='<li class="empty">Не удалось загрузить рейтинг. Проверь интернет и открой его ещё раз.</li>';}
+}
+function openBoard(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('boardView');back(false);loadBoard();}
+function submitScore(){
+  const el=$('rRank');
+  if(!API_URL||!inTg||!g.total){el.hidden=true;return;}
+  el.hidden=false;el.textContent='Отправляю результат в рейтинг…';
+  api({action:'submit',mode:cfg.mode,max:g.max,score:g.score,total:g.total})
+    .then(r=>{el.textContent=r.me?`Ты на ${r.me.rank}-м месте в рейтинге недели`:'Результат сохранён';})
+    .catch(()=>{el.textContent='Не удалось отправить результат в рейтинг.';});
+}
+
+/* ===== гриф ===== */
+const isLand=()=>innerWidth>innerHeight;
+function buildBoard(){
+  const b=$('board');b.innerHTML='';
+  const H=isLand();
+  b.classList.toggle('h',H);$('app').classList.toggle('land',H);
+  g.boardH=H;
+  const sizes=['minmax(36px,44px)'];
+  for(let n=1;n<=g.max;n++)sizes.push(((Math.pow(2,-(n-1)/12)-Math.pow(2,-n/12))*100).toFixed(3)+'fr');
+  // вертикально: лады идут сверху вниз; горизонтально: слева направо, 1-я струна сверху
+  if(H){b.style.gridTemplateColumns=sizes.join(' ');b.style.gridTemplateRows='';}
+  else{b.style.gridTemplateRows=sizes.join(' ');b.style.gridTemplateColumns='';}
+  const place=(el,fret,col)=>{ // col: 0 = номер лада, 1..6 = струны (6-я … 1-я)
+    if(H){el.style.gridColumn=fret+1;el.style.gridRow=col===0?7:7-col;}
+    else{el.style.gridRow=fret+1;el.style.gridColumn=col+1;}
+  };
+  const w=document.createElement('div');w.className='wood';
+  if(H)w.style.gridColumn=`2/${g.max+2}`;else w.style.gridRow=`2/${g.max+2}`;
+  b.appendChild(w);
+  for(let r=0;r<=g.max;r++){
+    if(INLAYS[r]){const d=document.createElement('div');d.className='inlay';if(H)d.style.gridColumn=r+1;else d.style.gridRow=r+1;d.innerHTML='<i></i>'.repeat(INLAYS[r]);b.appendChild(d);}
+    const num=document.createElement('div');num.className='fretnum'+(INLAYS[r]?' marked':'');num.textContent=r||'';place(num,r,0);b.appendChild(num);
+    STRINGS.forEach((s,c)=>{
+      const cell=document.createElement('button');
+      cell.className='cell '+(r===0?'open':'fret');
+      place(cell,r,c+1);cell.style.setProperty('--sw',s.w+'px');
+      cell.dataset.c=c;cell.dataset.r=r;
+      cell.setAttribute('aria-label',`${s.n}-я струна, ${r===0?'открытая':r+'-й лад'}`);
+      b.appendChild(cell);
+    });
+  }
+}
+function paintQuestion(){
+  if(!g.q)return;
+  if(cfg.mode==='find')document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===g.q.c?'target':'dim'));
+  else putDot(g.q.c,g.q.r,'mark');
+}
+function onResize(){
+  const H=isLand();
+  $('app').classList.toggle('land',H);
+  if(g.boardH===H||!$('board').childElementCount)return;
+  buildBoard();
+  if(g.playing&&!g.locked)paintQuestion();
+}
+addEventListener('resize',onResize);
+try{tg&&tg.onEvent('viewportChanged',onResize);}catch(e){}
+
+const cellAt=(c,r)=>$('board').querySelector(`.cell[data-c="${c}"][data-r="${r}"]`);
+function clearMarks(){document.querySelectorAll('.cell').forEach(el=>{el.classList.remove('dim','target');el.innerHTML='';});}
+function putDot(c,r,cls,txt=''){cellAt(c,r).innerHTML=`<span class="dot ${cls}">${txt}</span>`;}
+
+/* ===== звук ===== */
+let actx=null;
+function pluck(freq){
+  if(!cfg.sound||g.mic)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended')actx.resume();
+    const sr=actx.sampleRate,len=Math.floor(sr*1.4),buf=actx.createBuffer(1,len,sr),d=buf.getChannelData(0);
+    const N=Math.max(2,Math.round(sr/freq)),ring=new Float32Array(N);
+    for(let i=0;i<N;i++)ring[i]=Math.random()*2-1;
+    let idx=0;
+    for(let i=0;i<len;i++){const nx=(idx+1)%N,v=ring[idx];d[i]=v;ring[idx]=0.996*0.5*(v+ring[nx]);idx=nx;}
+    const src=actx.createBufferSource(),gn=actx.createGain();gn.gain.value=0.35;
+    src.buffer=buf;src.connect(gn).connect(actx.destination);src.start();
+  }catch(e){}
+}
+const freqAt=(c,r)=>STRINGS[c].f*Math.pow(2,r/12);
+
+/* ===== верхняя панель ===== */
+function stat(id,val,label,low){const el=$(id);el.hidden=val===null;if(val===null)return;el.querySelector('b').textContent=val;el.querySelector('small').textContent=label;el.classList.toggle('low',!!low);}
+function updateTop(){
+  if(g.type==='level'){
+    stat('s1',`${g.total}/${QUESTIONS}`,'ответов');
+    stat('s2',`${g.mistakes}/${MAX_MISTAKES}`,'ошибок',g.mistakes===MAX_MISTAKES);
+    stat('s3',null);
+  }else{
+    stat('s1',g.score,'очков');stat('s2',g.streak,'подряд');stat('s3',g.time,'сек',g.time<=10);
+  }
+}
+
+/* ===== вопросы ===== */
+function newQuestion(){
+  clearMarks();$('answers').innerHTML='';
+  let c,r,key,tries=0;
+  do{c=g.cols[Math.floor(Math.random()*g.cols.length)];r=Math.floor(Math.random()*(g.max+1));key=c+':'+pcAt(c,r);tries++;}
+  while(key===g.last&&tries<50);
+  g.last=key;
+  const pc=pcAt(c,r);
+  if(cfg.mode==='find'){
+    g.q={c,pc};
+    $('pNote').textContent=nm(pc);
+    $('pSub').textContent=`${g.mic?'сыграй ':''}на ${STRINGS[c].n}-й струне`;
+    document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
+  }else{
+    g.q={c,r,pc};
+    $('pNote').textContent='?';
+    $('pSub').textContent=`${STRINGS[c].n}-я струна, ${r===0?'открытая':r+'-й лад'}`;
+    putDot(c,r,'mark');
+    $('answers').innerHTML=(cfg.names==='letters'?LETTERS:SOLFEGE).map((t,i)=>`<button class="ans" data-pc="${i}">${t}</button>`).join('');
+  }
+  g.locked=false;
+}
+
+function answered(ok){
+  g.total++;
+  if(ok){g.score++;g.streak++;}else{g.mistakes++;g.streak=0;}
+  haptic(ok?'success':'error');
+  updateTop();g.locked=true;
+  const done=g.type==='level'&&(g.mistakes>MAX_MISTAKES||g.total>=QUESTIONS);
+  setTimeout(()=>{if(!g.playing)return;done?endRound():newQuestion();},ok?450:1100);
+}
+
+function judgeFind(c,r){
+  const ok=pcAt(c,r)===g.q.pc;
+  putDot(c,r,ok?'ok':'bad',nm(pcAt(c,r)));
+  if(!ok)for(let f=0;f<=g.max;f++)if(pcAt(c,f)===g.q.pc)putDot(c,f,'show',nm(g.q.pc));
+  answered(ok);
+}
+$('board').addEventListener('click',e=>{
+  const cell=e.target.closest('.cell');
+  if(!cell||!g.playing||g.locked||cfg.mode!=='find')return;
+  const c=+cell.dataset.c,r=+cell.dataset.r;
+  if(c!==g.q.c)return;
+  pluck(freqAt(c,r));
+  judgeFind(c,r);
+});
+
+/* ===== микрофон: распознавание ноты ===== */
+const mic={stream:null,an:null,buf:null,timer:null,armed:true,lastMidi:null,cand:null,count:0};
+const toMidi=f=>Math.round(69+12*Math.log2(f/440));
+// YIN: ищет основной тон в сигнале
+function detectPitch(buf,sr){
+  let rms=0;for(let i=0;i<buf.length;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/buf.length);
+  if(rms<0.006)return{rms,f:0};
+  const W=2048,tMin=Math.floor(sr/1000),tMax=Math.min(Math.floor(sr/70),buf.length-W-1);
+  const d=new Float32Array(tMax+2);d[0]=1;let run=0;
+  for(let t=1;t<=tMax+1;t++){let sum=0;for(let i=0;i<W;i++){const x=buf[i]-buf[i+t];sum+=x*x;}run+=sum;d[t]=run?sum*t/run:1;}
+  let tau=-1;
+  for(let t=tMin;t<=tMax;t++){if(d[t]<0.15){while(t+1<=tMax&&d[t+1]<d[t])t++;tau=t;break;}}
+  if(tau<1)return{rms,f:0};
+  const a=d[tau-1],b=d[tau],c=d[tau+1],den=a+c-2*b,shift=den?(a-c)/(2*den):0;
+  return{rms,f:sr/(tau+shift)};
+}
+async function micStart(){
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended')actx.resume();
+    if(!mic.stream){
+      mic.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+      mic.an=actx.createAnalyser();mic.an.fftSize=4096;
+      actx.createMediaStreamSource(mic.stream).connect(mic.an);
+      mic.buf=new Float32Array(mic.an.fftSize);
+    }
+    return true;
+  }catch(e){mic.stream=null;return false;}
+}
+function micStop(){
+  clearInterval(mic.timer);mic.timer=null;
+  if(mic.stream){mic.stream.getTracks().forEach(t=>t.stop());mic.stream=null;}
+  $('hear').hidden=true;
+}
+function micTick(){
+  if(!mic.an)return;
+  mic.an.getFloatTimeDomainData(mic.buf);
+  const{rms,f}=detectPitch(mic.buf,actx.sampleRate);
+  $('hearLvl').firstChild.style.width=Math.min(100,rms*600)+'%';
+  if(!f){if(rms<0.004)mic.armed=true;mic.cand=null;mic.count=0;$('hearNote').textContent='—';return;}
+  const midi=toMidi(f);
+  $('hearNote').textContent=nm(((midi%12)+12)%12);
+  if(midi===mic.cand)mic.count++;else{mic.cand=midi;mic.count=1;}
+  if(mic.count<3)return;                       // нота должна звучать стабильно ~150 мс
+  if(!mic.armed&&midi===mic.lastMidi)return;   // это ещё звучит прошлая нота
+  mic.armed=true;
+  if(!g.playing||g.locked||cfg.mode!=='find'||!g.q)return;
+  heard(midi);
+}
+function heard(midi){
+  const c=g.q.c,pc=((midi%12)+12)%12;
+  const fret=midi-toMidi(STRINGS[c].f);
+  let r=fret;
+  if(pc===g.q.pc&&(r<0||r>g.max)){             // верная нота, но октава вне диапазона (или ошибка октавы)
+    let best=null;for(let x=0;x<=g.max;x++)if(pcAt(c,x)===pc&&(best===null||Math.abs(x-fret)<Math.abs(best-fret)))best=x;
+    r=best;
+  }
+  if(r===null||r<0||r>g.max){$('pSub').textContent=`эта нота не на ${STRINGS[c].n}-й струне`;return;}
+  mic.armed=false;mic.lastMidi=midi;
+  judgeFind(c,r);
+}
+$('answers').addEventListener('click',e=>{
+  const b=e.target.closest('.ans');
+  if(!b||!g.playing||g.locked)return;
+  const ok=+b.dataset.pc===g.q.pc;
+  b.classList.add(ok?'ok':'bad');
+  if(!ok)$('answers').querySelector(`[data-pc="${g.q.pc}"]`).classList.add('ok');
+  putDot(g.q.c,g.q.r,ok?'ok':'bad',nm(g.q.pc));
+  $('pNote').textContent=nm(g.q.pc);
+  pluck(freqAt(g.q.c,g.q.r));
+  answered(ok);
+});
+
+/* ===== раунды ===== */
+async function begin(){
+  g.mic=false;
+  if(cfg.input==='mic'&&cfg.mode==='find'){
+    g.mic=await micStart();
+    if(!g.mic){
+      const msg='Нет доступа к микрофону. Разреши его в настройках Telegram или телефона. Пока играем касанием.';
+      try{inTg?tg.showAlert(msg):alert(msg);}catch(e){}
+    }
+  }
+  Object.assign(g,{total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:true,locked:false,q:null,last:''});
+  clearInterval(g.timer);
+  buildBoard();updateTop();$('sheet').hidden=true;back(true);
+  if(g.mic){Object.assign(mic,{armed:true,lastMidi:null,cand:null,count:0});$('hear').hidden=false;clearInterval(mic.timer);mic.timer=setInterval(micTick,50);}
+  pluck(82.41);
+  if(g.type==='free')g.timer=setInterval(()=>{g.time--;updateTop();if(g.time<=0)endRound();},1000);
+  newQuestion();
+}
+function startLevel(i){const L=LEVELS[i];Object.assign(g,{type:'level',lvl:i,max:L.m,cols:L.s.map(colOf)});begin();}
+function startFree(){Object.assign(g,{type:'free',max:cfg.max,cols:[0,1,2,3,4,5]});begin();}
+
+async function endRound(){
+  clearInterval(g.timer);g.playing=false;back(false);micStop();
+  if(g.total>0)bumpStreak();
+  const nextBtn=$('nextBtn');
+  if(g.type==='level'){
+    const passed=g.mistakes<=MAX_MISTAKES&&g.total>=QUESTIONS;
+    const st=passed?(g.mistakes===0?3:g.mistakes===1?2:1):0;
+    g.lastStars=st;
+    const prog=data[cfg.mode];
+    if(st>(prog[g.lvl]||0))prog[g.lvl]=st;
+    $('rTitle').textContent=passed?`Уровень ${g.lvl+1} пройден`:'Почти получилось';
+    $('rLead').textContent=passed?(st===3?'Без единой ошибки.':'Три звезды дают за прохождение без ошибок.'):`Больше ${MAX_MISTAKES} ошибок. Попробуй ещё раз, ноты запоминаются с повторением.`;
+    $('rStars').innerHTML=stars(st);$('rStars').hidden=false;
+    $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
+    nextBtn.hidden=!(passed&&g.lvl<LEVELS.length-1);
+    $('rRank').hidden=true;$('rBoardBtn').hidden=true;
+  }else{
+    const k=cfg.mode+g.max,best=data.best[k]||0,rec=g.score>best;
+    if(rec)data.best[k]=g.score;
+    $('rTitle').textContent=rec&&g.score>0?'Новый рекорд!':'Время вышло';
+    $('rLead').textContent=`Свободная игра, лады 0–${g.max}.`;
+    $('rStars').hidden=true;
+    $('rStats').innerHTML=`<div><b>${g.score}</b><small>очков</small></div><div><b>${g.total?Math.round(g.score/g.total*100):0}%</b><small>точность</small></div><div><b>${data.best[k]||0}</b><small>рекорд</small></div>`;
+    nextBtn.hidden=true;$('rBoardBtn').hidden=false;
+    submitScore();
+  }
+  await save();
+  show('resultView');
+}
+
+$('nextBtn').addEventListener('click',()=>startLevel(g.lvl+1));
+$('againBtn').addEventListener('click',()=>g.type==='level'?startLevel(g.lvl):startFree());
+$('toMenuBtn').addEventListener('click',openMenu);
+$('menuBtn').addEventListener('click',openMenu);
+$('lbBtn').addEventListener('click',openBoard);
+$('rBoardBtn').addEventListener('click',openBoard);
+$('lbBack').addEventListener('click',openMenu);
+$('lbPlay').addEventListener('click',()=>startFree());
+$('shareBtn').addEventListener('click',()=>{
+  const text=g.type==='level'
+    ?`Прошёл уровень ${g.lvl+1} в «Нота на грифе» на ${'★'.repeat(g.lastStars)}. А ты знаешь гриф?`
+    :`Набрал ${g.score} очков за 60 секунд в «Нота на грифе». Побьёшь?`;
+  const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
+  if(inTg)tg.openTelegramLink(url);
+  else if(navigator.share)navigator.share({text,url:BOT_LINK}).catch(()=>{});
+  else window.open(url,'_blank');
+});
+
+(async()=>{
+  await load();
+  syncOrientation();
+  if(fsSupported&&data.fs&&!tg.isFullscreen)setFullscreen(true);
+  openMenu();
+})();
+</script>
+</body>
+</html>
