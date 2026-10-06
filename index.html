@@ -193,6 +193,13 @@
   .hint{font-size:14px;line-height:1.45;color:#6b6457;margin:-4px 0 12px}
   .hint.warn{color:var(--bad);text-align:center;margin-top:10px}
   .ans.big2{padding:18px 0;font-size:18px}
+  .ico{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center}
+  .ico svg{width:28px;height:28px}
+  .ico-cap{background:#F7DFAE;color:#8A5310}
+  .ico-podium{background:#D9E4F0;color:#1E2B3C}
+  .ico-ear{background:#DCEBD5;color:#2F6B34}
+  .ico-gear{background:#E6DFCF;color:#5B554B}
+  .lvlcard{gap:14px}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
@@ -252,19 +259,23 @@
         <div class="goal"><b id="goalTitle">Цель дня</b><small id="goalText"></small></div>
         <div class="flame" id="flame"><b id="flameN">0</b><small id="flameText">дней подряд</small></div>
       </section>
-      <button class="lvlcard dark" id="rateBtn">
+      <button class="lvlcard" id="rateBtn">
+        <span class="ico ico-podium" aria-hidden="true"><svg viewBox="1 1.2 22 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20.5h20"/><path d="M8.5 20.5V11h7v9.5"/><path d="M2.8 20.5v-5.5h5.7"/><path d="M15.5 16.5h5.7v4"/><path d="M12.00 2.20 L12.88 4.39 L15.23 4.55 L13.43 6.06 L14.00 8.35 L12.00 7.10 L10.00 8.35 L10.57 6.06 L8.77 4.55 L11.12 4.39Z" fill="currentColor"/></svg></span>
         <span class="t">Игра на рейтинг<small id="rateSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="levelsBtn">
+        <span class="ico ico-cap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4"/><path d="M21 10v5.5"/><circle cx="21" cy="17" r="1" fill="currentColor"/></svg></span>
         <span class="t">Путь обучения<small id="lvlSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="earBtn">
-        <span class="t">Тренажёр слуха<small id="earSummary">Выше или ниже · найди ноту на слух</small></span>
+        <span class="ico ico-ear" aria-hidden="true"><svg viewBox="-0.2 2.4 21.6 18.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9.5a5 5 0 0 1 10 0c0 3.2-2.4 4-3.4 5.8-.7 1.3-.6 2.5-1.6 3.6a2.6 2.6 0 0 1-4.2-.6"/><path d="M12 9.6a2 2 0 0 1 4 0c0 1.2-1 1.6-1.4 2.6"/><path d="M5.6 7.5a5.5 5.5 0 0 0 0 7"/><path d="M2.8 5.5a9 9 0 0 0 0 11"/></svg></span>
+        <span class="t">Тренажёр слуха<small id="earSummary">Выше или ниже · ноты на слух</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="setBtn">
+        <span class="ico ico-gear" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.45 10.49 L22.11 10.68 L22.11 13.32 L19.45 13.51 L18.33 16.20 L20.09 18.22 L18.22 20.09 L16.20 18.33 L13.51 19.45 L13.32 22.11 L10.68 22.11 L10.49 19.45 L7.80 18.33 L5.78 20.09 L3.91 18.22 L5.67 16.20 L4.55 13.51 L1.89 13.32 L1.89 10.68 L4.55 10.49 L5.67 7.80 L3.91 5.78 L5.78 3.91 L7.80 5.67 L10.49 4.55 L10.68 1.89 L13.32 1.89 L13.51 4.55 L16.20 5.67 L18.22 3.91 L20.09 5.78 L18.33 7.80Z"/><circle cx="12" cy="12" r="3.2"/></svg></span>
         <span class="t">Настройки<small id="setSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
@@ -441,7 +452,7 @@ function renderMenu(){
   $('flameText').textContent=sn?`${plural(sn,'день','дня','дней')} подряд`:'начни серию';
   const best=data.best[cfg.mode+cfg.max]||0;
   $('rateSummary').textContent=best?`60 секунд · твой рекорд ${best}`:'60 секунд · рейтинг недели';
-  $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'играю на гитаре':'касанием'].join(' · ');
+  $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'микрофон':''].filter(Boolean).join(' · ');
   $('earHint').textContent=cfg.ear==='hl'
     ?'Звучат две ноты на одной струне. Ответь, вторая выше или ниже первой.'
     :'Сначала звучит открытая струна, потом загаданная нота. Найди её на подсвеченной струне.';
