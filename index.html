@@ -65,6 +65,8 @@
 
   /* горизонтальный гриф */
   #board.h{grid-template-columns:none;grid-template-rows:repeat(6,1fr) 22px}
+  #board.hp{flex:1 1 auto;max-height:min(400px,100%);margin:auto 0}
+  #board.hp .dot{font-size:10px}
   #board.h .wood{grid-column:auto;grid-row:1/7;background:linear-gradient(180deg,var(--wood-2),var(--wood) 14%,var(--wood) 86%,var(--wood-2));border-radius:0 6px 6px 0}
   #board.h .inlay{grid-column:auto;grid-row:1/7;flex-direction:column}
   #board.h .cell::before{top:50%;bottom:auto;left:0;right:0;width:auto;height:var(--sw);transform:translateY(-50%);background:linear-gradient(180deg,#8a7450,#d9c08e,#8a7450)}
@@ -170,6 +172,7 @@
       <div class="btns"><button class="btn ghost" id="lbBtn">Рейтинг недели</button></div>
       <h2>Настройки</h2>
       <div class="row"><span>Названия нот</span><div class="seg" data-k="names"></div></div>
+      <div class="row"><span>Гриф</span><div class="seg" data-k="orient"></div></div>
       <div class="row"><span>Звук</span><div class="seg" data-k="sound"></div></div>
       <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
     </div>
@@ -220,7 +223,7 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={mode:'find',input:'tap',max:5,names:'letters',sound:true};
+const cfg={orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:true};
 let data={find:[],name:[],best:{},streak:{last:'',n:0}};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
@@ -281,7 +284,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[[true,'Вкл'],[false,'Выкл']]};
+const SEGS={orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[[true,'Вкл'],[false,'Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -309,6 +312,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   const k=el.dataset.k;let v=b.dataset.v;
   if(k==='max')v=+v;else if(v==='true'||v==='false')v=v==='true';
   if(k==='fs'){setFullscreen(v);return;}
+  if(k==='orient'){data.orient=v;save();}
   cfg[k]=v;renderMenu();
   if(!$('boardView').hidden)loadBoard();
 }));
@@ -353,13 +357,20 @@ function submitScore(){
 
 /* ===== гриф ===== */
 const isLand=()=>innerWidth>innerHeight;
+const wantH=()=>isLand()||cfg.orient==='h';
+const boardKey=()=>`${wantH()}-${isLand()}`;
 function buildBoard(){
   const b=$('board');b.innerHTML='';
-  const H=isLand();
-  b.classList.toggle('h',H);$('app').classList.toggle('land',H);
-  g.boardH=H;
-  const sizes=['minmax(36px,44px)'];
-  for(let n=1;n<=g.max;n++)sizes.push(((Math.pow(2,-(n-1)/12)-Math.pow(2,-n/12))*100).toFixed(3)+'fr');
+  const H=wantH(),land=isLand(),narrow=H&&!land;
+  b.classList.toggle('h',H);b.classList.toggle('hp',narrow);$('app').classList.toggle('land',land);
+  g.boardKey=boardKey();
+  const sizes=[narrow?'minmax(28px,36px)':'minmax(36px,44px)'];
+  for(let n=1;n<=g.max;n++){
+    const real=(Math.pow(2,-(n-1)/12)-Math.pow(2,-n/12))/(1-Math.pow(2,-g.max/12));
+    // на узком экране сглаживаем пропорции, чтобы верхние лады не стали слишком тонкими
+    const w=narrow&&g.max>5?0.5*real+0.5/g.max:real;
+    sizes.push((w*100).toFixed(3)+'fr');
+  }
   // вертикально: лады идут сверху вниз; горизонтально: слева направо, 1-я струна сверху
   if(H){b.style.gridTemplateColumns=sizes.join(' ');b.style.gridTemplateRows='';}
   else{b.style.gridTemplateRows=sizes.join(' ');b.style.gridTemplateColumns='';}
@@ -389,9 +400,8 @@ function paintQuestion(){
   else putDot(g.q.c,g.q.r,'mark');
 }
 function onResize(){
-  const H=isLand();
-  $('app').classList.toggle('land',H);
-  if(g.boardH===H||!$('board').childElementCount)return;
+  $('app').classList.toggle('land',isLand());
+  if(g.boardKey===boardKey()||!$('board').childElementCount)return;
   buildBoard();
   if(g.playing&&!g.locked)paintQuestion();
 }
@@ -623,6 +633,7 @@ $('shareBtn').addEventListener('click',()=>{
 
 (async()=>{
   await load();
+  if(data.orient)cfg.orient=data.orient;
   syncOrientation();
   if(fsSupported&&data.fs&&!tg.isFullscreen)setFullscreen(true);
   openMenu();
