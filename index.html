@@ -419,12 +419,13 @@ function pluck(freq){
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();
     if(actx.state==='suspended')actx.resume();
-    const sr=actx.sampleRate,len=Math.floor(sr*1.4),buf=actx.createBuffer(1,len,sr),d=buf.getChannelData(0);
+    const DUR=0.5,sr=actx.sampleRate,len=Math.floor(sr*DUR),buf=actx.createBuffer(1,len,sr),d=buf.getChannelData(0);
     const N=Math.max(2,Math.round(sr/freq)),ring=new Float32Array(N);
     for(let i=0;i<N;i++)ring[i]=Math.random()*2-1;
     let idx=0;
-    for(let i=0;i<len;i++){const nx=(idx+1)%N,v=ring[idx];d[i]=v;ring[idx]=0.996*0.5*(v+ring[nx]);idx=nx;}
-    const src=actx.createBufferSource(),gn=actx.createGain();gn.gain.value=0.35;
+    for(let i=0;i<len;i++){const nx=(idx+1)%N,v=ring[idx];d[i]=v;ring[idx]=0.992*0.5*(v+ring[nx]);idx=nx;}
+    const src=actx.createBufferSource(),gn=actx.createGain(),t0=actx.currentTime;
+    gn.gain.setValueAtTime(0.35,t0);gn.gain.setValueAtTime(0.35,t0+DUR*0.4);gn.gain.exponentialRampToValueAtTime(0.001,t0+DUR); // плавно глушим, без щелчка
     src.buffer=buf;src.connect(gn).connect(actx.destination);src.start();
   }catch(e){}
 }
