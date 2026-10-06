@@ -439,12 +439,39 @@ function clearMarks(){document.querySelectorAll('.cell').forEach(el=>{el.classLi
 function putDot(c,r,cls,txt=''){cellAt(c,r).innerHTML=`<span class="dot ${cls}">${txt}</span>`;}
 
 /* ===== звук ===== */
-let actx=null;
+let actx=null,audioUnlocked=false;
+// iPhone/iPad: браузерный звук считается «фоновым» и глушится беззвучным режимом.
+// Переводим его в режим «воспроизведение» и «размораживаем» звук при первом касании.
+function silentWavUrl(){
+  const n=800,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=(o,t)=>[...t].forEach((ch,i)=>v.setUint8(o+i,ch.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+}
+function getCtx(){
+  actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state!=='running')actx.resume().catch(()=>{});
+  return actx;
+}
+function unlockAudio(){
+  try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+  try{getCtx();}catch(e){}
+  if(audioUnlocked)return;
+  audioUnlocked=true;
+  try{
+    const el=new Audio(silentWavUrl());el.setAttribute('playsinline','');el.volume=0.01;
+    el.play().catch(()=>{audioUnlocked=false;});
+    // пустой буфер через Web Audio тоже «будит» звук на старых iOS
+    const ctx=getCtx(),src=ctx.createBufferSource();src.buffer=ctx.createBuffer(1,1,22050);src.connect(ctx.destination);src.start(0);
+  }catch(e){audioUnlocked=false;}
+}
+['touchend','pointerdown','click'].forEach(ev=>document.addEventListener(ev,unlockAudio,{capture:true,passive:true}));
+// после сворачивания Telegram iOS «замораживает» звук — будим при возвращении
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running')actx.resume().catch(()=>{});});
 function pluck(freq){
   if(!cfg.sound||g.mic)return;
   try{
-    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
-    if(actx.state==='suspended')actx.resume();
+    unlockAudio();getCtx();
     const DUR=0.5,sr=actx.sampleRate,len=Math.floor(sr*DUR),buf=actx.createBuffer(1,len,sr),d=buf.getChannelData(0);
     const N=Math.max(2,Math.round(sr/freq)),ring=new Float32Array(N);
     for(let i=0;i<N;i++)ring[i]=Math.random()*2-1;
@@ -550,8 +577,8 @@ function detectPitch(buf,sr){
 }
 async function micStart(){
   try{
-    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
-    if(actx.state==='suspended')actx.resume();
+    try{if(navigator.audioSession)navigator.audioSession.type='play-and-record';}catch(e){}
+    getCtx();
     if(!mic.stream){
       mic.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
       mic.an=actx.createAnalyser();mic.an.fftSize=4096;
@@ -564,6 +591,7 @@ async function micStart(){
 function micStop(){
   clearInterval(mic.timer);mic.timer=null;
   if(mic.stream){mic.stream.getTracks().forEach(t=>t.stop());mic.stream=null;}
+  try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
   $('hear').hidden=true;
 }
 function micTick(){
