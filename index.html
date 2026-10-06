@@ -135,15 +135,13 @@
   #hear b{color:var(--paper);font-family:var(--display);font-weight:800;min-width:34px;text-align:left}
   #hearLvl{width:70px;height:6px;border-radius:3px;background:var(--stage-2);overflow:hidden}
   #hearLvl i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s}
-  .hero{background:var(--stage);color:var(--paper);border-radius:18px;padding:18px 16px 16px;margin:4px 0 12px;display:flex;flex-direction:column;gap:10px}
-  .hero h2{margin:0;font-family:var(--display);font-weight:800;font-size:20px;color:var(--amber)}
-  .hero > p{margin:-4px 0 2px;color:var(--muted);font-size:14px;line-height:1.45}
-  .hero .seg{background:var(--stage-2)}
-  .hero .seg button{color:var(--muted)}
-  .hero .seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
-  .hero .best{margin:0;font-size:13px;color:var(--muted);text-align:center;min-height:1em}
-  .hero .best b{color:var(--paper)}
-  .hero .btn{width:100%;font-size:18px;padding:16px}
+  .btn.big{width:100%;font-size:18px;padding:16px}
+  .best{margin:0 0 12px;font-size:14px;color:#6b6457;text-align:center}
+  .best b{color:var(--ink)}
+  .lvlcard.dark{background:var(--stage);color:var(--paper)}
+  .lvlcard.dark .t{color:var(--amber)}
+  .lvlcard.dark .t small{color:var(--muted)}
+  .lvlcard.dark .chev{color:var(--amber)}
   .btn.dark{background:var(--stage-2);color:var(--paper);font-size:15px!important;padding:12px!important}
   .lvlcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;background:#fff8ea;border-radius:16px;padding:16px;margin-bottom:6px}
   .lvlcard .t{flex:1;font-family:var(--display);font-weight:800;font-size:18px}
@@ -203,26 +201,30 @@
       <div class="streak" id="streakBadge" hidden></div>
       <h1>Нота на грифе</h1>
       <p class="lead">Учи гриф и соревнуйся с другими гитаристами.</p>
-      <section class="hero">
-        <h2>Игра на рейтинг</h2>
-        <p>60 секунд: угадай как можно больше нот. Рейтинг обновляется каждый понедельник.</p>
-        <div class="seg" data-k="mode"></div>
-        <div class="seg" data-k="max"></div>
-        <p class="best" id="bestLine"></p>
-        <button class="btn" id="freeBtn">Играть</button>
-        <button class="btn dark" id="lbBtn">Рейтинг недели</button>
-      </section>
+      <button class="lvlcard dark" id="rateBtn">
+        <span class="t">Игра на рейтинг<small id="rateSummary"></small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
       <button class="lvlcard" id="levelsBtn">
         <span class="t">Уровни<small id="lvlSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
-      <h2>Настройки</h2>
+      <button class="lvlcard" id="setBtn">
+        <span class="t">Настройки<small id="setSummary"></small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+    </div>
+    <!-- settings -->
+    <div id="settingsView" hidden>
+      <h1>Настройки</h1>
+      <p class="lead">Выбор запоминается на этом устройстве.</p>
       <div class="row" id="inputRow"><span>Как отвечать</span><div class="seg" data-k="input"></div></div>
       <div class="row"><span>Названия нот</span><div class="seg" data-k="names"></div></div>
       <div class="row"><span>Гриф</span><div class="seg" data-k="orient"></div></div>
       <div class="row"><span>Звук</span><div class="seg" data-k="sound"></div></div>
       <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
       <p class="credits">Звуки гитары: <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> (CC BY 3.0): University of Iowa MIS, Karoryfer, quartertone (Freesound).</p>
+      <div class="btns"><button class="btn ghost" id="setBack">В меню</button></div>
     </div>
     <!-- levels -->
     <div id="levelsView" hidden>
@@ -249,15 +251,15 @@
     </div>
     <!-- leaderboard -->
     <div id="boardView" hidden>
-      <h1>Рейтинг недели</h1>
-      <p class="lead">Кто больше угадал за 60 секунд в свободной игре. Каждый понедельник рейтинг начинается заново.</p>
+      <h1>Игра на рейтинг</h1>
+      <p class="lead">60 секунд: угадай как можно больше нот. Каждый понедельник рейтинг начинается заново.</p>
       <div class="row"><div class="seg" data-k="mode"></div></div>
       <div class="row"><div class="seg" data-k="max"></div></div>
+      <p class="best" id="bestLine"></p>
+      <button class="btn big" id="lbPlay">Играть</button>
+      <h2>Рейтинг недели</h2>
       <ol class="lb" id="lbList"></ol>
-      <div class="btns">
-        <button class="btn" id="lbPlay">Играть на рейтинг</button>
-        <button class="btn ghost" id="lbBack">В меню</button>
-      </div>
+      <div class="btns"><button class="btn ghost" id="lbBack">В меню</button></div>
     </div>
   </div>
 </div>
@@ -353,6 +355,8 @@ function renderMenu(){
   const passed=LEVELS.filter((_,i)=>(prog[i]||0)>0).length,starsN=LEVELS.reduce((a,_,i)=>a+(prog[i]||0),0);
   $('lvlSummary').textContent=passed?`Пройдено ${passed} из ${LEVELS.length} · ★ ${starsN} из ${LEVELS.length*3}`:`${LEVELS.length} уровней: от одной струны до всего грифа`;
   const best=data.best[cfg.mode+cfg.max]||0;
+  $('rateSummary').textContent=best?`60 секунд · твой рекорд ${best}`:'60 секунд · рейтинг недели';
+  $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'играю на гитаре':'касанием'].join(' · ');
   $('bestLine').innerHTML=best?`Твой рекорд: <b>${best}</b>`:'Сыграй первый раунд и попади в таблицу';
   $('levels').innerHTML=LEVELS.map((L,i)=>{
     const open=i===0||(prog[i-1]||0)>0;
@@ -378,9 +382,8 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(!$('boardView').hidden)loadBoard();
 }));
 $('levels').addEventListener('click',e=>{const b=e.target.closest('.lvl');if(b&&!b.disabled)startLevel(+b.dataset.i);});
-$('freeBtn').addEventListener('click',()=>startFree());
 
-function show(view){['menuView','resultView','boardView','levelsView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function show(view){['menuView','resultView','boardView','levelsView','settingsView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
 function openLevels(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);}
 function openMenu(){
   clearInterval(g.timer);g.playing=false;micStop();
@@ -407,7 +410,8 @@ async function loadBoard(){
     list.innerHTML=html;
   }catch(e){list.innerHTML='<li class="empty">Не удалось загрузить рейтинг. Проверь интернет и открой его ещё раз.</li>';}
 }
-function openBoard(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('boardView');back(false);loadBoard();}
+function openBoard(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('boardView');back(true);loadBoard();}
+function openSettings(){renderMenu();show('settingsView');back(true);}
 function submitScore(){
   const el=$('rRank');
   if(!API_URL||!inTg||!g.total){el.hidden=true;return;}
@@ -757,7 +761,9 @@ $('toMenuBtn').addEventListener('click',()=>g.type==='level'?openLevels():openMe
 $('levelsBtn').addEventListener('click',openLevels);
 $('lvBack').addEventListener('click',openMenu);
 $('menuBtn').addEventListener('click',openMenu);
-$('lbBtn').addEventListener('click',openBoard);
+$('rateBtn').addEventListener('click',openBoard);
+$('setBtn').addEventListener('click',openSettings);
+$('setBack').addEventListener('click',openMenu);
 $('rBoardBtn').addEventListener('click',openBoard);
 $('lbBack').addEventListener('click',openMenu);
 $('lbPlay').addEventListener('click',()=>startFree());
