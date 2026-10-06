@@ -190,6 +190,9 @@
   .node-stars{font-size:13px;letter-spacing:2px;color:var(--amber);margin-top:10px}
   .node-stars .e{color:#cfc4ab}
   .ans.wide{grid-column:1/-1}
+  .hint{font-size:14px;line-height:1.45;color:#6b6457;margin:-4px 0 12px}
+  .hint.warn{color:var(--bad);text-align:center;margin-top:10px}
+  .ans.big2{padding:18px 0;font-size:18px}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
@@ -257,6 +260,10 @@
         <span class="t">Путь обучения<small id="lvlSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
+      <button class="lvlcard" id="earBtn">
+        <span class="t">Тренажёр слуха<small id="earSummary">Выше или ниже · найди ноту на слух</small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
       <button class="lvlcard" id="setBtn">
         <span class="t">Настройки<small id="setSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
@@ -275,10 +282,22 @@
       <p class="credits">Звуки гитары: <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> (CC BY 3.0): University of Iowa MIS, Karoryfer, quartertone (Freesound).</p>
       <div class="btns"><button class="btn ghost" id="setBack">В меню</button></div>
     </div>
+    <!-- ear trainer -->
+    <div id="earView" hidden>
+      <h1>Тренажёр слуха</h1>
+      <p class="lead">10 заданий без таймера. Начни с «Выше или ниже», а когда пойдёт легко, переходи к поиску ноты.</p>
+      <div class="row"><span>Упражнение</span><div class="seg" data-k="ear"></div></div>
+      <p class="hint" id="earHint"></p>
+      <div class="row" id="earMaxRow"><span>Лады</span><div class="seg" data-k="max"></div></div>
+      <p class="best" id="earBest"></p>
+      <button class="btn big" id="earPlay">Начать</button>
+      <p class="hint warn" id="earNoSound" hidden>Включи звук в настройках, без него тренажёр слуха не работает.</p>
+      <div class="btns"><button class="btn ghost" id="earBack">В меню</button></div>
+    </div>
     <!-- levels -->
     <div id="levelsView" hidden>
       <h1>Путь обучения</h1>
-      <p class="lead">Короткие уроки по 2 минуты: найди ноту, назови ноту, узнай на слух. В конце раздела контрольная.</p>
+      <p class="lead">Короткие уроки по 2 минуты: найди ноту на грифе и назови ноту по точке. В конце раздела контрольная.</p>
       <div id="path"></div>
       <div class="btns"><button class="btn ghost" id="lvBack">В меню</button></div>
     </div>
@@ -330,7 +349,7 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
+const cfg={ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
 let data={find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
@@ -400,7 +419,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={ear:[['hl','Выше или ниже'],['ear','Найди на струне']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -423,6 +442,13 @@ function renderMenu(){
   const best=data.best[cfg.mode+cfg.max]||0;
   $('rateSummary').textContent=best?`60 секунд · твой рекорд ${best}`:'60 секунд · рейтинг недели';
   $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'играю на гитаре':'касанием'].join(' · ');
+  $('earHint').textContent=cfg.ear==='hl'
+    ?'Звучат две ноты на одной струне. Ответь, вторая выше или ниже первой.'
+    :'Сначала звучит открытая струна, потом загаданная нота. Найди её на подсвеченной струне.';
+  $('earMaxRow').hidden=cfg.ear!=='ear';
+  const eb=(data.earBest||{})[cfg.ear+(cfg.ear==='ear'?cfg.max:'')]||0;
+  $('earBest').innerHTML=eb?`Лучший результат: <b>${eb} из 10</b>`:'';
+  $('earNoSound').hidden=cfg.sound!=='off';$('earPlay').disabled=cfg.sound==='off';
   $('bestLine').innerHTML=best?`Твой рекорд: <b>${best}</b>`:'Сыграй первый раунд и попади в таблицу';
 }
 /* ===== путь обучения: разделы = LEVELS, в каждом 2 урока + контрольная ===== */
@@ -439,7 +465,7 @@ function renderPath(){
     const done=(data.path[id]||0)>0,open=nodeOpen(id),isCur=open&&!done&&cur===null;
     if(isCur)cur=id;
     const glyph=done&&k!=='t'?'✓':k==='t'?'★':k==='b'?'♫':'♪';
-    const name=k==='t'?'Контрольная':k==='b'?'Урок на слух':'Урок';
+    const name=k==='t'?'Контрольная':k==='b'?'Урок 2':'Урок 1';
     html+=`<div class="node-row" style="--x:${OFFS[id%OFFS.length]}px">
       ${isCur?`<span class="bubble ${OFFS[id%OFFS.length]>0?'l':'r'}">${id===0?'Начни здесь':'Дальше'}</span>`:''}
       <button class="node ${k==='t'?'test':''} ${done?'done':open?'':'locked'} ${isCur?'cur':''}" data-id="${id}" ${open?'':'disabled'} aria-label="${name}, раздел ${u+1}${done?', пройдено':open?'':', закрыто'}">${glyph}</button>
@@ -453,10 +479,7 @@ $('path').addEventListener('click',e=>{const b=e.target.closest('.node');if(b&&!
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function lessonPlan(k){
   const mk=(f,n,e)=>[...Array(f).fill('find'),...Array(n).fill('name'),...Array(e).fill('ear')];
-  let plan=k==='a'?mk(5,5,0):k==='b'?mk(3,3,4):mk(5,5,5);
-  // на слух без звука или с микрофоном не получится — заменяем на «найди»
-  if(cfg.sound==='off'||cfg.input==='mic')plan=plan.map(t=>t==='ear'?'find':t);
-  return shuffle(plan);
+  return shuffle(k==='a'?mk(6,4,0):k==='b'?mk(4,6,0):mk(8,7,0));
 }
 function startNode(id){
   const u=Math.floor(id/3),k=NODE_KIND[id%3],L=LEVELS[u];
@@ -470,6 +493,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   const k=el.dataset.k;let v=b.dataset.v;
   if(k==='max'||k==='goal')v=+v;else if(v==='true'||v==='false')v=v==='true';
   if(k==='goal'){data.goal=v;save();}
+  if(k==='ear'){data.ear=v;save();}
   if(k==='fs'){setFullscreen(v);return;}
   if(k==='orient'){data.orient=v;save();}
   if(k==='sound'){data.sound=v;save();loadBank(v);setTimeout(()=>pluck(110),250);} // предпрослушка: открытая 5-я струна
@@ -477,7 +501,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(!$('boardView').hidden)loadBoard();
 }));
 
-function show(view){['menuView','resultView','boardView','levelsView','settingsView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function show(view){['menuView','resultView','boardView','levelsView','settingsView','earView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
 function openLevels(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
   const cur=renderPath();
@@ -510,6 +534,7 @@ async function loadBoard(){
   }catch(e){list.innerHTML='<li class="empty">Не удалось загрузить рейтинг. Проверь интернет и открой его ещё раз.</li>';}
 }
 function openBoard(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('boardView');back(true);loadBoard();}
+function openEar(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('earView');back(true);}
 function openSettings(){renderMenu();show('settingsView');back(true);}
 function submitScore(){
   const el=$('rRank');
@@ -653,7 +678,7 @@ const freqAt=(c,r)=>STRINGS[c].f*Math.pow(2,r/12);
 /* ===== верхняя панель ===== */
 function stat(id,val,label,low){const el=$(id);el.hidden=val===null;if(val===null)return;el.querySelector('b').textContent=val;el.querySelector('small').textContent=label;el.classList.toggle('low',!!low);}
 function updateTop(){
-  const learn=g.type==='lesson'||g.type==='test';
+  const learn=g.type==='lesson'||g.type==='test'||g.type==='ear';
   $('pbar').hidden=!learn;
   if(learn){
     $('pbar').firstChild.style.width=(100*g.total/g.plan.length)+'%';
@@ -692,12 +717,22 @@ function newQuestion(){
     $('pSub').textContent=`${g.mic?'сыграй ':''}на ${STRINGS[c].n}-й струне`;
     document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
   }else if(type==='ear'){
-    g.q={type,c,r,pc};
+    if(r===0)r=1+Math.floor(Math.random()*g.max); // открытая струна звучит опорой — загадываем лад
+    g.q={type,c,r,pc:pcAt(c,r)};
     $('pNote').textContent='♪';
-    $('pSub').textContent=`где звучит эта нота на ${STRINGS[c].n}-й струне?`;
+    $('pSub').textContent=`открытая ${STRINGS[c].n}-я, затем загаданная нота. Где она?`;
     document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
     $('answers').innerHTML='<button class="ans wide" data-replay="1">▶ Послушать ещё раз</button>';
-    setTimeout(()=>{if(g.q&&g.q.type==='ear'&&g.q.c===c&&g.q.r===r&&!g.locked)pluck(freqAt(c,r));},350);
+    playQuestion(350);
+  }else if(type==='hl'){
+    let r2;do{r2=Math.floor(Math.random()*6);}while(r2===r||Math.abs(r2-r)>5);
+    g.q={type,c,r,r2,pc};
+    $('pNote').textContent='♪ ♪';
+    $('pSub').textContent='вторая нота выше или ниже?';
+    document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
+    $('answers').style.gridTemplateColumns='repeat(2,1fr)';
+    $('answers').innerHTML='<button class="ans big2" data-hl="down">↓ Ниже</button><button class="ans big2" data-hl="up">↑ Выше</button><button class="ans wide" data-replay="1">▶ Послушать ещё раз</button>';
+    playQuestion(350);
   }else{
     g.q={type,c,r,pc};
     $('pNote').textContent='?';
@@ -723,10 +758,17 @@ function answered(ok){
   updateTop();g.locked=true;
   if(ok)replay($('s1').querySelector('b'),'bump');
   else{replay($('pNote'),'shake');if(g.type==='test')replay($('s2').querySelector('b'),'bump');}
-  const done=(g.type==='lesson'&&g.total>=g.plan.length)||(g.type==='test'&&(g.mistakes>MAX_MISTAKES||g.total>=g.plan.length));
+  const done=((g.type==='lesson'||g.type==='ear')&&g.total>=g.plan.length)||(g.type==='test'&&(g.mistakes>MAX_MISTAKES||g.total>=g.plan.length));
   setTimeout(()=>{if(!g.playing)return;done?endRound():newQuestion();},ok?450:1100);
 }
 
+// воспроизведение задания на слух: опора/первая нота, пауза, вторая нота
+function playQuestion(delay){
+  const q=g.q;if(!q)return;
+  const first=q.type==='ear'?STRINGS[q.c].f:freqAt(q.c,q.r),second=q.type==='ear'?freqAt(q.c,q.r):freqAt(q.c,q.r2);
+  setTimeout(()=>{if(g.q!==q||g.locked)return;pluck(first);vibrate(q.c);},delay);
+  setTimeout(()=>{if(g.q!==q||g.locked)return;pluck(second);vibrate(q.c);},delay+750);
+}
 function judgeEar(c,r){
   vibrate(c);
   const ok=r===g.q.r;
@@ -816,7 +858,15 @@ function heard(midi){
 $('answers').addEventListener('click',e=>{
   const b=e.target.closest('.ans');
   if(!b||!g.playing||g.locked)return;
-  if(b.dataset.replay){pluck(freqAt(g.q.c,g.q.r));vibrate(g.q.c);return;}
+  if(b.dataset.replay){playQuestion(0);return;}
+  if(b.dataset.hl){
+    const q=g.q,up=q.r2>q.r,ok=(b.dataset.hl==='up')===up;
+    b.classList.add(ok?'ok':'bad');
+    if(!ok)$('answers').querySelector(`[data-hl="${up?'up':'down'}"]`).classList.add('ok');
+    putDot(q.c,q.r,'show',nm(q.pc));putDot(q.c,q.r2,ok?'ok':'bad',nm(pcAt(q.c,q.r2)));
+    $('pNote').textContent=up?'↑ выше':'↓ ниже';
+    answered(ok);return;
+  }
   const ok=+b.dataset.pc===g.q.pc;
   b.classList.add(ok?'ok':'bad');
   if(!ok)$('answers').querySelector(`[data-pc="${g.q.pc}"]`).classList.add('ok');
@@ -844,6 +894,11 @@ async function begin(){
   if(g.type==='free')g.timer=setInterval(()=>{g.time--;updateTop();if(g.time<=0)endRound();},1000);
   newQuestion();
 }
+function startEar(){
+  if(cfg.sound==='off')return;
+  Object.assign(g,{type:'ear',kind:cfg.ear,max:cfg.ear==='ear'?cfg.max:5,cols:[0,1,2,3,4,5],plan:Array(10).fill(cfg.ear)});
+  begin();
+}
 function startFree(){Object.assign(g,{type:'free',max:cfg.max,cols:[0,1,2,3,4,5]});begin();}
 
 async function endRound(){
@@ -852,7 +907,17 @@ async function endRound(){
   const nextBtn=$('nextBtn'),learn=g.type==='lesson'||g.type==='test';
   $('toMenuBtn').textContent=learn?'К пути':'В меню';
   let xp=0;
-  if(learn){
+  if(g.type==='ear'){
+    const k=g.kind+(g.kind==='ear'?g.max:'');data.earBest=data.earBest||{};
+    const rec=g.score>(data.earBest[k]||0);if(rec)data.earBest[k]=g.score;
+    xp=g.mistakes===0?15:10;
+    $('rTitle').textContent=g.mistakes===0?'Идеально!':rec?'Новый рекорд!':'Тренировка окончена';
+    $('rLead').textContent=g.kind==='hl'?'Тренажёр слуха: выше или ниже.':`Тренажёр слуха: найди на струне, лады 0–${g.max}.`;
+    $('rStars').hidden=true;
+    $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
+    nextBtn.hidden=true;$('rRank').hidden=true;$('rBoardBtn').hidden=true;
+    $('toMenuBtn').textContent='В меню';
+  }else if(learn){
     const isTest=g.type==='test',n=g.plan.length,u=Math.floor(g.node/3);
     const passed=!isTest||(g.mistakes<=MAX_MISTAKES&&g.total>=n);
     const st=isTest?(passed?(g.mistakes===0?3:g.mistakes===1?2:1):0):(passed?1:0);
@@ -892,19 +957,24 @@ async function endRound(){
 }
 
 $('nextBtn').addEventListener('click',()=>startNode(g.node+1));
-$('againBtn').addEventListener('click',()=>g.type==='free'?startFree():startNode(g.node));
-$('toMenuBtn').addEventListener('click',()=>g.type==='free'?openMenu():openLevels());
+$('againBtn').addEventListener('click',()=>g.type==='free'?startFree():g.type==='ear'?startEar():startNode(g.node));
+$('toMenuBtn').addEventListener('click',()=>g.type==='free'||g.type==='ear'?openMenu():openLevels());
 $('levelsBtn').addEventListener('click',openLevels);
 $('lvBack').addEventListener('click',openMenu);
 $('menuBtn').addEventListener('click',openMenu);
 $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
+$('earBtn').addEventListener('click',openEar);
+$('earBack').addEventListener('click',openMenu);
+$('earPlay').addEventListener('click',startEar);
 $('setBack').addEventListener('click',openMenu);
 $('rBoardBtn').addEventListener('click',openBoard);
 $('lbBack').addEventListener('click',openMenu);
 $('lbPlay').addEventListener('click',()=>startFree());
 $('shareBtn').addEventListener('click',()=>{
-  const text=g.type!=='free'
+  const text=g.type==='ear'
+    ?`Тренирую слух в «Нота на грифе»: ${g.score} из 10. А ты отличишь ноты на слух?`
+    :g.type!=='free'
     ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone()} из ${NODES} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
     :`Набрал ${g.score} очков за 60 секунд в «Нота на грифе». Побьёшь?`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
@@ -916,6 +986,7 @@ $('shareBtn').addEventListener('click',()=>{
 (async()=>{
   await load();
   if(data.orient)cfg.orient=data.orient;
+  if(data.ear)cfg.ear=data.ear;
   data.path=data.path||{};data.day=data.day||{date:'',xp:0};data.goal=data.goal||20;cfg.goal=data.goal;
   LEVELS.forEach((_,u)=>{const st=Math.max(data.find[u]||0,data.name[u]||0);if(st&&!data.path[u*3+2]){data.path[u*3]=data.path[u*3]||1;data.path[u*3+1]=data.path[u*3+1]||1;data.path[u*3+2]=st;}});
   if(typeof data.sound==='string'&&SAMPLE_SETS[data.sound]||data.sound==='off')cfg.sound=data.sound;
