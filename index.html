@@ -147,6 +147,49 @@
   .lvlcard .t{flex:1;font-family:var(--display);font-weight:800;font-size:18px}
   .lvlcard .t small{display:block;font-family:var(--body);font-weight:700;font-size:13px;color:#7a7264;margin-top:4px}
   .lvlcard .chev{font-size:30px;line-height:1;color:var(--wood)}
+  /* прогресс урока */
+  .pbar{flex:1;height:14px;background:var(--stage-2);border-radius:7px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:var(--ok);border-radius:7px;transition:width .35s ease}
+  /* цель дня и серия */
+  .today{display:flex;align-items:center;gap:14px;background:#fff8ea;border-radius:16px;padding:12px 16px;margin-bottom:10px}
+  .ring{width:56px;height:56px;flex:none;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:7}
+  .ring .track{stroke:#e6dcc5}
+  .ring .fill{stroke:var(--amber);stroke-linecap:round;stroke-dasharray:144.5;stroke-dashoffset:144.5;transition:stroke-dashoffset .8s ease}
+  .today.done .ring .fill{stroke:var(--ok)}
+  .today .goal{flex:1}
+  .today .goal b{display:block;font-family:var(--display);font-weight:800;font-size:16px}
+  .today .goal small{font-size:13px;font-weight:700;color:#7a7264}
+  .flame{text-align:center;min-width:64px}
+  .flame b{display:block;font-family:var(--display);font-weight:800;font-size:22px;color:#c9bfa7}
+  .flame b::before{content:"🔥";margin-right:2px;filter:grayscale(1);opacity:.5}
+  .flame.on b{color:var(--amber)}
+  .flame.on b::before{filter:none;opacity:1}
+  .flame small{font-size:11px;font-weight:700;color:#7a7264}
+  .xpgain{text-align:center;font-family:var(--display);font-weight:800;font-size:20px;color:var(--amber);margin:4px 0 12px;min-height:1em}
+  .xpgain small{display:block;font-family:var(--body);font-size:14px;color:var(--ok);margin-top:4px}
+  /* путь обучения */
+  #path{display:flex;flex-direction:column;align-items:center;gap:18px;padding:4px 0 24px}
+  .unit{align-self:stretch;background:var(--stage);color:var(--paper);border-radius:14px;padding:12px 16px;margin-top:8px}
+  .unit b{display:block;font-family:var(--display);font-weight:800;color:var(--amber);font-size:15px}
+  .unit span{font-size:13px;color:var(--muted)}
+  .node-row{position:relative;display:flex;flex-direction:column;align-items:center;transform:translateX(var(--x))}
+  .node{width:70px;height:64px;border-radius:50%;border:none;font-size:26px;font-weight:800;background:var(--amber);color:#1b1b1b;box-shadow:0 6px 0 #b77a17;transition:transform .08s}
+  .node:active{transform:translateY(4px);box-shadow:0 2px 0 #b77a17}
+  .node.test{border-radius:20px}
+  .node.done{background:var(--ok);color:#fff;box-shadow:0 6px 0 #4c8f50}
+  .node.locked{background:#ddd3bc;color:#ab9f87;box-shadow:0 6px 0 #c4b99f}
+  .node.cur{animation:nodePulse 1.6s ease-out infinite}
+  @keyframes nodePulse{0%{box-shadow:0 6px 0 #b77a17,0 0 0 0 rgba(240,168,48,.55)}100%{box-shadow:0 6px 0 #b77a17,0 0 0 18px rgba(240,168,48,0)}}
+  .bubble{position:absolute;top:28px;transform:translateY(-50%);background:var(--stage);color:var(--amber);font-weight:800;font-size:13px;padding:6px 12px;border-radius:10px;white-space:nowrap;pointer-events:none}
+  .bubble.r{left:calc(100% + 14px)}
+  .bubble.l{right:calc(100% + 14px)}
+  .bubble::after{content:"";position:absolute;top:50%;transform:translateY(-50%);border:7px solid transparent}
+  .bubble.r::after{right:100%;border-right-color:var(--stage)}
+  .bubble.l::after{left:100%;border-left-color:var(--stage)}
+  .node-stars{font-size:13px;letter-spacing:2px;color:var(--amber);margin-top:10px}
+  .node-stars .e{color:#cfc4ab}
+  .ans.wide{grid-column:1/-1}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
@@ -174,7 +217,7 @@
   .stat b.bump{display:inline-block;animation:bump .3s}
   .stat.low b{animation:tick 1s ease-in-out infinite}
   .bigstars .on{display:inline-block;animation:starIn .45s cubic-bezier(.3,1.5,.5,1) both}
-  #rTitle.rec{animation:pop .4s cubic-bezier(.3,1.5,.5,1)}
+  #rTitle.rec,#rXP.rec{animation:pop .4s cubic-bezier(.3,1.5,.5,1)}
 
   @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
 </style>
@@ -185,6 +228,7 @@
     <div class="stat" id="s1"><b></b><small></small></div>
     <div class="stat" id="s2"><b></b><small></small></div>
     <div class="stat" id="s3"><b></b><small></small></div>
+    <div class="pbar" id="pbar" hidden><i></i></div>
     <button id="fsBtn" hidden aria-label="Полный экран">⛶</button>
     <button id="menuBtn">Меню</button>
   </header>
@@ -198,15 +242,19 @@
   <div class="panel">
     <!-- menu -->
     <div id="menuView">
-      <div class="streak" id="streakBadge" hidden></div>
       <h1>Нота на грифе</h1>
       <p class="lead">Учи гриф и соревнуйся с другими гитаристами.</p>
+      <section class="today" id="today">
+        <svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" class="track"/><circle cx="28" cy="28" r="23" class="fill" id="ringFill"/></svg>
+        <div class="goal"><b id="goalTitle">Цель дня</b><small id="goalText"></small></div>
+        <div class="flame" id="flame"><b id="flameN">0</b><small id="flameText">дней подряд</small></div>
+      </section>
       <button class="lvlcard dark" id="rateBtn">
         <span class="t">Игра на рейтинг<small id="rateSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="levelsBtn">
-        <span class="t">Уровни<small id="lvlSummary"></small></span>
+        <span class="t">Путь обучения<small id="lvlSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="setBtn">
@@ -221,6 +269,7 @@
       <div class="row" id="inputRow"><span>Как отвечать</span><div class="seg" data-k="input"></div></div>
       <div class="row"><span>Названия нот</span><div class="seg" data-k="names"></div></div>
       <div class="row"><span>Гриф</span><div class="seg" data-k="orient"></div></div>
+      <div class="row"><span>Цель дня, XP</span><div class="seg" data-k="goal"></div></div>
       <div class="row"><span>Звук</span><div class="seg" data-k="sound"></div></div>
       <div class="row" id="fsRow" hidden><span>Полный экран (поверни телефон — гриф ляжет горизонтально)</span><div class="seg" data-k="fs"></div></div>
       <p class="credits">Звуки гитары: <a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">tonejs-instruments</a> (CC BY 3.0): University of Iowa MIS, Karoryfer, quartertone (Freesound).</p>
@@ -228,10 +277,9 @@
     </div>
     <!-- levels -->
     <div id="levelsView" hidden>
-      <h1>Уровни</h1>
-      <p class="lead">Учи гриф по шагам: от одной струны до всех 12 ладов. 20 нот, не больше трёх ошибок.</p>
-      <div class="row"><div class="seg" data-k="mode"></div></div>
-      <div class="levels" id="levels"></div>
+      <h1>Путь обучения</h1>
+      <p class="lead">Короткие уроки по 2 минуты: найди ноту, назови ноту, узнай на слух. В конце раздела контрольная.</p>
+      <div id="path"></div>
       <div class="btns"><button class="btn ghost" id="lvBack">В меню</button></div>
     </div>
     <!-- result -->
@@ -239,6 +287,7 @@
       <h1 id="rTitle"></h1>
       <p class="lead" id="rLead"></p>
       <div class="bigstars" id="rStars"></div>
+      <p class="xpgain" id="rXP"></p>
       <div class="result" id="rStats"></div>
       <p class="rank" id="rRank" hidden></p>
       <div class="btns">
@@ -281,8 +330,8 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
-let data={find:[],name:[],best:{},streak:{last:'',n:0}};
+const cfg={goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
+let data={find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
 const $=id=>document.getElementById(id);
@@ -335,6 +384,15 @@ const store={
 async function load(){try{const v=await store.get('progress');if(v)data=Object.assign(data,JSON.parse(v));}catch(e){}}
 const save=()=>store.set('progress',JSON.stringify(data));
 
+const todayKey=()=>new Date().toDateString();
+function dayXP(){return data.day.date===todayKey()?data.day.xp:0;}
+// начисляет опыт; возвращает true, если именно сейчас выполнена цель дня
+function addXP(n){
+  if(data.day.date!==todayKey())data.day={date:todayKey(),xp:0};
+  const before=data.day.xp;data.day.xp+=n;data.xp=(data.xp||0)+n;
+  return before<data.goal&&data.day.xp>=data.goal;
+}
+function streakNow(){const s=data.streak;return s.n&&(s.last===todayKey()||s.last===new Date(Date.now()-864e5).toDateString())?s.n:0;}
 function bumpStreak(){
   const d=new Date(),key=d.toDateString(),y=new Date(d-864e5).toDateString();
   if(data.streak.last===key)return;
@@ -342,7 +400,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -351,40 +409,81 @@ function renderMenu(){
   });
   $('inputRow').hidden=cfg.mode!=='find';
   $('fsRow').hidden=!fsSupported;
-  const prog=data[cfg.mode];
-  const passed=LEVELS.filter((_,i)=>(prog[i]||0)>0).length,starsN=LEVELS.reduce((a,_,i)=>a+(prog[i]||0),0);
-  $('lvlSummary').textContent=passed?`Пройдено ${passed} из ${LEVELS.length} · ★ ${starsN} из ${LEVELS.length*3}`:`${LEVELS.length} уровней: от одной струны до всего грифа`;
+  const pd=pathDone();
+  $('lvlSummary').textContent=pd>=NODES?'Весь путь пройден!':pd?`Раздел ${Math.floor(pd/3)+1} · пройдено ${pd} из ${NODES}`:'Начни с первого урока';
+  // цель дня и серия
+  const dx=dayXP(),gl=data.goal||20,k=Math.min(1,dx/gl);
+  $('ringFill').style.strokeDashoffset=(144.5*(1-k)).toFixed(1);
+  $('today').classList.toggle('done',dx>=gl);
+  $('goalTitle').textContent=dx>=gl?'Цель дня выполнена':'Цель дня';
+  $('goalText').textContent=`${dx} из ${gl} XP`;
+  const sn=streakNow(),playedToday=data.streak.last===todayKey();
+  $('flameN').textContent=sn;$('flame').classList.toggle('on',playedToday&&sn>0);
+  $('flameText').textContent=sn?`${plural(sn,'день','дня','дней')} подряд`:'начни серию';
   const best=data.best[cfg.mode+cfg.max]||0;
   $('rateSummary').textContent=best?`60 секунд · твой рекорд ${best}`:'60 секунд · рейтинг недели';
   $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'играю на гитаре':'касанием'].join(' · ');
   $('bestLine').innerHTML=best?`Твой рекорд: <b>${best}</b>`:'Сыграй первый раунд и попади в таблицу';
-  $('levels').innerHTML=LEVELS.map((L,i)=>{
-    const open=i===0||(prog[i-1]||0)>0;
-    return `<button class="lvl" data-i="${i}" ${open?'':'disabled'}>
-      <span class="n">${i+1}</span>
-      <span class="t">${L.t}<small>Лады 0–${L.m}${open?'':' · откроется после уровня '+i}</small></span>
-      <span class="s">${open?stars(prog[i]||0):''}</span></button>`;
-  }).join('');
-  const s=data.streak;
-  const alive=s.n&&(s.last===new Date().toDateString()||s.last===new Date(Date.now()-864e5).toDateString());
-  $('streakBadge').hidden=!alive;
-  $('streakBadge').textContent=`Серия: ${s.n} ${plural(s.n,'день','дня','дней')} подряд`;
 }
+/* ===== путь обучения: разделы = LEVELS, в каждом 2 урока + контрольная ===== */
+const NODE_KIND=['a','b','t'];
+const NODES=LEVELS.length*3;
+const OFFS=[0,52,76,52,0,-52,-76,-52];
+const nodeOpen=id=>id===0||(data.path[id-1]||0)>0;
+function pathDone(){let n=0;for(let i=0;i<NODES;i++)if((data.path[i]||0)>0)n++;return n;}
+function renderPath(){
+  let html='',cur=null;
+  for(let id=0;id<NODES;id++){
+    const u=Math.floor(id/3),k=NODE_KIND[id%3],L=LEVELS[u];
+    if(id%3===0)html+=`<div class="unit"><b>Раздел ${u+1}</b><span>${L.t} · лады 0–${L.m}</span></div>`;
+    const done=(data.path[id]||0)>0,open=nodeOpen(id),isCur=open&&!done&&cur===null;
+    if(isCur)cur=id;
+    const glyph=done&&k!=='t'?'✓':k==='t'?'★':k==='b'?'♫':'♪';
+    const name=k==='t'?'Контрольная':k==='b'?'Урок на слух':'Урок';
+    html+=`<div class="node-row" style="--x:${OFFS[id%OFFS.length]}px">
+      ${isCur?`<span class="bubble ${OFFS[id%OFFS.length]>0?'l':'r'}">${id===0?'Начни здесь':'Дальше'}</span>`:''}
+      <button class="node ${k==='t'?'test':''} ${done?'done':open?'':'locked'} ${isCur?'cur':''}" data-id="${id}" ${open?'':'disabled'} aria-label="${name}, раздел ${u+1}${done?', пройдено':open?'':', закрыто'}">${glyph}</button>
+      ${k==='t'&&done?`<span class="node-stars">${stars(data.path[id])}</span>`:''}
+    </div>`;
+  }
+  $('path').innerHTML=html;
+  return cur;
+}
+$('path').addEventListener('click',e=>{const b=e.target.closest('.node');if(b&&!b.disabled)startNode(+b.dataset.id);});
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function lessonPlan(k){
+  const mk=(f,n,e)=>[...Array(f).fill('find'),...Array(n).fill('name'),...Array(e).fill('ear')];
+  let plan=k==='a'?mk(5,5,0):k==='b'?mk(3,3,4):mk(5,5,5);
+  // на слух без звука или с микрофоном не получится — заменяем на «найди»
+  if(cfg.sound==='off'||cfg.input==='mic')plan=plan.map(t=>t==='ear'?'find':t);
+  return shuffle(plan);
+}
+function startNode(id){
+  const u=Math.floor(id/3),k=NODE_KIND[id%3],L=LEVELS[u];
+  Object.assign(g,{type:k==='t'?'test':'lesson',node:id,kind:k,max:L.m,cols:L.s.map(colOf),plan:lessonPlan(k)});
+  begin();
+}
+
 function plural(n,a,b,c){const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c;}
 document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   const k=el.dataset.k;let v=b.dataset.v;
-  if(k==='max')v=+v;else if(v==='true'||v==='false')v=v==='true';
+  if(k==='max'||k==='goal')v=+v;else if(v==='true'||v==='false')v=v==='true';
+  if(k==='goal'){data.goal=v;save();}
   if(k==='fs'){setFullscreen(v);return;}
   if(k==='orient'){data.orient=v;save();}
   if(k==='sound'){data.sound=v;save();loadBank(v);setTimeout(()=>pluck(110),250);} // предпрослушка: открытая 5-я струна
   cfg[k]=v;renderMenu();
   if(!$('boardView').hidden)loadBoard();
 }));
-$('levels').addEventListener('click',e=>{const b=e.target.closest('.lvl');if(b&&!b.disabled)startLevel(+b.dataset.i);});
 
 function show(view){['menuView','resultView','boardView','levelsView','settingsView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
-function openLevels(){clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);}
+function openLevels(){
+  clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
+  const cur=renderPath();
+  const el=cur!==null&&$('path').querySelector(`.node[data-id="${cur}"]`);
+  if(el)requestAnimationFrame(()=>el.scrollIntoView({block:'center',behavior:calm()?'auto':'smooth'}));
+}
 function openMenu(){
   clearInterval(g.timer);g.playing=false;micStop();
   renderMenu();show('menuView');back(false);
@@ -462,7 +561,7 @@ function buildBoard(){
 }
 function paintQuestion(){
   if(!g.q)return;
-  if(cfg.mode==='find')document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===g.q.c?'target':'dim'));
+  if(g.q.type!=='name')document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===g.q.c?'target':'dim'));
   else putDot(g.q.c,g.q.r,'mark');
 }
 function onResize(){
@@ -554,10 +653,12 @@ const freqAt=(c,r)=>STRINGS[c].f*Math.pow(2,r/12);
 /* ===== верхняя панель ===== */
 function stat(id,val,label,low){const el=$(id);el.hidden=val===null;if(val===null)return;el.querySelector('b').textContent=val;el.querySelector('small').textContent=label;el.classList.toggle('low',!!low);}
 function updateTop(){
-  if(g.type==='level'){
-    stat('s1',`${g.total}/${QUESTIONS}`,'ответов');
-    stat('s2',`${g.mistakes}/${MAX_MISTAKES}`,'ошибок',g.mistakes===MAX_MISTAKES);
-    stat('s3',null);
+  const learn=g.type==='lesson'||g.type==='test';
+  $('pbar').hidden=!learn;
+  if(learn){
+    $('pbar').firstChild.style.width=(100*g.total/g.plan.length)+'%';
+    stat('s1',null);stat('s3',null);
+    if(g.type==='test')stat('s2',`${g.mistakes}/${MAX_MISTAKES}`,'ошибок',g.mistakes===MAX_MISTAKES);else stat('s2',null);
   }else{
     stat('s1',g.score,'очков');stat('s2',g.streak,'подряд');stat('s3',g.time,'сек',g.time<=10);
   }
@@ -583,17 +684,33 @@ function newQuestion(){
   while(key===g.last&&tries<50);
   g.last=key;
   const pc=pcAt(c,r);
-  if(cfg.mode==='find'){
-    g.q={c,pc};
+  const type=g.type==='free'?cfg.mode:g.plan[g.total];
+  $('answers').style.gridTemplateColumns='';
+  if(type==='find'){
+    g.q={type,c,pc};
     $('pNote').textContent=nm(pc);
     $('pSub').textContent=`${g.mic?'сыграй ':''}на ${STRINGS[c].n}-й струне`;
     document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
+  }else if(type==='ear'){
+    g.q={type,c,r,pc};
+    $('pNote').textContent='♪';
+    $('pSub').textContent=`где звучит эта нота на ${STRINGS[c].n}-й струне?`;
+    document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
+    $('answers').innerHTML='<button class="ans wide" data-replay="1">▶ Послушать ещё раз</button>';
+    setTimeout(()=>{if(g.q&&g.q.type==='ear'&&g.q.c===c&&g.q.r===r&&!g.locked)pluck(freqAt(c,r));},350);
   }else{
-    g.q={c,r,pc};
+    g.q={type,c,r,pc};
     $('pNote').textContent='?';
     $('pSub').textContent=`${STRINGS[c].n}-я струна, ${r===0?'открытая':r+'-й лад'}`;
     putDot(c,r,'mark');
-    $('answers').innerHTML=(cfg.names==='letters'?LETTERS:SOLFEGE).map((t,i)=>`<button class="ans" data-pc="${i}">${t}</button>`).join('');
+    const names=cfg.names==='letters'?LETTERS:SOLFEGE;
+    if(g.type==='free'){
+      $('answers').innerHTML=names.map((t,i)=>`<button class="ans" data-pc="${i}">${t}</button>`).join('');
+    }else{ // в уроках 4 варианта ответа
+      const opts=shuffle([pc,...shuffle([...Array(12).keys()].filter(x=>x!==pc)).slice(0,3)]);
+      $('answers').style.gridTemplateColumns='repeat(4,1fr)';
+      $('answers').innerHTML=opts.map(i=>`<button class="ans" data-pc="${i}">${names[i]}</button>`).join('');
+    }
   }
   replay($('pNote'),'in');
   g.locked=false;
@@ -605,11 +722,19 @@ function answered(ok){
   haptic(ok?'success':'error');
   updateTop();g.locked=true;
   if(ok)replay($('s1').querySelector('b'),'bump');
-  else{replay($('pNote'),'shake');if(g.type==='level')replay($('s2').querySelector('b'),'bump');}
-  const done=g.type==='level'&&(g.mistakes>MAX_MISTAKES||g.total>=QUESTIONS);
+  else{replay($('pNote'),'shake');if(g.type==='test')replay($('s2').querySelector('b'),'bump');}
+  const done=(g.type==='lesson'&&g.total>=g.plan.length)||(g.type==='test'&&(g.mistakes>MAX_MISTAKES||g.total>=g.plan.length));
   setTimeout(()=>{if(!g.playing)return;done?endRound():newQuestion();},ok?450:1100);
 }
 
+function judgeEar(c,r){
+  vibrate(c);
+  const ok=r===g.q.r;
+  putDot(c,r,ok?'ok':'bad',nm(pcAt(c,r)));
+  if(!ok)putDot(c,g.q.r,'show',nm(g.q.pc));
+  $('pNote').textContent=nm(g.q.pc);
+  answered(ok);
+}
 function judgeFind(c,r){
   vibrate(c);
   const ok=pcAt(c,r)===g.q.pc;
@@ -619,11 +744,11 @@ function judgeFind(c,r){
 }
 $('board').addEventListener('click',e=>{
   const cell=e.target.closest('.cell');
-  if(!cell||!g.playing||g.locked||cfg.mode!=='find')return;
+  if(!cell||!g.playing||g.locked||!g.q||g.q.type==='name')return;
   const c=+cell.dataset.c,r=+cell.dataset.r;
   if(c!==g.q.c)return;
   pluck(freqAt(c,r));
-  judgeFind(c,r);
+  g.q.type==='ear'?judgeEar(c,r):judgeFind(c,r);
 });
 
 /* ===== микрофон: распознавание ноты ===== */
@@ -673,7 +798,7 @@ function micTick(){
   if(mic.count<3)return;                       // нота должна звучать стабильно ~150 мс
   if(!mic.armed&&midi===mic.lastMidi)return;   // это ещё звучит прошлая нота
   mic.armed=true;
-  if(!g.playing||g.locked||cfg.mode!=='find'||!g.q)return;
+  if(!g.playing||g.locked||!g.q||g.q.type!=='find')return;
   heard(midi);
 }
 function heard(midi){
@@ -691,6 +816,7 @@ function heard(midi){
 $('answers').addEventListener('click',e=>{
   const b=e.target.closest('.ans');
   if(!b||!g.playing||g.locked)return;
+  if(b.dataset.replay){pluck(freqAt(g.q.c,g.q.r));vibrate(g.q.c);return;}
   const ok=+b.dataset.pc===g.q.pc;
   b.classList.add(ok?'ok':'bad');
   if(!ok)$('answers').querySelector(`[data-pc="${g.q.pc}"]`).classList.add('ok');
@@ -703,7 +829,7 @@ $('answers').addEventListener('click',e=>{
 /* ===== раунды ===== */
 async function begin(){
   g.mic=false;
-  if(cfg.input==='mic'&&cfg.mode==='find'){
+  if(cfg.input==='mic'&&(g.type==='free'?cfg.mode==='find':g.plan.includes('find'))){
     g.mic=await micStart();
     if(!g.mic){
       const msg='Нет доступа к микрофону. Разреши его в настройках Telegram или телефона. Пока играем касанием.';
@@ -714,50 +840,60 @@ async function begin(){
   clearInterval(g.timer);
   buildBoard();updateTop();$('sheet').hidden=true;back(true);
   if(g.mic){Object.assign(mic,{armed:true,lastMidi:null,cand:null,count:0});$('hear').hidden=false;clearInterval(mic.timer);mic.timer=setInterval(micTick,50);}
-  pluck(82.41);
+  if(g.type==='free')pluck(82.41);
   if(g.type==='free')g.timer=setInterval(()=>{g.time--;updateTop();if(g.time<=0)endRound();},1000);
   newQuestion();
 }
-function startLevel(i){const L=LEVELS[i];Object.assign(g,{type:'level',lvl:i,max:L.m,cols:L.s.map(colOf)});begin();}
 function startFree(){Object.assign(g,{type:'free',max:cfg.max,cols:[0,1,2,3,4,5]});begin();}
 
 async function endRound(){
   clearInterval(g.timer);g.playing=false;back(false);micStop();
   if(g.total>0)bumpStreak();
-  const nextBtn=$('nextBtn');
-  $('toMenuBtn').textContent=g.type==='level'?'К уровням':'В меню';
-  if(g.type==='level'){
-    const passed=g.mistakes<=MAX_MISTAKES&&g.total>=QUESTIONS;
-    const st=passed?(g.mistakes===0?3:g.mistakes===1?2:1):0;
+  const nextBtn=$('nextBtn'),learn=g.type==='lesson'||g.type==='test';
+  $('toMenuBtn').textContent=learn?'К пути':'В меню';
+  let xp=0;
+  if(learn){
+    const isTest=g.type==='test',n=g.plan.length,u=Math.floor(g.node/3);
+    const passed=!isTest||(g.mistakes<=MAX_MISTAKES&&g.total>=n);
+    const st=isTest?(passed?(g.mistakes===0?3:g.mistakes===1?2:1):0):(passed?1:0);
     g.lastStars=st;
-    const prog=data[cfg.mode];
-    if(st>(prog[g.lvl]||0))prog[g.lvl]=st;
-    $('rTitle').textContent=passed?`Уровень ${g.lvl+1} пройден`:'Почти получилось';
-    $('rLead').textContent=passed?(st===3?'Без единой ошибки.':'Три звезды дают за прохождение без ошибок.'):`Больше ${MAX_MISTAKES} ошибок. Попробуй ещё раз, ноты запоминаются с повторением.`;
-    $('rStars').innerHTML=starsAnimated(st);$('rStars').hidden=false;
+    if(passed&&st>(data.path[g.node]||0))data.path[g.node]=st;
+    xp=isTest?(passed?20:5):(g.mistakes===0?15:10);
+    $('rTitle').textContent=isTest?(passed?'Контрольная сдана':'Почти получилось'):(g.mistakes===0?'Идеально!':'Урок пройден');
+    $('rLead').textContent=isTest
+      ?(passed?`Раздел ${u+1} закрыт. ${st===3?'Без единой ошибки.':'Три звезды дают за контрольную без ошибок.'}`:`Больше ${MAX_MISTAKES} ошибок. Повтори уроки раздела и попробуй снова.`)
+      :`Раздел ${u+1}: ${LEVELS[u].t}.`;
+    $('rStars').innerHTML=starsAnimated(st);$('rStars').hidden=!isTest;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
-    nextBtn.hidden=!(passed&&g.lvl<LEVELS.length-1);
+    const next=g.node+1;
+    nextBtn.hidden=!(passed&&next<NODES);
+    nextBtn.textContent=next%3===2?'К контрольной':next%3===0?'Следующий раздел':'Следующий урок';
     $('rRank').hidden=true;$('rBoardBtn').hidden=true;
   }else{
     const k=cfg.mode+g.max,best=data.best[k]||0,rec=g.score>best;
     if(rec)data.best[k]=g.score;
+    xp=g.total?Math.max(5,Math.min(20,Math.ceil(g.score/2))):0;
     $('rTitle').textContent=rec&&g.score>0?'Новый рекорд!':'Время вышло';
-    $('rLead').textContent=`Свободная игра, лады 0–${g.max}.`;
+    $('rLead').textContent=`Игра на рейтинг, лады 0–${g.max}.`;
     $('rStars').hidden=true;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>очков</small></div><div><b>${g.total?Math.round(g.score/g.total*100):0}%</b><small>точность</small></div><div><b>${data.best[k]||0}</b><small>рекорд</small></div>`;
     nextBtn.hidden=true;$('rBoardBtn').hidden=false;
     submitScore();
   }
+  const goalNow=xp?addXP(xp):false;
+  $('rXP').innerHTML=xp?`+${xp} XP${goalNow?`<small>Цель дня выполнена · 🔥 ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд</small>`:''}`:'';
   await save();
   show('resultView');
-  $('rTitle').classList.toggle('rec',/рекорд|пройден/.test($('rTitle').textContent));
+  $('rTitle').classList.toggle('rec',/рекорд|пройден|сдана|Идеально/.test($('rTitle').textContent));
   if($('rTitle').classList.contains('rec'))replay($('rTitle'),'rec');
+  if(xp)replay($('rXP'),'rec');
+  if(goalNow)haptic('success');
   $('rStats').querySelectorAll('b').forEach(countUp);
 }
 
-$('nextBtn').addEventListener('click',()=>startLevel(g.lvl+1));
-$('againBtn').addEventListener('click',()=>g.type==='level'?startLevel(g.lvl):startFree());
-$('toMenuBtn').addEventListener('click',()=>g.type==='level'?openLevels():openMenu());
+$('nextBtn').addEventListener('click',()=>startNode(g.node+1));
+$('againBtn').addEventListener('click',()=>g.type==='free'?startFree():startNode(g.node));
+$('toMenuBtn').addEventListener('click',()=>g.type==='free'?openMenu():openLevels());
 $('levelsBtn').addEventListener('click',openLevels);
 $('lvBack').addEventListener('click',openMenu);
 $('menuBtn').addEventListener('click',openMenu);
@@ -768,8 +904,8 @@ $('rBoardBtn').addEventListener('click',openBoard);
 $('lbBack').addEventListener('click',openMenu);
 $('lbPlay').addEventListener('click',()=>startFree());
 $('shareBtn').addEventListener('click',()=>{
-  const text=g.type==='level'
-    ?`Прошёл уровень ${g.lvl+1} в «Нота на грифе» на ${'★'.repeat(g.lastStars)}. А ты знаешь гриф?`
+  const text=g.type!=='free'
+    ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone()} из ${NODES} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
     :`Набрал ${g.score} очков за 60 секунд в «Нота на грифе». Побьёшь?`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);
@@ -780,6 +916,8 @@ $('shareBtn').addEventListener('click',()=>{
 (async()=>{
   await load();
   if(data.orient)cfg.orient=data.orient;
+  data.path=data.path||{};data.day=data.day||{date:'',xp:0};data.goal=data.goal||20;cfg.goal=data.goal;
+  LEVELS.forEach((_,u)=>{const st=Math.max(data.find[u]||0,data.name[u]||0);if(st&&!data.path[u*3+2]){data.path[u*3]=data.path[u*3]||1;data.path[u*3+1]=data.path[u*3+1]||1;data.path[u*3+2]=st;}});
   if(typeof data.sound==='string'&&SAMPLE_SETS[data.sound]||data.sound==='off')cfg.sound=data.sound;
   loadBank(cfg.sound);
   syncOrientation();
