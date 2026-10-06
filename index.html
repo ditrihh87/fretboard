@@ -138,7 +138,33 @@
   #hearLvl{width:70px;height:6px;border-radius:3px;background:var(--stage-2);overflow:hidden}
   #hearLvl i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  /* ===== анимации: только в ответ на действия игрока ===== */
+  @keyframes pop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{translate:0}20%{translate:-6px}40%{translate:5px}60%{translate:-3px}80%{translate:2px}}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(111,191,115,.7)}100%{box-shadow:0 0 0 14px rgba(111,191,115,0)}}
+  @keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.35)}100%{transform:scale(1)}}
+  @keyframes noteIn{0%{opacity:0;transform:translateY(10px) scale(.9)}100%{opacity:1;transform:none}}
+  @keyframes tick{0%,100%{opacity:1}50%{opacity:.45}}
+  @keyframes starIn{0%{transform:scale(0) rotate(-40deg);opacity:0}70%{transform:scale(1.3) rotate(8deg);opacity:1}100%{transform:none}}
+  /* дрожание струны: затухающие колебания поперёк струны */
+  @keyframes vibV{0%,100%{transform:translateX(-50%)}10%{transform:translateX(calc(-50% + 3px))}22%{transform:translateX(calc(-50% - 2.4px))}34%{transform:translateX(calc(-50% + 1.8px))}46%{transform:translateX(calc(-50% - 1.2px))}60%{transform:translateX(calc(-50% + .7px))}76%{transform:translateX(calc(-50% - .3px))}}
+  @keyframes vibH{0%,100%{transform:translateY(-50%)}10%{transform:translateY(calc(-50% + 3px))}22%{transform:translateY(calc(-50% - 2.4px))}34%{transform:translateY(calc(-50% + 1.8px))}46%{transform:translateY(calc(-50% - 1.2px))}60%{transform:translateY(calc(-50% + .7px))}76%{transform:translateY(calc(-50% - .3px))}}
+  .cell.vib::before{animation:vibV .45s linear;filter:brightness(1.5)}
+  #board.h .cell.vib::before{animation:vibH .45s linear}
+
+  .dot{animation:pop .24s cubic-bezier(.3,1.5,.5,1) both}
+  .dot.bad{animation:pop .24s cubic-bezier(.3,1.5,.5,1) both,shake .32s .2s}
+  .dot.show{animation:pop .24s .15s cubic-bezier(.3,1.5,.5,1) both,ring .9s .3s ease-out 2}
+  .ans.ok{animation:bump .3s}
+  .ans.bad{animation:shake .32s}
+  #pNote.in{animation:noteIn .22s ease-out}
+  #pNote.shake{animation:shake .32s}
+  .stat b.bump{display:inline-block;animation:bump .3s}
+  .stat.low b{animation:tick 1s ease-in-out infinite}
+  .bigstars .on{display:inline-block;animation:starIn .45s cubic-bezier(.3,1.5,.5,1) both}
+  #rTitle.rec{animation:pop .4s cubic-bezier(.3,1.5,.5,1)}
+
+  @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -443,6 +469,18 @@ function updateTop(){
   }
 }
 
+/* ===== анимации ===== */
+const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function replay(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
+function vibrate(c){document.querySelectorAll(`.cell[data-c="${c}"]`).forEach(el=>replay(el,'vib'));}
+function countUp(el){
+  const m=el.textContent.match(/^(\d+)(%?)$/);if(!m||calm())return;
+  const to=+m[1],t0=performance.now(),D=650;
+  const step=t=>{const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);el.textContent=Math.round(to*e)+m[2];if(k<1)requestAnimationFrame(step);};
+  el.textContent='0'+m[2];requestAnimationFrame(step);
+}
+function starsAnimated(n){return [0,1,2].map(i=>i<n?`<span class="on" style="animation-delay:${.15+i*.22}s">★</span>`:'<span class="e">★</span>').join('');}
+
 /* ===== вопросы ===== */
 function newQuestion(){
   clearMarks();$('answers').innerHTML='';
@@ -463,6 +501,7 @@ function newQuestion(){
     putDot(c,r,'mark');
     $('answers').innerHTML=(cfg.names==='letters'?LETTERS:SOLFEGE).map((t,i)=>`<button class="ans" data-pc="${i}">${t}</button>`).join('');
   }
+  replay($('pNote'),'in');
   g.locked=false;
 }
 
@@ -471,11 +510,14 @@ function answered(ok){
   if(ok){g.score++;g.streak++;}else{g.mistakes++;g.streak=0;}
   haptic(ok?'success':'error');
   updateTop();g.locked=true;
+  if(ok)replay($('s1').querySelector('b'),'bump');
+  else{replay($('pNote'),'shake');if(g.type==='level')replay($('s2').querySelector('b'),'bump');}
   const done=g.type==='level'&&(g.mistakes>MAX_MISTAKES||g.total>=QUESTIONS);
   setTimeout(()=>{if(!g.playing)return;done?endRound():newQuestion();},ok?450:1100);
 }
 
 function judgeFind(c,r){
+  vibrate(c);
   const ok=pcAt(c,r)===g.q.pc;
   putDot(c,r,ok?'ok':'bad',nm(pcAt(c,r)));
   if(!ok)for(let f=0;f<=g.max;f++)if(pcAt(c,f)===g.q.pc)putDot(c,f,'show',nm(g.q.pc));
@@ -559,7 +601,7 @@ $('answers').addEventListener('click',e=>{
   if(!ok)$('answers').querySelector(`[data-pc="${g.q.pc}"]`).classList.add('ok');
   putDot(g.q.c,g.q.r,ok?'ok':'bad',nm(g.q.pc));
   $('pNote').textContent=nm(g.q.pc);
-  pluck(freqAt(g.q.c,g.q.r));
+  pluck(freqAt(g.q.c,g.q.r));vibrate(g.q.c);
   answered(ok);
 });
 
@@ -596,7 +638,7 @@ async function endRound(){
     if(st>(prog[g.lvl]||0))prog[g.lvl]=st;
     $('rTitle').textContent=passed?`Уровень ${g.lvl+1} пройден`:'Почти получилось';
     $('rLead').textContent=passed?(st===3?'Без единой ошибки.':'Три звезды дают за прохождение без ошибок.'):`Больше ${MAX_MISTAKES} ошибок. Попробуй ещё раз, ноты запоминаются с повторением.`;
-    $('rStars').innerHTML=stars(st);$('rStars').hidden=false;
+    $('rStars').innerHTML=starsAnimated(st);$('rStars').hidden=false;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
     nextBtn.hidden=!(passed&&g.lvl<LEVELS.length-1);
     $('rRank').hidden=true;$('rBoardBtn').hidden=true;
@@ -612,6 +654,9 @@ async function endRound(){
   }
   await save();
   show('resultView');
+  $('rTitle').classList.toggle('rec',/рекорд|пройден/.test($('rTitle').textContent));
+  if($('rTitle').classList.contains('rec'))replay($('rTitle'),'rec');
+  $('rStats').querySelectorAll('b').forEach(countUp);
 }
 
 $('nextBtn').addEventListener('click',()=>startLevel(g.lvl+1));
