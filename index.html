@@ -285,6 +285,8 @@
   .stat2 b{display:block;font-family:var(--display);font-weight:800;font-size:17px;line-height:1.15}
   .stat2 small{display:block;color:var(--p-muted);font-weight:700;font-size:12px;margin-top:2px}
   .stat2.off b{color:var(--p-muted)}
+  button.stat2{border:none;text-align:left;width:100%;color:inherit;font:inherit;box-shadow:inset 0 0 0 2px var(--amber)}
+  .stat2 .go{margin-left:auto;font-size:24px;color:var(--amber);font-weight:800}
   .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:130px;background:var(--p-card);border-radius:14px;padding:12px 10px 8px}
   .wd{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
   .wd i{display:block;width:70%;min-height:3px;border-radius:5px 5px 2px 2px;background:var(--p-line)}
@@ -342,8 +344,6 @@
   html.dark .bubble{background:#F0A830;color:#1b1b1b}
   html.dark .bubble.r::after{border-right-color:#F0A830}html.dark .bubble.l::after{border-left-color:#F0A830}
   html.dark .flame:not(.on) b{color:#46566A}
-  #leagueIco{background:var(--lg-bg);color:var(--lg-fg)}
-  html.dark #leagueIco{background:color-mix(in srgb,var(--lg-fg) 30%,transparent);color:var(--lg-bg)}
   @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -394,11 +394,6 @@
         <span class="t">Рейтинговая битва<small id="rateSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
-      <button class="lvlcard" id="leagueBtn">
-        <span class="ico ico-cup" id="leagueIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h10v5.5a5 5 0 0 1-10 0z"/><path d="M7 5.5H4.2a3 3 0 0 0 3.2 4.3"/><path d="M17 5.5h2.8a3 3 0 0 1-3.2 4.3"/><path d="M12 14v3"/><path d="M8.5 20.5h7"/><path d="M9.5 17h5l.6 3.5H8.9z"/></svg></span>
-        <span class="t">Лига недели<small id="leagueSummary">Набирай XP и поднимайся в лигах</small></span>
-        <span class="chev" aria-hidden="true">›</span>
-      </button>
       <button class="lvlcard" id="songsBtn">
         <span class="ico ico-book" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5c2.8-1.3 5.6-1.3 8.5 0v14c-2.9-1.3-5.7-1.3-8.5 0z"/><path d="M20.5 5.5c-2.8-1.3-5.6-1.3-8.5 0v14c2.9-1.3 5.7-1.3 8.5 0z"/><path d="M15.2 8.2v5.3"/><circle cx="14.1" cy="13.6" r="1.2" fill="currentColor"/><path d="M15.2 8.2l2.2.8"/></svg></span>
         <span class="t">Песенник<small id="songsSummary">Песни с аккордами и схемами</small></span>
@@ -433,7 +428,7 @@
       <ol class="lb lg" id="lgList"></ol>
       <div class="btns">
         <button class="btn big" id="lgPlay">Набрать XP</button>
-        <button class="btn ghost" id="lgBack">В меню</button>
+        <button class="btn ghost" id="lgBack">В профиль</button>
       </div>
     </div>
     <!-- profile -->
@@ -678,8 +673,6 @@ function renderMenu(){
   $('rankBar').style.width=(nx?100*(tx-RANKS[ri][0])/(nx[0]-RANKS[ri][0]):100)+'%';
   // лига
   const lg=data.league,lt=lg?lg.tier:0;
-  $('leagueIco').style.setProperty('--lg-bg',LEAGUES[lt][1]);$('leagueIco').style.setProperty('--lg-fg',LEAGUES[lt][2]);
-  $('leagueSummary').textContent=!inTg?'Доступно в Telegram':lg&&lg.place?`Лига ${leagueName(lt)} · ${lg.place}-е место · ${lg.xp} XP`:`Лига ${leagueName(lt)} · набирай XP`;
   // цель дня и серия
   const dx=dayXP(),gl=data.goal||20,k=Math.min(1,dx/gl);
   $('ringFill').style.strokeDashoffset=(144.5*(1-k)).toFixed(1);
@@ -1020,14 +1013,17 @@ function openProfile(){
   const st=[
     ['🔥',sn,`${plural(sn,'день','дня','дней')} подряд`,!sn],
     ['⚡',tx,'очки опыта',!tx],
-    ['🏆',LEAGUES[lt][0],'текущая лига',!data.league],
+    ['🏆',LEAGUES[lt][0],data.league&&data.league.place?`${data.league.place}-е место`:'открыть лигу',false],
     ['🥇',data.top3||0,'раз в топ-3 лиги',!data.top3],
     ['🏅',data.bestStreak||0,'рекорд серии',!data.bestStreak],
     ['⚔️',battle,'рекорд битвы',!battle],
     ['📚',`${lessons}/${lessonsAll}`,'уроков пройдено',!lessons],
     ['👂',ear?`${ear}/10`:0,'лучший слух',!ear],
   ];
-  $('pStats').innerHTML=st.map(([i,v,l,off])=>`<div class="stat2 ${off?'off':''}"><i>${i}</i><div><b>${esc(String(v))}</b><small>${l}</small></div></div>`).join('');
+  $('pStats').innerHTML=st.map(([i,v,l,off],k)=>k===2
+    ?`<button class="stat2 link" id="pLeague"><i>${i}</i><div><b>${esc(String(v))}</b><small>${l}</small></div><span class="go">›</span></button>`
+    :`<div class="stat2 ${off?'off':''}"><i>${i}</i><div><b>${esc(String(v))}</b><small>${l}</small></div></div>`).join('');
+  $('pLeague').addEventListener('click',openLeague);
   // неделя
   const days=[...Array(7)].map((_,k)=>{const dt=new Date(Date.now()-(6-k)*864e5);return {key:dt.toISOString().slice(0,10),wd:['вс','пн','вт','ср','чт','пт','сб'][dt.getDay()],today:k===6};});
   const vals=days.map(x=>(data.hist||{})[x.key]||0),mx=Math.max(data.goal||20,...vals);
@@ -1734,8 +1730,7 @@ $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
 $('songsBtn').addEventListener('click',openSongs);
-$('leagueBtn').addEventListener('click',openLeague);
-$('lgBack').addEventListener('click',openMenu);
+$('lgBack').addEventListener('click',openProfile);
 $('lgPlay').addEventListener('click',openLevels);
 $('earBack').addEventListener('click',openMenu);
 $('earPlay').addEventListener('click',startEar);
