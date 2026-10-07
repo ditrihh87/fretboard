@@ -69,6 +69,7 @@
   .dot.o.bad,.dot.x.bad{background:transparent;border-color:var(--bad);color:var(--bad)}
   .dot.still{animation:none!important}
   #levelsView .seg[data-k="topic"]{margin-top:14px}
+  .dot.root{background:var(--paper);color:var(--stage);font-weight:800;box-shadow:0 0 0 3px rgba(238,230,211,.3)}
   .chordname{font-size:15px;color:var(--muted);margin-top:4px}
 
   /* горизонтальный гриф */
@@ -343,6 +344,7 @@
       <p class="lead">10 заданий без таймера. Начни с «Выше или ниже», а когда пойдёт легко, переходи к поиску ноты.</p>
       <div class="row"><span>Упражнение</span><div class="seg" data-k="ear"></div></div>
       <p class="hint" id="earHint"></p>
+      <div class="row" id="ivSetRow"><span>Интервалы</span><div class="seg" data-k="ivset"></div></div>
       <div class="row" id="earMaxRow"><span>Лады</span><div class="seg" data-k="max"></div></div>
       <p class="best" id="earBest"></p>
       <button class="btn big" id="earPlay">Начать</button>
@@ -405,7 +407,7 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
+const cfg={ivset:'easy',topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
 let data={find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
@@ -490,7 +492,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={topic:[['notes','Ноты на грифе'],['chords','Аккорды']],ear:[['hl','Выше или ниже'],['ear','Найди на струне']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -499,8 +501,8 @@ function renderMenu(){
   });
   $('inputRow').hidden=cfg.mode!=='find';
   $('fsRow').hidden=!fsSupported;
-  const pdN=pathDone('notes'),pdC=pathDone('chords');
-  $('lvlSummary').textContent=pdN||pdC?`Ноты ${pdN}/${nodesOf('notes')} · аккорды ${pdC}/${nodesOf('chords')}`:'Ноты на грифе и первые аккорды';
+  const pdN=pathDone('notes'),pdC=pathDone('chords'),pdI=pathDone('intervals');
+  $('lvlSummary').textContent=pdN||pdC||pdI?`Ноты ${pdN}/${nodesOf('notes')} · аккорды ${pdC}/${nodesOf('chords')} · интервалы ${pdI}/${nodesOf('intervals')}`:'Ноты, аккорды и интервалы';
   // звание
   const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
   $('rankName').textContent=RANKS[ri][1];
@@ -524,9 +526,11 @@ function renderMenu(){
   $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'микрофон':''].filter(Boolean).join(' · ');
   $('earHint').textContent=cfg.ear==='hl'
     ?'Звучат две ноты на одной струне. Ответь, вторая выше или ниже первой.'
+    :cfg.ear==='iv'?'Звучит корень R, потом вторая нота, потом обе вместе. Определи интервал на слух.'
     :'Сначала звучит открытая струна, потом загаданная нота. Найди её на подсвеченной струне.';
   $('earMaxRow').hidden=cfg.ear!=='ear';
-  const eb=(data.earBest||{})[cfg.ear+(cfg.ear==='ear'?cfg.max:'')]||0;
+  $('ivSetRow').hidden=cfg.ear!=='iv';
+  const eb=(data.earBest||{})[cfg.ear+(cfg.ear==='ear'?cfg.max:cfg.ear==='iv'?cfg.ivset:'')]||0;
   $('earBest').innerHTML=eb?`Лучший результат: <b>${eb} из 10</b>`:'';
   $('earNoSound').hidden=cfg.sound!=='off';$('earPlay').disabled=cfg.sound==='off';
   $('bestLine').innerHTML=best?`Твой рекорд: <b>${best}</b>`:'Сыграй первый раунд и попади в таблицу';
@@ -547,7 +551,26 @@ const CHORD_UNITS=[
   {t:'Em и Am',ch:['Em','Am']},{t:'E и A',ch:['E','A']},{t:'D и Dm',ch:['D','Dm']},
   {t:'G и C',ch:['G','C']},{t:'Все открытые аккорды',ch:[]},
 ];
+/* ===== интервалы: форма от корня на 6-й/5-й струне ===== */
+const IVS={
+  'ч8':{n:12,t:'Октава',ds:2,df:2,hint:'через одну струну вниз (к тонким) и на 2 лада вправо'},
+  'ч5':{n:7,t:'Квинта',ds:1,df:2,hint:'соседняя тонкая струна, на 2 лада вправо. Корень + квинта = пауэр-аккорд'},
+  'ч4':{n:5,t:'Кварта',ds:1,df:0,hint:'соседняя тонкая струна, тот же лад'},
+  'б3':{n:4,t:'Большая терция',ds:1,df:-1,hint:'соседняя тонкая струна, на 1 лад назад. Звучит светло, мажорно'},
+  'м3':{n:3,t:'Малая терция',ds:1,df:-2,hint:'соседняя тонкая струна, на 2 лада назад. Звучит грустно, минорно'},
+  'б2':{n:2,t:'Большая секунда',ds:0,df:2,hint:'та же струна, через лад (тон)'},
+  'м2':{n:1,t:'Малая секунда',ds:0,df:1,hint:'та же струна, соседний лад (полутон)'},
+};
+const IV_UNITS=[
+  {t:'Октава',iv:['ч8']},{t:'Квинта и кварта',iv:['ч5','ч4']},{t:'Терции',iv:['б3','м3']},
+  {t:'Секунды',iv:['б2','м2']},{t:'Все интервалы',iv:[]},
+];
+const BASE_MIDI=[40,45,50,55,59,64];
+const midiAt=(c,r)=>BASE_MIDI[c]+r;
+const midiToF=m=>440*Math.pow(2,(m-69)/12);
 const TOPICS={
+  intervals:{store:'ipath',units:IV_UNITS.map(u=>({t:u.t,sub:u.iv.length?'новые интервалы':'повторение всех семи'})),
+    lead:'Интервал — расстояние между двумя нотами. На гитаре каждый интервал имеет свою форму: запомни её от корня R.'},
   notes:{store:'path',units:LEVELS.map(L=>({t:L.t,sub:`лады 0–${L.m}`})),
     lead:'Короткие уроки по 2 минуты: найди ноту на грифе и назови ноту по точке. В конце раздела контрольная.'},
   chords:{store:'cpath',units:CHORD_UNITS.map((u,i)=>({t:u.t,sub:u.ch.length?'новые аккорды':'повторение всех восьми'})),
@@ -593,9 +616,19 @@ function chordPlan(u,k){
   if(k==='b')return shuffle([...many('cbuild',4,shuffle([...fresh])),...many('cname',4,shuffle([...pool]))]);
   return shuffle([...many('cbuild',5,shuffle([...fresh,...pool])),...many('cname',5,shuffle([...pool,...fresh]))]);
 }
+function ivPlan(u,k){
+  const now=IV_UNITS[u].iv,pool=IV_UNITS.slice(0,u+1).flatMap(x=>x.iv),fresh=now.length?now:pool;
+  const many=(type,n,src)=>{const out=[];for(let i=0;i<n;i++)out.push(`${type}:${src[i%src.length]}`);return out;};
+  const canName=pool.length>=2;
+  if(k==='a')return [...now.map(x=>'iintro:'+x),...shuffle(canName?[...many('ifind',4,shuffle([...fresh])),...many('iname',4,shuffle([...pool]))]:many('ifind',6,fresh))];
+  if(k==='b')return shuffle(canName?[...many('ifind',4,shuffle([...fresh])),...many('iname',4,shuffle([...pool,...fresh]))]:many('ifind',8,fresh));
+  return shuffle(canName?[...many('ifind',5,shuffle([...fresh,...pool])),...many('iname',5,shuffle([...pool,...fresh]))]:many('ifind',10,fresh));
+}
 function startNode(id,t=cfg.topic){
   const u=Math.floor(id/3),k=NODE_KIND[id%3];
-  if(t==='chords'){
+  if(t==='intervals'){
+    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:ivPlan(u,k)});
+  }else if(t==='chords'){
     Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:chordPlan(u,k)});
   }else{
     const L=LEVELS[u];
@@ -611,6 +644,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(k==='max'||k==='goal')v=+v;else if(v==='true'||v==='false')v=v==='true';
   if(k==='goal'){data.goal=v;save();}
   if(k==='ear'){data.ear=v;save();}
+  if(k==='ivset'){data.ivset=v;save();}
   if(k==='topic'){data.topic=v;save();}
   if(k==='fs'){setFullscreen(v);return;}
   if(k==='orient'){data.orient=v;save();}
@@ -746,6 +780,7 @@ function paintQuestion(){
   if(!g.q)return;
   if(g.q.type==='cbuild'){renderBuild();return;}
   if(g.q.chord){drawChord(g.q.chord,'mark',g.q.type==='intro');return;}
+  if(g.q.iv){drawIv(g.q.type!=='ifind',g.q.type==='iintro'?'mark':'mark',g.q.type==='iintro');return;}
   if(g.q.type!=='name')document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===g.q.c?'target':'dim'));
   else putDot(g.q.c,g.q.r,'mark');
 }
@@ -909,6 +944,50 @@ function chordQuestion(entry){
   replay($('pNote'),'in');
   g.locked=false;
 }
+// корень на 6-й или 5-й струне так, чтобы форма поместилась в лады 1–5
+function ivRoot(key){
+  const I=IVS[key],lo=Math.max(1,1-I.df),hi=Math.min(4,5-I.df);
+  const c=Math.floor(Math.random()*2),r=lo+Math.floor(Math.random()*(hi-lo+1));
+  return {c,r,tc:c+I.ds,tr:r+I.df};
+}
+function drawIv(showTarget=true,cls='mark',label=true){
+  const q=g.q;
+  putDot(q.c,q.r,'root','R');
+  if(showTarget)putDot(q.tc,q.tr,cls,label?IVS[q.iv].n>9?'8':key2short(q.iv):'');
+}
+const key2short=k=>k.replace('ч','');
+function playIv(){
+  const q=g.q,a=freqAt(q.c,q.r),b=freqAt(q.tc,q.tr);
+  pluck(a);vibrate(q.c);
+  setTimeout(()=>{if(g.q===q){pluck(b);vibrate(q.tc);}},420);
+  setTimeout(()=>{if(g.q===q){pluck(a);pluck(b);}},1000);
+}
+function intervalQuestion(entry){
+  const [type,key]=entry.split(':'),I=IVS[key];
+  g.q={type,iv:key,...ivRoot(key)};
+  $('answers').style.gridTemplateColumns='';
+  if(type==='iintro'){
+    $('pNote').textContent=I.t;
+    $('pSub').innerHTML=`${I.n} ${plural(I.n,'полутон','полутона','полутонов')} от корня R<div class="chordname">${I.hint}</div>`;
+    drawIv();
+    $('answers').innerHTML='<button class="ans wide" data-strum="1">▶ Послушать</button><button class="ans wide check" data-next="1">Запомнил, дальше</button>';
+    setTimeout(()=>{if(g.q&&g.q.iv===key&&g.q.type==='iintro')playIv();},350);
+  }else if(type==='ifind'){
+    $('pNote').textContent=I.t;
+    $('pSub').textContent='найди интервал от корня R: нажми на нужный лад';
+    drawIv(false);
+  }else{
+    $('pNote').textContent='?';
+    $('pSub').textContent='какой это интервал от R?';
+    drawIv(true,'mark',false);
+    const pool=Object.keys(IVS);
+    const opts=shuffle([key,...shuffle(pool.filter(x=>x!==key)).slice(0,3)]);
+    $('answers').style.gridTemplateColumns='repeat(2,1fr)';
+    $('answers').innerHTML=opts.map(x=>`<button class="ans" data-iv="${x}">${IVS[x].t}</button>`).join('');
+  }
+  replay($('pNote'),'in');
+  g.locked=false;
+}
 function nextAfterIntro(){
   g.total++;updateTop();g.locked=true;
   setTimeout(()=>{if(!g.playing)return;g.total>=g.plan.length?endRound():newQuestion();},150);
@@ -916,7 +995,7 @@ function nextAfterIntro(){
 function newQuestion(){
   clearMarks();$('answers').innerHTML='';
   const entry=g.type==='free'||g.type==='ear'?null:g.plan[g.total];
-  if(entry&&entry.includes(':')){chordQuestion(entry);return;}
+  if(entry&&entry.includes(':')){(/^i(intro|name|find):/.test(entry)?intervalQuestion:chordQuestion)(entry);return;}
   let c,r,key,tries=0;
   do{c=g.cols[Math.floor(Math.random()*g.cols.length)];r=Math.floor(Math.random()*(g.max+1));key=c+':'+pcAt(c,r);tries++;}
   while(key===g.last&&tries<50);
@@ -937,6 +1016,17 @@ function newQuestion(){
     document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===c?'target':'dim'));
     $('answers').innerHTML='<button class="ans wide" data-replay="1">▶ Послушать ещё раз</button>';
     playQuestion(350);
+  }else if(type==='iv'){
+    const set=cfg.ivset==='easy'?['ч8','ч5','ч4']:Object.keys(IVS);
+    const key=set[Math.floor(Math.random()*set.length)];
+    g.q={type,iv:key,...ivRoot(key)};
+    $('pNote').textContent='♪ ♪';
+    $('pSub').textContent='какой это интервал?';
+    putDot(g.q.c,g.q.r,'root','R');
+    const opts=set.length<=4?shuffle([...set]):shuffle([key,...shuffle(set.filter(x=>x!==key)).slice(0,3)]);
+    $('answers').style.gridTemplateColumns='repeat(2,1fr)';
+    $('answers').innerHTML=opts.map(x=>`<button class="ans" data-iv="${x}">${IVS[x].t}</button>`).join('')+'<button class="ans wide" data-replay="1">▶ Послушать ещё раз</button>';
+    setTimeout(()=>{if(g.q&&g.q.type==='iv'&&g.q.iv===key&&!g.locked)playIv();},350);
   }else if(type==='hl'){
     let r2;do{r2=Math.floor(Math.random()*6);}while(r2===r||Math.abs(r2-r)>5);
     g.q={type,c,r,r2,pc};
@@ -978,6 +1068,7 @@ function answered(ok){
 // воспроизведение задания на слух: опора/первая нота, пауза, вторая нота
 function playQuestion(delay){
   const q=g.q;if(!q)return;
+  if(q.iv){playIv();return;}
   const first=q.type==='ear'?STRINGS[q.c].f:freqAt(q.c,q.r),second=q.type==='ear'?freqAt(q.c,q.r):freqAt(q.c,q.r2);
   setTimeout(()=>{if(g.q!==q||g.locked)return;pluck(first);vibrate(q.c);},delay);
   setTimeout(()=>{if(g.q!==q||g.locked)return;pluck(second);vibrate(q.c);},delay+750);
@@ -999,6 +1090,16 @@ function judgeFind(c,r){
 }
 $('board').addEventListener('click',e=>{
   const cell=e.target.closest('.cell');
+  if(cell&&g.playing&&!g.locked&&g.q&&g.q.type==='ifind'){
+    const q=g.q,c=+cell.dataset.c,r=+cell.dataset.r;
+    if(c===q.c&&r===q.r)return;
+    const want=midiAt(q.c,q.r)+IVS[q.iv].n,ok=midiAt(c,r)===want;
+    pluck(freqAt(c,r));vibrate(c);
+    putDot(c,r,ok?'ok':'bad',ok?key2short(q.iv):'');
+    if(!ok)for(let cc=0;cc<6;cc++)for(let rr=0;rr<=g.max;rr++)if(midiAt(cc,rr)===want)putDot(cc,rr,'show',key2short(q.iv));
+    setTimeout(()=>{if(g.q===q){pluck(freqAt(q.c,q.r));pluck(midiToF(want));}},450);
+    answered(ok);return;
+  }
   if(cell&&g.playing&&!g.locked&&g.q&&g.q.type==='cbuild'){
     const c=+cell.dataset.c,r=+cell.dataset.r,sel=g.q.sel;
     if(r===0)sel[c]=sel[c]===0?-1:0;
@@ -1080,7 +1181,15 @@ $('answers').addEventListener('click',e=>{
   const b=e.target.closest('.ans');
   if(!b||!g.playing||g.locked)return;
   if(b.dataset.replay){playQuestion(0);return;}
-  if(b.dataset.strum){strum(g.q.chord);return;}
+  if(b.dataset.strum){g.q.iv?playIv():strum(g.q.chord);return;}
+  if(b.dataset.iv){
+    const ok=b.dataset.iv===g.q.iv;
+    b.classList.add(ok?'ok':'bad');
+    if(!ok)$('answers').querySelector(`[data-iv="${g.q.iv}"]`).classList.add('ok');
+    $('pNote').textContent=IVS[g.q.iv].t;
+    clearMarks();drawIv(true,ok?'ok':'show',true);
+    playIv();answered(ok);return;
+  }
   if(b.dataset.next){nextAfterIntro();return;}
   if(b.dataset.ch){
     const ok=b.dataset.ch===g.q.chord;
@@ -1156,11 +1265,11 @@ async function endRound(){
   $('toMenuBtn').textContent=learn?'К пути':'В меню';
   let xp=0;
   if(g.type==='ear'){
-    const k=g.kind+(g.kind==='ear'?g.max:'');data.earBest=data.earBest||{};
+    const k=g.kind+(g.kind==='ear'?g.max:g.kind==='iv'?cfg.ivset:'');data.earBest=data.earBest||{};
     const rec=g.score>(data.earBest[k]||0);if(rec)data.earBest[k]=g.score;
     xp=g.mistakes===0?15:10;
     $('rTitle').textContent=g.mistakes===0?'Идеально!':rec?'Новый рекорд!':'Тренировка окончена';
-    $('rLead').textContent=g.kind==='hl'?'Тренажёр слуха: выше или ниже.':`Тренажёр слуха: найди на струне, лады 0–${g.max}.`;
+    $('rLead').textContent=g.kind==='hl'?'Тренажёр слуха: выше или ниже.':g.kind==='iv'?`Тренажёр слуха: интервалы (${cfg.ivset==='easy'?'октава, квинта, кварта':'все 7'}).`:`Тренажёр слуха: найди на струне, лады 0–${g.max}.`;
     $('rStars').hidden=true;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
     nextBtn.hidden=true;$('rRank').hidden=true;$('rBoardBtn').hidden=true;
@@ -1175,7 +1284,7 @@ async function endRound(){
     $('rTitle').textContent=isTest?(passed?'Контрольная сдана':'Почти получилось'):(g.mistakes===0?'Идеально!':'Урок пройден');
     $('rLead').textContent=isTest
       ?(passed?`Раздел ${u+1} закрыт. ${st===3?'Без единой ошибки.':'Три звезды дают за контрольную без ошибок.'}`:`Больше ${MAX_MISTAKES} ошибок. Повтори уроки раздела и попробуй снова.`)
-      :`${g.topic==='chords'?'Аккорды':'Ноты'} · раздел ${u+1}: ${T.units[u].t}.`;
+      :`${{chords:'Аккорды',intervals:'Интервалы'}[g.topic]||'Ноты'} · раздел ${u+1}: ${T.units[u].t}.`;
     $('rStars').innerHTML=starsAnimated(st);$('rStars').hidden=!isTest;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
     const next=g.node+1;
@@ -1232,7 +1341,7 @@ $('shareBtn').addEventListener('click',()=>{
   const text=g.type==='ear'
     ?`Тренирую слух в «Нота на грифе»: ${g.score} из 10. А ты отличишь ноты на слух?`
     :g.type!=='free'
-    ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone('notes')+pathDone('chords')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
+    ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone('notes')+pathDone('chords')+pathDone('intervals')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
     :`Набрал ${g.score} очков за 60 секунд в «Нота на грифе». Побьёшь?`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);
@@ -1244,6 +1353,7 @@ $('shareBtn').addEventListener('click',()=>{
   await load();
   if(data.orient)cfg.orient=data.orient;
   if(data.ear)cfg.ear=data.ear;
+  if(data.ivset)cfg.ivset=data.ivset;
   if(data.topic)cfg.topic=data.topic;
   data.path=data.path||{};data.day=data.day||{date:'',xp:0};data.goal=data.goal||20;cfg.goal=data.goal;
   LEVELS.forEach((_,u)=>{const st=Math.max(data.find[u]||0,data.name[u]||0);if(st&&!data.path[u*3+2]){data.path[u*3]=data.path[u*3]||1;data.path[u*3+1]=data.path[u*3+1]||1;data.path[u*3+2]=st;}});
