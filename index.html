@@ -400,9 +400,8 @@
     <!-- leaderboard -->
     <div id="boardView" hidden>
       <h1>Игра на рейтинг</h1>
-      <p class="lead">60 секунд: угадай как можно больше нот. Каждый понедельник рейтинг начинается заново.</p>
+      <p class="lead">60 секунд на весь гриф, лады 0–12: угадай как можно больше нот. Каждый понедельник рейтинг начинается заново.</p>
       <div class="row"><div class="seg" data-k="mode"></div></div>
-      <div class="row"><div class="seg" data-k="max"></div></div>
       <p class="best" id="bestLine"></p>
       <button class="btn big" id="lbPlay">Играть</button>
       <h2>Рейтинг недели</h2>
@@ -416,6 +415,7 @@
 /* ===== настрой под себя ===== */
 const BOT_LINK='https://t.me/notanagrife_bot?startapp'; // ссылка на Mini App
 const API_URL='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up'; // сервер рейтинга (Yandex Cloud Functions)
+const RATE_MAX=12; // игра на рейтинг — только весь гриф
 const QUESTIONS=20, MAX_MISTAKES=3, FREE_TIME=60;
 
 const LETTERS=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
@@ -551,8 +551,8 @@ function renderMenu(){
   const sn=streakNow(),playedToday=data.streak.last===todayKey();
   $('flameN').textContent=sn;$('flame').classList.toggle('on',playedToday&&sn>0);
   $('flameText').textContent=sn?`${plural(sn,'день','дня','дней')} подряд`:'начни серию';
-  const best=data.best[cfg.mode+cfg.max]||0;
-  $('rateSummary').textContent=best?`60 секунд · твой рекорд ${best}`:'60 секунд · рейтинг недели';
+  const best=data.best[cfg.mode+RATE_MAX]||0;
+  $('rateSummary').textContent=best?`весь гриф · 60 секунд · рекорд ${best}`:'весь гриф · 60 секунд';
   $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'микрофон':''].filter(Boolean).join(' · ');
   $('earHint').textContent=cfg.ear==='hl'
     ?'Звучат две ноты на одной струне. Ответь, вторая выше или ниже первой.'
@@ -710,7 +710,7 @@ async function loadBoard(){
   if(!API_URL){list.innerHTML='<li class="empty">Рейтинг заработает, когда подключим сервер.</li>';return;}
   list.innerHTML='<li class="empty">Загружаю рейтинг…</li>';
   try{
-    const r=await api({action:'top',mode:cfg.mode,max:cfg.max});
+    const r=await api({action:'top',mode:cfg.mode,max:RATE_MAX});
     if(!r.top.length){list.innerHTML='<li class="empty">На этой неделе здесь ещё никто не играл. Займи первое место.</li>';return;}
     let html=r.top.map(li).join('');
     if(r.me&&!r.top.some(e=>e.me))html+='<li class="gap">…</li>'+li(Object.assign({me:true},r.me));
@@ -1287,7 +1287,7 @@ function startEar(){
   Object.assign(g,{type:'ear',kind:cfg.ear,max:cfg.ear==='ear'?cfg.max:5,cols:[0,1,2,3,4,5],plan:Array(10).fill(cfg.ear)});
   begin();
 }
-function startFree(){Object.assign(g,{type:'free',max:cfg.max,cols:[0,1,2,3,4,5]});begin();}
+function startFree(){Object.assign(g,{type:'free',max:RATE_MAX,cols:[0,1,2,3,4,5]});begin();}
 
 async function endRound(){
   clearInterval(g.timer);g.playing=false;back(false);micStop();
