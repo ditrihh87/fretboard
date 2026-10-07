@@ -1,6 +1,6 @@
-# Гитарные уроки от ditrihh
+# Гитарный клуб ditrihh
 
-Гитарные уроки в Telegram (ноты на грифе, аккорды, интервалы, тренажёр слуха) — Mini App [@notanagrife_bot](https://t.me/notanagrife_bot?startapp).
+Гитарный клуб в Telegram: уроки, тренажёры, лиги и песенник (ноты на грифе, аккорды, интервалы, тренажёр слуха) — Mini App [@notanagrife_bot](https://t.me/notanagrife_bot?startapp).
 
 - `index.html` — приложение (GitHub Pages: https://ditrihh87.github.io/fretboard/)
 - `songs.json` — песни для песенника (как добавлять: SONGS.md)
