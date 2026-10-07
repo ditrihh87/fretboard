@@ -573,6 +573,7 @@
     <!-- levels -->
     <div id="levelsView" hidden>
       <h1>Путь обучения</h1>
+      <div class="row"><div class="seg" data-k="topic"></div></div>
       <p class="lead" id="pathLead"></p>
       <div id="path"></div>
       <div class="btns"><button class="btn ghost" id="lvBack">В меню</button></div>
@@ -623,7 +624,6 @@ const LEVELS=[
   {t:'4-я струна',s:[4],m:5},{t:'3-я струна',s:[3],m:5},{t:'2-я и 1-я',s:[2,1],m:5},
   {t:'Все струны',s:[6,5,4,3,2,1],m:5},{t:'6-я и 5-я',s:[6,5],m:12},
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
-  {t:'Открытые струны',s:[6,5,4,3,2,1],m:3,r:0},
 ];
 
 const cfg={sfilter:'all',theme:'auto',ivset:'easy',topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
@@ -754,8 +754,7 @@ function renderMenu(){
   $('inputRow').hidden=cfg.mode!=='find';
   $('fsRow').hidden=!fsSupported;
   const pdN=pathDone('notes'),pdC=pathDone('chords'),pdI=pathDone('intervals');
-  const curStep=STEPS.find(x=>!stepDone(x)),stepsN=PATH.length;
-  $('lvlSummary').textContent=!curStep?'Весь путь пройден!':`Ступень ${curStep.step+1} из ${stepsN} · ${TOPICS[curStep.t].units[Math.floor(curStep.id/3)].t}`;
+  $('lvlSummary').textContent=pdN||pdC||pdI?`Ноты ${pdN}/${nodesOf('notes')} · аккорды ${pdC}/${nodesOf('chords')} · интервалы ${pdI}/${nodesOf('intervals')}`:'Ноты, аккорды и интервалы';
   paintAvatar($('avaMini'));
   // звание
   const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
@@ -823,64 +822,38 @@ const midiToF=m=>440*Math.pow(2,(m-69)/12);
 const TOPICS={
   intervals:{store:'ipath',units:IV_UNITS.map(u=>({t:u.t,sub:u.iv.length?'новые интервалы':'повторение всех семи'})),
     lead:'Интервал — расстояние между двумя нотами. На гитаре каждый интервал имеет свою форму: запомни её от первой ноты.'},
-  notes:{store:'path',units:LEVELS.map(L=>({t:L.t,sub:L.r===0?'названия струн':`лады 0–${L.m}`})),
+  notes:{store:'path',units:LEVELS.map(L=>({t:L.t,sub:`лады 0–${L.m}`})),
     lead:'Короткие уроки по 2 минуты: найди ноту на грифе и назови ноту по точке. В конце раздела контрольная.'},
-
   chords:{store:'cpath',units:CHORD_UNITS.map((u,i)=>({t:u.t,sub:u.ch.length?'новые аккорды':'повторение всех восьми'})),
     lead:'Первые 8 аккордов. Сначала знакомство с формой, потом узнай аккорд по точкам и поставь его сам. ✕ значит не играть струну.'},
 };
 const nodesOf=t=>TOPICS[t].units.length*3;
 const progOf=t=>(data[TOPICS[t].store]=data[TOPICS[t].store]||{});
-const PATH=[
-  ['notes',11],                       // открытые струны: как называются
-  ['notes',0],                        // 6-я струна
-  ['chords',0],                       // Em и Am — первые аккорды
-  ['notes',1],                        // 5-я струна
-  ['chords',1],                       // E и A
-  ['intervals',0],                    // октава — помогает находить ноты
-  ['notes',2],                        // 6-я и 5-я вместе
-  ['chords',2],                       // D и Dm
-  ['intervals',1],                    // квинта и кварта, пауэр-аккорд
-  ['notes',3],['notes',4],            // 4-я и 3-я струны
-  ['chords',3],                       // G и C
-  ['notes',5],                        // 2-я и 1-я
-  ['intervals',2],                    // терции: мажор и минор
-  ['chords',4],                       // все открытые аккорды
-  ['notes',6],                        // все струны 0–5
-  ['intervals',3],                    // секунды
-  ['notes',7],['notes',8],['notes',9],// гриф до 12-го лада
-  ['intervals',4],                    // все интервалы
-  ['notes',10],                       // весь гриф — финал
-];
-const TOPIC_RU={notes:'Ноты',chords:'Аккорды',intervals:'Интервалы'};
-// шаги пути: ступень → 3 узла; prevOf — предыдущий узел в общем порядке
-const STEPS=PATH.flatMap(([t,u],i)=>[0,1,2].map(k=>({t,id:u*3+k,step:i,k})));
-const stepIdx=(t,id)=>STEPS.findIndex(x=>x.t===t&&x.id===id);
-const stepDone=x=>(progOf(x.t)[x.id]||0)>0;
 const NODE_KIND=['a','b','t'];
 const NODES=LEVELS.length*3;
 const OFFS=[0,52,76,52,0,-52,-76,-52];
 function pathDone(t='notes'){const P=progOf(t);let n=0;for(let i=0;i<nodesOf(t);i++)if((P[i]||0)>0)n++;return n;}
 function renderPath(){
-  $('pathLead').textContent='Шаг за шагом: названия струн → первые аккорды → ноты на грифе → интервалы. Ступени чередуют темы, чтобы сразу играть, а не только зубрить.';
+  const t=cfg.topic,P=progOf(t),U=TOPICS[t].units;
+  $('pathLead').textContent=TOPICS[t].lead;
   let html='',cur=null;
-  STEPS.forEach((x,n)=>{
-    const U=TOPICS[x.t].units[Math.floor(x.id/3)];
-    if(x.k===0)html+=`<div class="unit"><b>Ступень ${x.step+1}: ${U.t}</b><span>${TOPIC_RU[x.t]} · ${U.sub}</span></div>`;
-    const done=stepDone(x),open=done||n===0||stepDone(STEPS[n-1]),isCur=open&&!done&&cur===null;
-    if(isCur)cur=n;
-    const k=NODE_KIND[x.k],glyph=done&&k!=='t'?'✓':k==='t'?'★':k==='b'?'♫':'♪';
-    const name=k==='t'?'Контрольная':k==='b'?'Урок 2':'Урок 1',off=OFFS[n%OFFS.length];
-    html+=`<div class="node-row" style="--x:${off}px">
-      ${isCur?`<span class="bubble ${off>0?'l':'r'}">${n===0?'Начни здесь':'Дальше'}</span>`:''}
-      <button class="node ${k==='t'?'test':''} ${done?'done':open?'':'locked'} ${isCur?'cur':''}" data-n="${n}" ${open?'':'disabled'} aria-label="${name}, ступень ${x.step+1}${done?', пройдено':open?'':', закрыто'}">${glyph}</button>
-      ${k==='t'&&done?`<span class="node-stars">${stars(progOf(x.t)[x.id])}</span>`:''}
+  for(let id=0;id<nodesOf(t);id++){
+    const u=Math.floor(id/3),k=NODE_KIND[id%3];
+    if(id%3===0)html+=`<div class="unit"><b>Раздел ${u+1}: ${U[u].t}</b><span>${U[u].sub}</span></div>`;
+    const done=(P[id]||0)>0,open=id===0||(P[id-1]||0)>0,isCur=open&&!done&&cur===null;
+    if(isCur)cur=id;
+    const glyph=done&&k!=='t'?'✓':k==='t'?'★':k==='b'?'♫':'♪';
+    const name=k==='t'?'Контрольная':k==='b'?'Урок 2':'Урок 1';
+    html+=`<div class="node-row" style="--x:${OFFS[id%OFFS.length]}px">
+      ${isCur?`<span class="bubble ${OFFS[id%OFFS.length]>0?'l':'r'}">${id===0?'Начни здесь':'Дальше'}</span>`:''}
+      <button class="node ${k==='t'?'test':''} ${done?'done':open?'':'locked'} ${isCur?'cur':''}" data-id="${id}" ${open?'':'disabled'} aria-label="${name}, раздел ${u+1}${done?', пройдено':open?'':', закрыто'}">${glyph}</button>
+      ${k==='t'&&done?`<span class="node-stars">${stars(P[id])}</span>`:''}
     </div>`;
-  });
+  }
   $('path').innerHTML=html;
   return cur;
 }
-$('path').addEventListener('click',e=>{const b=e.target.closest('.node');if(b&&!b.disabled){const x=STEPS[+b.dataset.n];startNode(x.id,x.t);}});
+$('path').addEventListener('click',e=>{const b=e.target.closest('.node');if(b&&!b.disabled)startNode(+b.dataset.id);});
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function lessonPlan(k){
   const mk=(f,n,e)=>[...Array(f).fill('find'),...Array(n).fill('name'),...Array(e).fill('ear')];
@@ -905,12 +878,12 @@ function ivPlan(u,k){
 function startNode(id,t=cfg.topic){
   const u=Math.floor(id/3),k=NODE_KIND[id%3];
   if(t==='intervals'){
-    Object.assign(g,{rmax:undefined,type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:ivPlan(u,k)});
+    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:ivPlan(u,k)});
   }else if(t==='chords'){
-    Object.assign(g,{rmax:undefined,type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:chordPlan(u,k)});
+    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:chordPlan(u,k)});
   }else{
     const L=LEVELS[u];
-    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:L.m,rmax:L.r??L.m,cols:L.s.map(colOf),plan:lessonPlan(k)});
+    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:L.m,cols:L.s.map(colOf),plan:lessonPlan(k)});
   }
   begin();
 }
@@ -938,7 +911,7 @@ function show(view){if(view!=='songView'&&typeof stopScroll==='function'&&song.s
 function openLevels(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
   const cur=renderPath();
-  const el=cur!==null&&$('path').querySelector(`.node[data-n="${cur}"]`);
+  const el=cur!==null&&$('path').querySelector(`.node[data-id="${cur}"]`);
   if(el)requestAnimationFrame(()=>el.scrollIntoView({block:'center',behavior:calm()?'auto':'smooth'}));
 }
 function openMenu(){
@@ -1626,8 +1599,7 @@ function newQuestion(){
   const entry=g.type==='free'||g.type==='ear'?null:g.plan[g.total];
   if(entry&&entry.includes(':')){(/^i(intro|name|find):/.test(entry)?intervalQuestion:chordQuestion)(entry);return;}
   let c,r,key,tries=0;
-  const rmax=g.rmax??g.max;
-  do{c=g.cols[Math.floor(Math.random()*g.cols.length)];r=Math.floor(Math.random()*(rmax+1));key=c+':'+pcAt(c,r);tries++;}
+  do{c=g.cols[Math.floor(Math.random()*g.cols.length)];r=Math.floor(Math.random()*(g.max+1));key=c+':'+pcAt(c,r);tries++;}
   while(key===g.last&&tries<50);
   g.last=key;
   const pc=pcAt(c,r);
@@ -1904,10 +1876,10 @@ async function begin(){
 }
 function startEar(){
   if(cfg.sound==='off')return;
-  Object.assign(g,{rmax:undefined,type:'ear',kind:cfg.ear,max:cfg.ear==='ear'?cfg.max:5,cols:[0,1,2,3,4,5],plan:Array(10).fill(cfg.ear)});
+  Object.assign(g,{type:'ear',kind:cfg.ear,max:cfg.ear==='ear'?cfg.max:5,cols:[0,1,2,3,4,5],plan:Array(10).fill(cfg.ear)});
   begin();
 }
-function startFree(){Object.assign(g,{rmax:undefined,type:'free',max:RATE_MAX,cols:[0,1,2,3,4,5]});begin();}
+function startFree(){Object.assign(g,{type:'free',max:RATE_MAX,cols:[0,1,2,3,4,5]});begin();}
 
 async function endRound(){
   clearInterval(g.timer);g.playing=false;back(false);micStop();
@@ -1934,14 +1906,13 @@ async function endRound(){
     xp=isTest?(passed?20:5):(g.mistakes===0?15:10);
     $('rTitle').textContent=isTest?(passed?'Контрольная сдана':'Почти получилось'):(g.mistakes===0?'Идеально!':'Урок пройден');
     $('rLead').textContent=isTest
-      ?(passed?`Ступень ${STEPS[stepIdx(g.topic,g.node)].step+1} закрыта. ${st===3?'Без единой ошибки.':'Три звезды дают за контрольную без ошибок.'}`:`Больше ${MAX_MISTAKES} ошибок. Повтори уроки раздела и попробуй снова.`)
-      :`Ступень ${STEPS[stepIdx(g.topic,g.node)].step+1}: ${T.units[u].t} · ${TOPIC_RU[g.topic||'notes']}.`;
+      ?(passed?`Раздел ${u+1} закрыт. ${st===3?'Без единой ошибки.':'Три звезды дают за контрольную без ошибок.'}`:`Больше ${MAX_MISTAKES} ошибок. Повтори уроки раздела и попробуй снова.`)
+      :`${{chords:'Аккорды',intervals:'Интервалы'}[g.topic]||'Ноты'} · раздел ${u+1}: ${T.units[u].t}.`;
     $('rStars').innerHTML=starsAnimated(st);$('rStars').hidden=!isTest;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
-    const si=stepIdx(g.topic,g.node),nx=STEPS[si+1];
-    g.nextStep=nx||null;
-    nextBtn.hidden=!(passed&&nx);
-    nextBtn.textContent=nx?(nx.k===2?'К контрольной':nx.k===0?'Следующая ступень':'Следующий урок'):'';
+    const next=g.node+1;
+    nextBtn.hidden=!(passed&&next<N);
+    nextBtn.textContent=next%3===2?'К контрольной':next%3===0?'Следующий раздел':'Следующий урок';
     $('rRank').hidden=true;$('rBoardBtn').hidden=true;
   }else{
     const k=cfg.mode+g.max,best=data.best[k]||0,rec=g.score>best;
@@ -1971,7 +1942,7 @@ async function endRound(){
   $('rStats').querySelectorAll('b').forEach(countUp);
 }
 
-$('nextBtn').addEventListener('click',()=>{const x=g.nextStep;if(x)startNode(x.id,x.t);});
+$('nextBtn').addEventListener('click',()=>startNode(g.node+1,g.topic));
 $('againBtn').addEventListener('click',()=>g.type==='free'?startFree():g.type==='ear'?startEar():startNode(g.node,g.topic));
 $('toMenuBtn').addEventListener('click',()=>g.type==='free'||g.type==='ear'?openMenu():openLevels());
 $('levelsBtn').addEventListener('click',openLevels);
