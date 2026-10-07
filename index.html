@@ -300,6 +300,48 @@
   .tp div span{color:var(--p-muted)}
   .tp i{display:block;height:8px;border-radius:4px;background:var(--p-line);overflow:hidden}
   .tp em{display:block;height:100%;background:var(--ok);border-radius:4px}
+  /* ===== таб-плеер ===== */
+  #tabPlayer{position:fixed;inset:0;z-index:25;display:flex;flex-direction:column;background:var(--tp-bg);color:var(--tp-ink);
+    --tp-bg:#16202C;--tp-ink:#EEE6D3;--tp-card:#1E2B3C;--tp-muted:#93A1B3;--tp-line:#2A394B}
+  html:not(.dark) #tabPlayer{--tp-bg:#F6F0E2;--tp-ink:#22201c;--tp-card:#fffaf0;--tp-muted:#7a7264;--tp-line:#e3d8c0}
+  .tp-head{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--sa-t)) max(12px,var(--sa-r)) 6px max(12px,var(--sa-l))}
+  .tp-ico{border:none;background:var(--tp-card);color:var(--tp-ink);width:42px;height:42px;border-radius:12px;font-size:26px;font-weight:800;line-height:1}
+  .tp-title{flex:1;min-width:0}
+  .tp-title b{display:block;font-family:var(--display);font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tp-title small{display:block;color:var(--tp-muted);font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tp-chip{border:none;background:var(--tp-card);color:var(--tp-ink);border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px}
+  .tp-legend{display:flex;gap:10px;justify-content:center;padding:2px 12px 6px;font-size:12px;font-weight:800;color:var(--tp-muted)}
+  .tp-legend span{display:flex;align-items:center;gap:4px}
+  .tp-legend i{width:10px;height:10px;border-radius:50%;display:block}
+  .tp-tracks{margin:0 12px 6px;font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;border:none;background:var(--tp-card);color:var(--tp-ink)}
+  .tp-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 4px;position:relative}
+  #tpRender{min-height:100%}
+  .tp-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--tp-bg);z-index:2;font-size:15px}
+  .tp-loading[hidden]{display:none!important}
+  .tp-spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--tp-line);border-top-color:var(--amber);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .tp-bar{background:var(--tp-card);border-radius:20px 20px 0 0;padding:10px max(14px,var(--sa-r)) calc(12px + var(--sa-b)) max(14px,var(--sa-l));box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+  .tp-progress{height:6px;border-radius:3px;background:var(--tp-line);overflow:hidden;cursor:pointer}
+  .tp-progress i{display:block;height:100%;width:0;background:var(--amber);border-radius:3px}
+  .tp-times{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:var(--tp-muted);margin:6px 0 8px}
+  .tp-times #tpHint{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tp-ctrls{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .tp-btn{flex:1;border:none;background:transparent;color:var(--tp-muted);border-radius:12px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .tp-btn b{font-size:17px;font-weight:800;color:var(--tp-ink)}
+  .tp-btn small{font-size:11px;font-weight:700}
+  .tp-btn.on{background:rgba(240,168,48,.16)}
+  .tp-btn.on b,.tp-btn.on small{color:var(--amber)}
+  .tp-play{flex:none;width:68px;height:68px;border-radius:50%;border:none;background:var(--amber);color:#1b1b1b;font-size:28px;font-weight:800;box-shadow:0 6px 0 #b77a17;padding-left:4px}
+  .tp-play.pause{padding-left:0;font-size:20px;letter-spacing:-2px}
+  .tp-play:disabled{opacity:.5}
+  .tp-play:active{transform:translateY(3px);box-shadow:0 3px 0 #b77a17}
+  /* курсор и подсветка alphaTab */
+  #tpRender .at-cursor-bar{background:rgba(240,168,48,.13)}
+  #tpRender .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
+  #tpRender .at-highlight *{fill:var(--amber);stroke:var(--amber)}
+  #tpRender .at-selection div{background:rgba(111,191,115,.22)}
+  .filebtn{display:block;text-align:center;margin-top:10px;cursor:pointer}
+  .chip.tab{background:var(--amber);color:#1b1b1b}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -363,6 +405,28 @@
   <div id="answers"></div>
 </div>
 
+<div id="tabPlayer" hidden>
+  <header class="tp-head">
+    <button class="tp-ico" id="tpBack" aria-label="Назад">‹</button>
+    <div class="tp-title"><b id="tpTitle"></b><small id="tpArtist"></small></div>
+    <button class="tp-chip" id="tpView" aria-label="Вид">Таб</button>
+  </header>
+  <div class="tp-legend" id="tpLegend"></div>
+  <select class="tp-tracks" id="tpTracks" hidden aria-label="Партия"></select>
+  <div class="tp-scroll" id="tpScroll"><div id="tpRender"></div></div>
+  <div class="tp-loading" id="tpLoading"><span class="tp-spin"></span><b id="tpLoadText">Загружаю таб…</b></div>
+  <footer class="tp-bar">
+    <div class="tp-progress" id="tpProgress"><i id="tpProgFill"></i></div>
+    <div class="tp-times"><span id="tpCur">0:00</span><span id="tpHint">выдели такты — повтор участка</span><span id="tpEnd">0:00</span></div>
+    <div class="tp-ctrls">
+      <button class="tp-btn" id="tpSpeed" aria-label="Темп"><b>100%</b><small>темп</small></button>
+      <button class="tp-btn" id="tpLoop" aria-label="Повтор"><b>⟲</b><small>повтор</small></button>
+      <button class="tp-play" id="tpPlay" aria-label="Играть" disabled>▶</button>
+      <button class="tp-btn" id="tpMetro" aria-label="Метроном"><b>♩</b><small>метроном</small></button>
+      <button class="tp-btn" id="tpCount" aria-label="Отсчёт"><b>1-2</b><small>отсчёт</small></button>
+    </div>
+  </footer>
+</div>
 <div class="chordpop" id="chordPop" hidden><div class="cpbox"><div id="cpSvg"></div><div class="cpname" id="cpName"></div><button class="btn ghost" id="cpPlay">▶ Сыграть</button></div></div>
 <div id="sheet">
   <div class="panel">
@@ -451,10 +515,11 @@
     <!-- songbook -->
     <div id="songsView" hidden>
       <h1>Песенник</h1>
-      <p class="lead">Песни с аккордами. Нажми на аккорд, чтобы увидеть схему и услышать его.</p>
+      <p class="lead">Песни с аккордами и табы с плеером. Нажми на аккорд, чтобы увидеть схему и услышать его.</p>
       <input class="search" id="songSearch" type="search" placeholder="Найти песню или исполнителя" autocomplete="off">
       <div class="row"><div class="seg" data-k="sfilter"></div></div>
       <div class="songlist" id="songList"></div>
+      <label class="btn ghost filebtn">Открыть свой файл Guitar Pro<input type="file" id="gpFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.musicxml,.xml,.mxl" hidden></label>
       <div class="btns"><button class="btn ghost" id="songsBack">В меню</button></div>
     </div>
     <div id="songView" hidden>
@@ -552,7 +617,7 @@ const tg=window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initDat
 const inTg=!!(tg&&tg.initData);
 if(tg){
   try{tg.ready();tg.expand();tg.setHeaderColor('#1E2B3C');tg.setBackgroundColor('#1E2B3C');tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}
-  try{tg.BackButton.onClick(()=>openMenu());}catch(e){}
+  try{tg.BackButton.onClick(()=>{if(!$('tabPlayer').hidden)closeTab();else openMenu();});}catch(e){}
 }
 // Полный экран: поворот разрешён только в нём; в обычном режиме ориентация закреплена
 const fsSupported=!!(inTg&&tg.isVersionAtLeast&&tg.isVersionAtLeast('8.0')&&['ios','android'].includes(tg.platform));
@@ -580,6 +645,7 @@ function applyTheme(){
   const sys=inTg&&tg.colorScheme?tg.colorScheme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
   const dark=cfg.theme==='dark'||(cfg.theme==='auto'&&sys);
   document.documentElement.classList.toggle('dark',dark);
+  if(typeof tabRestyle==='function')tabRestyle();
 }
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);}catch(e){}
 try{tg&&tg.onEvent('themeChanged',applyTheme);}catch(e){}
@@ -655,7 +721,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={sfilter:[['all','Все песни'],['can','Могу сыграть']],theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[20,'20'],[50,'50'],[100,'100'],[150,'150']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={sfilter:[['all','Все'],['can','Могу сыграть'],['tab','Табы']],theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[20,'20'],[50,'50'],[100,'100'],[150,'150']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -895,7 +961,7 @@ async function openLeague(){
 /* ===== песенник: экраны ===== */
 let SONGS=[],songsLoaded=false,cur=null;
 const song={tr:0,fs:17,scroll:0,raf:0};
-const chordsIn=text=>[...new Set([...text.matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(x=>parseChord(x)))];
+const chordsIn=text=>[...new Set([...(text||'').matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(x=>parseChord(x)))];
 function knownChords(){
   const P=progOf('chords'),k=new Set();
   CHORD_UNITS.forEach((u,i)=>{if((P[i*3+2]||0)>0)u.ch.forEach(c=>{k.add(c);if(!c.endsWith('m'))k.add(c+'7');});}); // знаешь E — сыграешь и E7
@@ -910,10 +976,10 @@ function renderSongList(){
   const q=($('songSearch').value||'').toLowerCase().trim(),known=knownChords();
   const items=SONGS.map(sg=>({sg,ch:chordsIn(sg.text)})).map(x=>({...x,can:x.ch.length&&x.ch.every(c=>known.has(c))}))
     .filter(x=>!q||(x.sg.title+' '+x.sg.artist).toLowerCase().includes(q))
-    .filter(x=>cfg.sfilter!=='can'||x.can);
+    .filter(x=>cfg.sfilter!=='can'||x.can).filter(x=>cfg.sfilter!=='tab'||x.sg.tab);
   if(!songsLoaded){$('songList').innerHTML='<p class="hint">Не удалось загрузить песни. Проверь интернет.</p>';return;}
   if(!items.length){$('songList').innerHTML=`<p class="hint">${cfg.sfilter==='can'?'Пока нет песен из выученных аккордов. Пройди разделы «Аккорды» в пути обучения: каждый закрытый раздел открывает новые песни.':'Ничего не нашлось.'}</p>`;return;}
-  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}">${x.can?'<span class="can">✓ могу сыграть</span>':''}<b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
+  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}">${x.can?'<span class="can">✓ могу сыграть</span>':''}<b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
 }
 async function openSongs(){
   stopScroll();clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('songsView');back(true);
@@ -923,6 +989,7 @@ $('songSearch').addEventListener('input',renderSongList);
 $('songList').addEventListener('click',e=>{const b=e.target.closest('.song');if(b)openSong(b.dataset.id);});
 function openSong(id){
   cur=SONGS.find(x=>x.id===id);if(!cur)return;
+  if(cur.tab){openTab(cur);return;}
   song.tr=(data.songTr||{})[id]||0;song.fs=data.songFs||17;
   show('songView');back(true);renderSong();
 }
@@ -1042,6 +1109,124 @@ $('pShare').addEventListener('click',()=>{
   const text=`Я ${RANKS[rankOf(data.xp||0)][1].toLowerCase()} в «Гитарном клубе ditrihh»: ${data.xp||0} XP, лига «${LEAGUES[lt][0]}»${sn?`, ${sn} ${plural(sn,'день','дня','дней')} подряд`:''}. Присоединяйся!`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);else if(navigator.share)navigator.share({text,url:BOT_LINK}).catch(()=>{});else window.open(url,'_blank');
+});
+
+/* ===== таб-плеер на alphaTab (MPL-2.0) ===== */
+const AT_DIR='vendor/alphatab/';
+// цвета цифр по струнам: 6-я (толстая) … 1-я (тонкая)
+const STR_COL={dark:['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8'],light:['#D33A3F','#C97A0E','#9A8300','#3E9A45','#2E7FC0','#8456C2']};
+let atApi=null,atLoading=null,tp={speedI:0,score:null,file:null,dur:0};
+const SPEEDS=[1,0.75,0.5,1.25];
+const isDark=()=>document.documentElement.classList.contains('dark');
+function loadAlphaTab(){
+  if(window.alphaTab)return Promise.resolve();
+  if(atLoading)return atLoading;
+  atLoading=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=AT_DIR+'alphaTab.min.js';sc.onload=res;sc.onerror=()=>{atLoading=null;rej(new Error('script'));};document.head.appendChild(sc);});
+  return atLoading;
+}
+function tabResources(){
+  const d=isDark();
+  return d?{staffLineColor:'#4A5A6E',barSeparatorColor:'#5D6E83',mainGlyphColor:'#EEE6D3',secondaryGlyphColor:'#93A1B3',barNumberColor:'#93A1B3'}
+          :{staffLineColor:'#BFB29A',barSeparatorColor:'#A99C84',mainGlyphColor:'#22201c',secondaryGlyphColor:'#7a7264',barNumberColor:'#9b917f'};
+}
+function paintLegend(){
+  const c=STR_COL[isDark()?'dark':'light'];
+  $('tpLegend').innerHTML='струны '+c.map((x,i)=>`<span><i style="background:${x}"></i>${6-i}</span>`).join('');
+}
+// раскрашиваем цифры ладов по струнам
+function colorScore(score){
+  const c=STR_COL[isDark()?'dark':'light'];
+  for(const t of score.tracks)for(const st of t.staves){
+    const n=st.tuning&&st.tuning.length||6;
+    for(const b of st.bars)for(const v of b.voices)for(const bt of v.beats)for(const nt of bt.notes){
+      if(!nt.style)nt.style=new alphaTab.model.NoteStyle();
+      const idx=Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6))); // 1 = самая толстая струна
+      nt.style.colors.set(alphaTab.model.NoteSubElement.GuitarTabFretNumber,alphaTab.model.Color.fromJson(c[idx]));
+    }
+  }
+}
+function tabRestyle(){
+  if(!atApi||$('tabPlayer').hidden)return;
+  Object.assign(atApi.settings.display.resources,Object.fromEntries(Object.entries(tabResources()).map(([k,v])=>[k,alphaTab.model.Color.fromJson(v)])));
+  paintLegend();
+  if(tp.score){colorScore(tp.score);atApi.updateSettings();atApi.render();}
+}
+const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+async function ensureApi(){
+  await loadAlphaTab();
+  if(atApi)return atApi;
+  const res=tabResources();
+  atApi=new alphaTab.AlphaTabApi($('tpRender'),{
+    core:{fontDirectory:AT_DIR+'font/',scriptFile:new URL(AT_DIR+'alphaTab.min.js',location.href).href,useWorkers:true},
+    display:{staveProfile:data.tabView==='score'?'ScoreTab':'Tab',scale:innerWidth<480?0.92:1.05,layoutMode:'Page',resources:{...res,tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
+    notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false}},
+    player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('tpScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
+  });
+  atApi.scoreLoaded.on(score=>{
+    tp.score=score;colorScore(score);
+    const tr=$('tpTracks');
+    tr.hidden=score.tracks.length<2;
+    tr.innerHTML=score.tracks.map((t,i)=>`<option value="${i}">${esc(t.name||('Партия '+(i+1)))}</option>`).join('');
+    if(!tp.title){$('tpTitle').textContent=score.title||'Таб';$('tpArtist').textContent=score.artist||'';}
+  });
+  atApi.renderStarted.on(()=>{});
+  atApi.renderFinished.on(()=>{if(atApi.isReadyForPlayback)$('tpLoading').hidden=true;else $('tpLoadText').textContent='Загружаю звук гитары…';});
+  atApi.soundFontLoad.on(e=>{if(e.total)$('tpLoadText').textContent=`Загружаю звук гитары… ${Math.round(100*e.loaded/e.total)}%`;});
+  atApi.playerReady.on(()=>{$('tpLoading').hidden=true;$('tpPlay').disabled=false;});
+  atApi.playerStateChanged.on(e=>{const on=e.state===1;$('tpPlay').textContent=on?'❚❚':'▶';$('tpPlay').classList.toggle('pause',on);});
+  atApi.playerPositionChanged.on(e=>{tp.dur=e.endTime;$('tpCur').textContent=fmtT(e.currentTime);$('tpEnd').textContent=fmtT(e.endTime);$('tpProgFill').style.width=(e.endTime?100*e.currentTime/e.endTime:0)+'%';});
+  atApi.error.on(e=>{$('tpLoading').hidden=false;$('tpLoadText').textContent='Не удалось открыть таб. Проверь файл или интернет.';});
+  return atApi;
+}
+function tabUI(){
+  $('tpSpeed').querySelector('b').textContent=Math.round(SPEEDS[tp.speedI]*100)+'%';
+  $('tpSpeed').classList.toggle('on',SPEEDS[tp.speedI]!==1);
+  $('tpView').textContent=data.tabView==='score'?'Ноты + таб':'Таб';
+  $('tpLoop').classList.toggle('on',!!(atApi&&atApi.isLooping));
+  $('tpMetro').classList.toggle('on',!!(atApi&&atApi.metronomeVolume>0));
+  $('tpCount').classList.toggle('on',!!(atApi&&atApi.countInVolume>0));
+}
+async function openTab(item,fileData){
+  stopScroll();
+  tp.title=item&&item.title;
+  $('tpTitle').textContent=item?item.title:'Свой файл';$('tpArtist').textContent=item?item.artist||'':'';
+  $('tpLoading').hidden=false;$('tpLoadText').textContent='Загружаю таб…';$('tpPlay').disabled=true;$('tpTracks').hidden=true;
+  $('tpCur').textContent='0:00';$('tpEnd').textContent='0:00';$('tpProgFill').style.width='0';
+  $('tabPlayer').hidden=false;back(true);paintLegend();
+  try{
+    const api=await ensureApi();
+    api.stop();tp.speedI=0;api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
+    tabUI();
+    if(fileData){api.load(fileData);return;}
+    const src=item.tab;
+    if(/\.a?tex$/i.test(src)){const t=await (await fetch(src,{cache:'no-cache'})).text();api.tex(t);}
+    else api.load(new URL(src,location.href).href);
+  }catch(e){$('tpLoadText').textContent='Не удалось загрузить плеер. Проверь интернет и попробуй ещё раз.';}
+}
+function closeTab(){
+  if(atApi)atApi.pause();
+  $('tabPlayer').hidden=true;
+  if(!$('songsView').hidden)renderSongList();
+  back(true);
+}
+$('tpBack').addEventListener('click',closeTab);
+$('tpPlay').addEventListener('click',()=>{unlockAudio();atApi&&atApi.playPause();});
+$('tpSpeed').addEventListener('click',()=>{if(!atApi)return;tp.speedI=(tp.speedI+1)%SPEEDS.length;atApi.playbackSpeed=SPEEDS[tp.speedI];tabUI();});
+$('tpLoop').addEventListener('click',()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;tabUI();});
+$('tpMetro').addEventListener('click',()=>{if(!atApi)return;atApi.metronomeVolume=atApi.metronomeVolume>0?0:1;tabUI();});
+$('tpCount').addEventListener('click',()=>{if(!atApi)return;atApi.countInVolume=atApi.countInVolume>0?0:1;tabUI();});
+$('tpView').addEventListener('click',()=>{
+  data.tabView=data.tabView==='score'?'tab':'score';save();
+  if(atApi){atApi.settings.display.staveProfile=data.tabView==='score'?alphaTab.StaveProfile.ScoreTab:alphaTab.StaveProfile.Tab;atApi.updateSettings();atApi.render();}
+  tabUI();
+});
+$('tpTracks').addEventListener('change',e=>{if(atApi&&tp.score)atApi.renderTracks([tp.score.tracks[+e.target.value]]);});
+$('tpProgress').addEventListener('click',e=>{if(!atApi||!tp.dur)return;const r=e.currentTarget.getBoundingClientRect();atApi.timePosition=tp.dur*(e.clientX-r.left)/r.width;});
+$('gpFile').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>openTab({title:f.name.replace(/\.[^.]+$/,''),artist:'Свой файл'},new Uint8Array(rd.result));
+  rd.readAsArrayBuffer(f);e.target.value='';
 });
 
 function openSettings(){renderMenu();show('settingsView');back(true);}

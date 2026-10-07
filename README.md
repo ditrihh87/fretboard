@@ -15,3 +15,11 @@
 - `samples/acoustic` — University of Iowa Electronic Music Studios (Musical Instrument Samples)
 - `samples/electric` — Karoryfer Samples
 - `samples/nylon` — quartertone, Freesound: classicalguitar-multisampled (11573)
+
+## Таб-плеер
+
+Плеер табов Guitar Pro работает на [alphaTab](https://www.alphatab.net/) (MPL-2.0), файлы библиотеки без изменений лежат в `vendor/alphatab/`:
+- шрифт нот Bravura — SIL Open Font License (`vendor/alphatab/font/Bravura-OFL.txt`);
+- звуковой банк Sonivox — Apache License 2.0 (`vendor/alphatab/soundfont/LICENSE`).
+
+Табы лежат в папке `tabs/` (форматы .gp, .gp3–.gp5, .gpx, MusicXML или alphaTex .atex) и подключаются в `songs.json` полем `"tab": "tabs/имя-файла.gp"`.

@@ -6,6 +6,18 @@
     "text": "{comment: Играй по 4 удара на каждый аккорд. Эта последовательность звучит в сотнях песен}\n[Em] [C] [G] [D]\n[Em] [C] [G] [D]\n{comment: Теперь в другом порядке}\n[Am] [Dm] [G] [C]\n[Am] [Dm] [E] [Am]"
   },
   {
+    "id": "t-razminka",
+    "title": "Хроматическая разминка",
+    "artist": "Упражнение · таб",
+    "tab": "tabs/razminka.atex"
+  },
+  {
+    "id": "t-perebor",
+    "title": "Перебор: Am – Dm – E – Am",
+    "artist": "Упражнение · таб",
+    "tab": "tabs/perebor-am.atex"
+  },
+  {
     "id": "bereza",
     "title": "Во поле берёза стояла",
     "artist": "Русская народная",
