@@ -271,6 +271,33 @@
   .cpbox svg{width:150px;height:160px}
   .cpname{font-family:var(--display);font-weight:800;font-size:24px;margin:2px 0 10px}
   .cpbox .btn{width:100%}
+  .menuhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .avatar{flex:none;width:48px;height:48px;border-radius:50%;border:none;padding:0;background:var(--amber);overflow:hidden;box-shadow:0 0 0 3px var(--p-card)}
+  .avatar span,.bigava{display:grid;place-items:center;width:100%;height:100%;font-family:var(--display);font-weight:800;color:#1b1b1b;background-size:cover;background-position:center}
+  .avatar span{font-size:18px}
+  .phero{background:linear-gradient(135deg,#F7DFAE,#F0A830);border-radius:20px;height:150px;display:grid;place-items:center;margin-bottom:14px}
+  html.dark .phero{background:linear-gradient(135deg,#3A2E1C,#7A5418)}
+  .bigava{width:104px;height:104px;border-radius:50%;font-size:40px;background-color:var(--paper);box-shadow:0 0 0 5px rgba(255,255,255,.55)}
+  .pmeta{color:var(--p-muted);font-size:14px;font-weight:700;margin:4px 0 14px;line-height:1.5}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat2{display:flex;gap:10px;align-items:center;background:var(--p-card);border-radius:14px;padding:12px}
+  .stat2 i{font-style:normal;font-size:22px;width:28px;text-align:center}
+  .stat2 b{display:block;font-family:var(--display);font-weight:800;font-size:17px;line-height:1.15}
+  .stat2 small{display:block;color:var(--p-muted);font-weight:700;font-size:12px;margin-top:2px}
+  .stat2.off b{color:var(--p-muted)}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:130px;background:var(--p-card);border-radius:14px;padding:12px 10px 8px}
+  .wd{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+  .wd i{display:block;width:70%;min-height:3px;border-radius:5px 5px 2px 2px;background:var(--p-line)}
+  .wd.on i{background:var(--amber)}
+  .wd.now small{color:var(--p-ink)}
+  .wd small{font-size:11px;font-weight:800;color:var(--p-muted)}
+  .wd span{font-size:10px;font-weight:800;color:var(--p-muted);min-height:12px}
+  .topics{display:flex;flex-direction:column;gap:8px}
+  .tp{background:var(--p-card);border-radius:14px;padding:12px 14px}
+  .tp div{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:8px}
+  .tp div span{color:var(--p-muted)}
+  .tp i{display:block;height:8px;border-radius:4px;background:var(--p-line);overflow:hidden}
+  .tp em{display:block;height:100%;background:var(--ok);border-radius:4px}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -341,7 +368,10 @@
   <div class="panel">
     <!-- menu -->
     <div id="menuView">
-      <h1>Гитарные уроки<span class="by">от ditrihh</span></h1>
+      <div class="menuhead">
+        <h1>Гитарные уроки<span class="by">от ditrihh</span></h1>
+        <button class="avatar" id="profileBtn" aria-label="Мой профиль"><span id="avaMini"></span></button>
+      </div>
       <figure class="quote" id="quote" title="Нажми — следующая фраза"><blockquote id="qText"></blockquote><figcaption id="qBy"></figcaption></figure>
       <div class="rankline" id="rankLine"><b id="rankName">Новичок</b><span id="rankXP"></span><i><em id="rankBar"></em></i></div>
       <section class="today" id="today">
@@ -404,6 +434,23 @@
       <div class="btns">
         <button class="btn big" id="lgPlay">Набрать XP</button>
         <button class="btn ghost" id="lgBack">В меню</button>
+      </div>
+    </div>
+    <!-- profile -->
+    <div id="profileView" hidden>
+      <div class="phero"><div class="bigava" id="avaBig"></div></div>
+      <h1 id="pName"></h1>
+      <p class="pmeta" id="pMeta"></p>
+      <div class="rankline" id="pRank"><b id="pRankName"></b><span id="pRankXP"></span><i><em id="pRankBar"></em></i></div>
+      <h2>Статистика</h2>
+      <div class="stats" id="pStats"></div>
+      <h2>Опыт за неделю</h2>
+      <div class="week" id="pWeek"></div>
+      <h2>Прогресс по темам</h2>
+      <div class="topics" id="pTopics"></div>
+      <div class="btns">
+        <button class="btn" id="pShare">Поделиться профилем</button>
+        <button class="btn ghost" id="pBack">В меню</button>
       </div>
     </div>
     <!-- songbook -->
@@ -598,6 +645,9 @@ function dayXP(){return data.day.date===todayKey()?data.day.xp:0;}
 function addXP(n){
   if(data.day.date!==todayKey())data.day={date:todayKey(),xp:0};
   const before=data.day.xp;data.day.xp+=n;data.xp=(data.xp||0)+n;data.pendingXP=(data.pendingXP||0)+n;
+  // история XP по дням для графика в профиле (храним 14 дней)
+  const dk=new Date().toISOString().slice(0,10);data.hist=data.hist||{};data.hist[dk]=(data.hist[dk]||0)+n;
+  Object.keys(data.hist).sort().slice(0,-14).forEach(k=>delete data.hist[k]);
   return before<data.goal&&data.day.xp>=data.goal;
 }
 function streakNow(){const s=data.streak;return s.n&&(s.last===todayKey()||s.last===new Date(Date.now()-864e5).toDateString())?s.n:0;}
@@ -605,6 +655,7 @@ function bumpStreak(){
   const d=new Date(),key=d.toDateString(),y=new Date(d-864e5).toDateString();
   if(data.streak.last===key)return;
   data.streak.n=data.streak.last===y?data.streak.n+1:1;data.streak.last=key;
+  data.bestStreak=Math.max(data.bestStreak||0,data.streak.n);
 }
 
 /* ===== меню ===== */
@@ -619,6 +670,7 @@ function renderMenu(){
   $('fsRow').hidden=!fsSupported;
   const pdN=pathDone('notes'),pdC=pathDone('chords'),pdI=pathDone('intervals');
   $('lvlSummary').textContent=pdN||pdC||pdI?`Ноты ${pdN}/${nodesOf('notes')} · аккорды ${pdC}/${nodesOf('chords')} · интервалы ${pdI}/${nodesOf('intervals')}`:'Ноты, аккорды и интервалы';
+  paintAvatar($('avaMini'));
   // звание
   const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
   $('rankName').textContent=RANKS[ri][1];
@@ -772,7 +824,7 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(k==='sfilter'&&!$('songsView').hidden)renderSongList();
 }));
 
-function show(view){if(view!=='songView'&&typeof stopScroll==='function'&&song.scroll)stopScroll();['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView','songsView','songView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function show(view){if(view!=='songView'&&typeof stopScroll==='function'&&song.scroll)stopScroll();['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView','songsView','songView','profileView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
 function openLevels(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
   const cur=renderPath();
@@ -827,6 +879,7 @@ async function openLeague(){
         :x.to<x.from?`Ты опустился в лигу ${leagueName(x.to)}. Прошлая неделя: ${x.place}-е место. Отыграйся!`
         :`Ты остался в лиге: ${x.place}-е место, ${x.xp} XP на прошлой неделе.`;
       el.hidden=false;data.lastSettled=r.week;
+      if(x.place<=3)data.top3=(data.top3||0)+1;
       if(x.to>x.from)haptic('success');
     }
     save();
@@ -936,6 +989,63 @@ function showChord(name){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');if(b&&!$('songView').hidden)showChord(b.dataset.chord);});
 $('chordPop').addEventListener('click',e=>{if(e.target===$('chordPop'))$('chordPop').hidden=true;});
 $('cpPlay').addEventListener('click',()=>strumShape(chordShape($('chordPop').dataset.name)));
+
+/* ===== профиль ===== */
+function tgUser(){try{return (tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||null;}catch(e){return null;}}
+function myName(){const u=tgUser();return u?[u.first_name,u.last_name].filter(Boolean).join(' '):'Гитарист';}
+function paintAvatar(el){
+  const u=tgUser(),photo=u&&u.photo_url;
+  const ini=myName().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'🎸';
+  if(photo){el.style.backgroundImage=`url("${photo.replace(/"/g,'')}")`;el.textContent='';}
+  else{el.style.backgroundImage='';el.textContent=ini;}
+}
+const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function openProfile(){
+  renderMenu();show('profileView');back(true);
+  const u=tgUser();
+  paintAvatar($('avaBig'));
+  $('pName').textContent=myName();
+  const d=new Date(data.since||Date.now());
+  $('pMeta').innerHTML=`${u&&u.username?'@'+esc(u.username)+'<br>':''}С нами с ${MONTHS[d.getMonth()]} ${d.getFullYear()} г.`;
+  // звание
+  const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
+  $('pRankName').textContent=RANKS[ri][1];
+  $('pRankXP').textContent=nx?`до «${nx[1]}» ${nx[0]-tx} XP`:'высшее звание';
+  $('pRankBar').style.width=(nx?100*(tx-RANKS[ri][0])/(nx[0]-RANKS[ri][0]):100)+'%';
+  // статистика
+  const sn=streakNow(),lt=data.league?data.league.tier:0;
+  const battle=Math.max(data.best['find'+RATE_MAX]||0,data.best['name'+RATE_MAX]||0);
+  const ear=Math.max(0,...Object.values(data.earBest||{}));
+  const lessons=['notes','chords','intervals'].reduce((a,t)=>a+pathDone(t),0),lessonsAll=['notes','chords','intervals'].reduce((a,t)=>a+nodesOf(t),0);
+  const st=[
+    ['🔥',sn,`${plural(sn,'день','дня','дней')} подряд`,!sn],
+    ['⚡',tx,'очки опыта',!tx],
+    ['🏆',LEAGUES[lt][0],'текущая лига',!data.league],
+    ['🥇',data.top3||0,'раз в топ-3 лиги',!data.top3],
+    ['🏅',data.bestStreak||0,'рекорд серии',!data.bestStreak],
+    ['⚔️',battle,'рекорд битвы',!battle],
+    ['📚',`${lessons}/${lessonsAll}`,'уроков пройдено',!lessons],
+    ['👂',ear?`${ear}/10`:0,'лучший слух',!ear],
+  ];
+  $('pStats').innerHTML=st.map(([i,v,l,off])=>`<div class="stat2 ${off?'off':''}"><i>${i}</i><div><b>${esc(String(v))}</b><small>${l}</small></div></div>`).join('');
+  // неделя
+  const days=[...Array(7)].map((_,k)=>{const dt=new Date(Date.now()-(6-k)*864e5);return {key:dt.toISOString().slice(0,10),wd:['вс','пн','вт','ср','чт','пт','сб'][dt.getDay()],today:k===6};});
+  const vals=days.map(x=>(data.hist||{})[x.key]||0),mx=Math.max(data.goal||20,...vals);
+  $('pWeek').innerHTML=days.map((x,k)=>`<div class="wd ${vals[k]?'on':''} ${x.today?'now':''}"><span>${vals[k]||''}</span><i style="height:${Math.round(78*vals[k]/mx)}%"></i><small>${x.wd}</small></div>`).join('');
+  // темы
+  $('pTopics').innerHTML=[['notes','Ноты на грифе'],['chords','Аккорды'],['intervals','Интервалы']].map(([t,n])=>{
+    const a=pathDone(t),b=nodesOf(t);
+    return `<div class="tp"><div>${n}<span>${a} из ${b}</span></div><i><em style="width:${100*a/b}%"></em></i></div>`;
+  }).join('');
+}
+$('profileBtn').addEventListener('click',openProfile);
+$('pBack').addEventListener('click',openMenu);
+$('pShare').addEventListener('click',()=>{
+  const sn=streakNow(),lt=data.league?data.league.tier:0;
+  const text=`Я ${RANKS[rankOf(data.xp||0)][1].toLowerCase()} в «Гитарные уроки от ditrihh»: ${data.xp||0} XP, лига «${LEAGUES[lt][0]}»${sn?`, ${sn} ${plural(sn,'день','дня','дней')} подряд`:''}. Присоединяйся!`;
+  const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
+  if(inTg)tg.openTelegramLink(url);else if(navigator.share)navigator.share({text,url:BOT_LINK}).catch(()=>{});else window.open(url,'_blank');
+});
 
 function openSettings(){renderMenu();show('settingsView');back(true);}
 function submitScore(){
@@ -1652,6 +1762,7 @@ $('shareBtn').addEventListener('click',()=>{
   if(data.theme)cfg.theme=data.theme;applyTheme();
   if(data.ivset)cfg.ivset=data.ivset;
   if(data.topic)cfg.topic=data.topic;
+  if(!data.since){data.since=Date.now();save();}
   data.path=data.path||{};data.day=data.day||{date:'',xp:0};data.goal=data.goal||20;cfg.goal=data.goal;
   LEVELS.forEach((_,u)=>{const st=Math.max(data.find[u]||0,data.name[u]||0);if(st&&!data.path[u*3+2]){data.path[u*3]=data.path[u*3]||1;data.path[u*3+1]=data.path[u*3+1]||1;data.path[u*3+2]=st;}});
   if(typeof data.sound==='string'&&SAMPLE_SETS[data.sound]||data.sound==='off')cfg.sound=data.sound;
