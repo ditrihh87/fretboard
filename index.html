@@ -359,9 +359,13 @@
     .tp-play.pause{font-size:15px}
   }
   /* курсор и подсветка alphaTab */
-  #tpRender .at-cursor-bar{background:rgba(240,168,48,.13)}
+  #tpRender .at-cursor-bar{background:transparent}
   #tpRender .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
-  #tpRender .at-highlight *{fill:var(--amber);stroke:var(--amber)}
+  /* подсветка звучащих нот и такта — только когда телефон лежит боком; вертикально идёт одна полоска */
+  @media (orientation:landscape) and (max-height:520px){
+    #tpRender .at-cursor-bar{background:rgba(240,168,48,.13)}
+    #tpRender .at-highlight *{fill:var(--amber);stroke:var(--amber)}
+  }
   #tpRender .at-selection div{background:rgba(111,191,115,.22)}
   .filebtn{display:block;width:100%;text-align:center;margin-top:10px;cursor:pointer}
   .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
