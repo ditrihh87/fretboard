@@ -494,8 +494,9 @@ const save=()=>store.set('progress',JSON.stringify(data));
 /* ===== звания и лиги ===== */
 const RANKS=[[0,'Новичок'],[100,'Ученик'],[300,'Любитель'],[700,'Гитарист'],[1500,'Сессионщик'],[3000,'Виртуоз'],[6000,'Легенда']];
 function rankOf(xp){let i=0;while(i+1<RANKS.length&&xp>=RANKS[i+1][0])i++;return i;}
-const LEAGUES=[['Деревянная','#E6D3BC','#7A4A22'],['Медная','#F0D2C0','#9A4E28'],['Бронзовая','#F2E0BF','#8A5A16'],['Серебряная','#E0E6EC','#4E5D6B'],['Золотая','#F7E2A6','#8A6510'],['Платиновая','#D4ECF1','#2D6E7E']];
-const leagueName=(t,form)=>{const n=LEAGUES[t][0];return form==='в'?n.replace(/ая$/,'ую'):n;};
+// путь музыканта: от гаража до стадиона
+const LEAGUES=[['Гараж','#E6D3BC','#7A4A22'],['Репетиционная','#E3DCEB','#5B4A7A'],['Клуб','#F0D2C0','#9A4E28'],['Фестиваль','#DCEBD5','#2F6B34'],['Арена','#D9E4F0','#2D4F7E'],['Стадион','#F7E2A6','#8A6510']];
+const leagueName=t=>`«${LEAGUES[t][0]}»`;
 function untilWeekEnd(){
   const msk=Date.now()+3*3600e3,day=(new Date(msk).getUTCDay()+6)%7;
   const left=(7-day)*864e5-(msk%864e5),d=Math.floor(left/864e5),h=Math.floor(left%864e5/3600e3);
@@ -541,7 +542,7 @@ function renderMenu(){
   // лига
   const lg=data.league,lt=lg?lg.tier:0;
   $('leagueIco').style.setProperty('--lg-bg',LEAGUES[lt][1]);$('leagueIco').style.setProperty('--lg-fg',LEAGUES[lt][2]);
-  $('leagueSummary').textContent=!inTg?'Доступно в Telegram':lg&&lg.place?`${leagueName(lt)} · ${lg.place}-е место · ${lg.xp} XP`:`${leagueName(lt)} лига · набирай XP`;
+  $('leagueSummary').textContent=!inTg?'Доступно в Telegram':lg&&lg.place?`Лига ${leagueName(lt)} · ${lg.place}-е место · ${lg.xp} XP`:`Лига ${leagueName(lt)} · набирай XP`;
   // цель дня и серия
   const dx=dayXP(),gl=data.goal||20,k=Math.min(1,dx/gl);
   $('ringFill').style.strokeDashoffset=(144.5*(1-k)).toFixed(1);
@@ -722,7 +723,7 @@ function openEar(){clearInterval(g.timer);g.playing=false;micStop();renderMenu()
 async function openLeague(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('leagueView');back(true);
   const lt0=data.league?data.league.tier:0;
-  $('lgTitle').textContent=`${leagueName(lt0)} лига`;
+  $('lgTitle').textContent=`Лига ${leagueName(lt0)}`;
   $('lgLead').textContent=`Набирай XP за уроки, тренажёр слуха и игру на рейтинг. До конца недели: ${untilWeekEnd()}.`;
   $('lgResult').hidden=true;$('lgLegend').innerHTML='';
   const list=$('lgList');
@@ -732,19 +733,19 @@ async function openLeague(){
     syncXP();
     const r=await api({action:'league'});
     data.league={tier:r.tier,place:r.me&&r.me.rank,xp:r.me&&r.me.xp};
-    $('lgTitle').textContent=`${leagueName(r.tier)} лига`;
+    $('lgTitle').textContent=`Лига ${leagueName(r.tier)}`;
     if(r.result&&data.lastSettled!==r.week){
       const x=r.result,el=$('lgResult');
       el.className='lgresult '+(x.to>x.from?'up':x.to<x.from?'down':'same');
-      el.textContent=x.to>x.from?`Ты поднялся в ${leagueName(x.to,'в')} лигу! Прошлая неделя: ${x.place}-е место, ${x.xp} XP.`
-        :x.to<x.from?`Ты опустился в ${leagueName(x.to,'в')} лигу. Прошлая неделя: ${x.place}-е место. Отыграйся!`
+      el.textContent=x.to>x.from?`Ты поднялся в лигу ${leagueName(x.to)}! Прошлая неделя: ${x.place}-е место, ${x.xp} XP.`
+        :x.to<x.from?`Ты опустился в лигу ${leagueName(x.to)}. Прошлая неделя: ${x.place}-е место. Отыграйся!`
         :`Ты остался в лиге: ${x.place}-е место, ${x.xp} XP на прошлой неделе.`;
       el.hidden=false;data.lastSettled=r.week;
       if(x.to>x.from)haptic('success');
     }
     save();
     const parts=[];
-    if(r.promote)parts.push(`<span class="up">топ-${r.promote}</span> поднимутся в ${leagueName(r.tier+1,'в')}`);
+    if(r.promote)parts.push(`<span class="up">топ-${r.promote}</span> поднимутся в лигу ${leagueName(r.tier+1)}`);
     if(r.demote)parts.push(`<span class="down">последние ${r.demote}</span> опустятся`);
     $('lgLegend').innerHTML=parts.join(', ')+(parts.length?'.':'');
     if(!r.rows.length){list.innerHTML='<li class="empty">На этой неделе в лиге пока никого. Пройди урок и стань первым.</li>';return;}
