@@ -744,7 +744,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={sfilter:[['all','Все'],['can','Могу сыграть'],['tab','Табы']],theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[20,'20'],[50,'50'],[100,'100'],[150,'150']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={sfilter:[['all','Все'],['chords','Аккорды'],['tab','Табы']],theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[20,'20'],[50,'50'],[100,'100'],[150,'150']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -999,10 +999,10 @@ function renderSongList(){
   const q=($('songSearch').value||'').toLowerCase().trim(),known=knownChords();
   const items=SONGS.map(sg=>({sg,ch:chordsIn(sg.text)})).map(x=>({...x,can:x.ch.length&&x.ch.every(c=>known.has(c))}))
     .filter(x=>!q||(x.sg.title+' '+x.sg.artist).toLowerCase().includes(q))
-    .filter(x=>cfg.sfilter!=='can'||x.can).filter(x=>cfg.sfilter!=='tab'||x.sg.tab);
+    .filter(x=>cfg.sfilter!=='chords'||!x.sg.tab).filter(x=>cfg.sfilter!=='tab'||x.sg.tab);
   if(!songsLoaded){$('songList').innerHTML='<p class="hint">Не удалось загрузить песни. Проверь интернет.</p>';return;}
-  if(!items.length){$('songList').innerHTML=`<p class="hint">${cfg.sfilter==='can'?'Пока нет песен из выученных аккордов. Пройди разделы «Аккорды» в пути обучения: каждый закрытый раздел открывает новые песни.':'Ничего не нашлось.'}</p>`;return;}
-  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}">${x.can?'<span class="can">✓ могу сыграть</span>':''}<b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
+  if(!items.length){$('songList').innerHTML=`<p class="hint">Ничего не нашлось.</p>`;return;}
+  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}"><b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
 }
 async function openSongs(){
   stopScroll();clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('songsView');back(true);
