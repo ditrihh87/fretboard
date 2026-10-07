@@ -73,7 +73,7 @@
   .dot.o.bad,.dot.x.bad{background:transparent;border-color:var(--bad);color:var(--bad)}
   .dot.still{animation:none!important}
   #levelsView .seg[data-k="topic"]{margin-top:14px}
-  .dot.root{background:var(--paper);color:var(--stage);font-weight:800;box-shadow:0 0 0 3px rgba(238,230,211,.3)}
+  .dot.root{aspect-ratio:auto;height:min(30px,86%)!important;width:auto!important;min-width:30px;padding:0 7px;border-radius:999px;font-size:12px;white-space:nowrap;background:var(--paper);color:var(--stage);font-weight:800;box-shadow:0 0 0 3px rgba(238,230,211,.3)}
   .chordname{font-size:15px;color:var(--muted);margin-top:4px}
 
   /* горизонтальный гриф */
@@ -557,7 +557,7 @@ function renderMenu(){
   $('setSummary').textContent=[{acoustic:'Акустика',electric:'Электро',nylon:'Нейлон',off:'Без звука'}[cfg.sound],cfg.orient==='h'?'гриф горизонтально':'гриф вертикально',cfg.input==='mic'?'микрофон':''].filter(Boolean).join(' · ');
   $('earHint').textContent=cfg.ear==='hl'
     ?'Звучат две ноты на одной струне. Ответь, вторая выше или ниже первой.'
-    :cfg.ear==='iv'?'Звучит корень R, потом вторая нота, потом обе вместе. Определи интервал на слух.'
+    :cfg.ear==='iv'?'Звучит первая нота (она отмечена на грифе), потом вторая, потом обе вместе. Определи интервал на слух.'
     :'Сначала звучит открытая струна, потом загаданная нота. Найди её на подсвеченной струне.';
   $('earMaxRow').hidden=cfg.ear!=='ear';
   $('ivSetRow').hidden=cfg.ear!=='iv';
@@ -585,7 +585,7 @@ const CHORD_UNITS=[
 /* ===== интервалы: форма от корня на 6-й/5-й струне ===== */
 const IVS={
   'ч8':{n:12,t:'Октава',ds:2,df:2,hint:'через одну струну вниз (к тонким) и на 2 лада вправо'},
-  'ч5':{n:7,t:'Квинта',ds:1,df:2,hint:'соседняя тонкая струна, на 2 лада вправо. Корень + квинта = пауэр-аккорд'},
+  'ч5':{n:7,t:'Квинта',ds:1,df:2,hint:'соседняя тонкая струна, на 2 лада вправо. Эти две ноты вместе — пауэр-аккорд'},
   'ч4':{n:5,t:'Кварта',ds:1,df:0,hint:'соседняя тонкая струна, тот же лад'},
   'б3':{n:4,t:'Большая терция',ds:1,df:-1,hint:'соседняя тонкая струна, на 1 лад назад. Звучит светло, мажорно'},
   'м3':{n:3,t:'Малая терция',ds:1,df:-2,hint:'соседняя тонкая струна, на 2 лада назад. Звучит грустно, минорно'},
@@ -601,7 +601,7 @@ const midiAt=(c,r)=>BASE_MIDI[c]+r;
 const midiToF=m=>440*Math.pow(2,(m-69)/12);
 const TOPICS={
   intervals:{store:'ipath',units:IV_UNITS.map(u=>({t:u.t,sub:u.iv.length?'новые интервалы':'повторение всех семи'})),
-    lead:'Интервал — расстояние между двумя нотами. На гитаре каждый интервал имеет свою форму: запомни её от корня R.'},
+    lead:'Интервал — расстояние между двумя нотами. На гитаре каждый интервал имеет свою форму: запомни её от первой ноты.'},
   notes:{store:'path',units:LEVELS.map(L=>({t:L.t,sub:`лады 0–${L.m}`})),
     lead:'Короткие уроки по 2 минуты: найди ноту на грифе и назови ноту по точке. В конце раздела контрольная.'},
   chords:{store:'cpath',units:CHORD_UNITS.map((u,i)=>({t:u.t,sub:u.ch.length?'новые аккорды':'повторение всех восьми'})),
@@ -984,7 +984,7 @@ function ivRoot(key){
 }
 function drawIv(showTarget=true,cls='mark',label=true){
   const q=g.q;
-  putDot(q.c,q.r,'root','R');
+  putDot(q.c,q.r,'root',nm(pcAt(q.c,q.r)));
   if(showTarget)putDot(q.tc,q.tr,cls,label?IVS[q.iv].n>9?'8':key2short(q.iv):'');
 }
 const key2short=k=>k.replace('ч','');
@@ -1000,17 +1000,17 @@ function intervalQuestion(entry){
   $('answers').style.gridTemplateColumns='';
   if(type==='iintro'){
     $('pNote').textContent=I.t;
-    $('pSub').innerHTML=`${I.n} ${plural(I.n,'полутон','полутона','полутонов')} от корня R<div class="chordname">${I.hint}</div>`;
+    $('pSub').innerHTML=`${I.n} ${plural(I.n,'полутон','полутона','полутонов')} от ноты ${nm(pcAt(g.q.c,g.q.r))}<div class="chordname">${I.hint}</div>`;
     drawIv();
     $('answers').innerHTML='<button class="ans wide" data-strum="1">▶ Послушать</button><button class="ans wide check" data-next="1">Запомнил, дальше</button>';
     setTimeout(()=>{if(g.q&&g.q.iv===key&&g.q.type==='iintro')playIv();},350);
   }else if(type==='ifind'){
     $('pNote').textContent=I.t;
-    $('pSub').textContent='найди интервал от корня R: нажми на нужный лад';
+    $('pSub').textContent=`найди интервал от ноты ${nm(pcAt(g.q.c,g.q.r))}: нажми на нужный лад`;
     drawIv(false);
   }else{
     $('pNote').textContent='?';
-    $('pSub').textContent='какой это интервал от R?';
+    $('pSub').textContent=`какой это интервал от ноты ${nm(pcAt(g.q.c,g.q.r))}?`;
     drawIv(true,'mark',false);
     const pool=Object.keys(IVS);
     const opts=shuffle([key,...shuffle(pool.filter(x=>x!==key)).slice(0,3)]);
@@ -1053,8 +1053,8 @@ function newQuestion(){
     const key=set[Math.floor(Math.random()*set.length)];
     g.q={type,iv:key,...ivRoot(key)};
     $('pNote').textContent='♪ ♪';
-    $('pSub').textContent='какой это интервал?';
-    putDot(g.q.c,g.q.r,'root','R');
+    $('pSub').textContent=`какой интервал от ноты ${nm(pcAt(g.q.c,g.q.r))}?`;
+    putDot(g.q.c,g.q.r,'root',nm(pcAt(g.q.c,g.q.r)));
     const opts=set.length<=4?shuffle([...set]):shuffle([key,...shuffle(set.filter(x=>x!==key)).slice(0,3)]);
     $('answers').style.gridTemplateColumns='repeat(2,1fr)';
     $('answers').innerHTML=opts.map(x=>`<button class="ans" data-iv="${x}">${IVS[x].t}</button>`).join('')+'<button class="ans wide" data-replay="1">▶ Послушать ещё раз</button>';
