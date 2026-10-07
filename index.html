@@ -232,6 +232,10 @@
   .lgresult.same{background:var(--p-card);color:var(--p-ink)}
   .ans.check{background:var(--amber);color:#1b1b1b}
   .panel h1 .by{display:block;font-family:var(--body);font-weight:700;font-size:15px;color:var(--amber);margin-top:4px;letter-spacing:.2px}
+  .quote{margin:8px 0 16px;cursor:pointer}
+  .quote blockquote{font-size:15px;line-height:1.45;color:var(--p-ink2);font-style:italic}
+  .quote figcaption{font-size:13px;font-weight:700;color:var(--p-muted);margin-top:4px}
+  .quote figcaption:not(:empty)::before{content:"— "}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -254,7 +258,7 @@
   .dot.show{animation:pop .24s .15s cubic-bezier(.3,1.5,.5,1) both,ring .9s .3s ease-out 2}
   .ans.ok{animation:bump .3s}
   .ans.bad{animation:shake .32s}
-  #pNote.in{animation:noteIn .22s ease-out}
+  .quote.in,#pNote.in{animation:noteIn .22s ease-out}
   #pNote.shake{animation:shake .32s}
   .stat b.bump{display:inline-block;animation:bump .3s}
   .stat.low b{animation:tick 1s ease-in-out infinite}
@@ -302,7 +306,7 @@
     <!-- menu -->
     <div id="menuView">
       <h1>Гитарные уроки<span class="by">от ditrihh</span></h1>
-      <p class="lead">Учи гриф и соревнуйся с другими гитаристами.</p>
+      <figure class="quote" id="quote" title="Нажми — следующая фраза"><blockquote id="qText"></blockquote><figcaption id="qBy"></figcaption></figure>
       <div class="rankline" id="rankLine"><b id="rankName">Новичок</b><span id="rankXP"></span><i><em id="rankBar"></em></i></div>
       <section class="today" id="today">
         <svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" class="track"/><circle cx="28" cy="28" r="23" class="fill" id="ringFill"/></svg>
@@ -491,6 +495,24 @@ const store={
 };
 async function load(){try{const v=await store.get('progress');if(v)data=Object.assign(data,JSON.parse(v));}catch(e){}}
 const save=()=>store.set('progress',JSON.stringify(data));
+
+/* ===== фразы на главном экране: [текст, автор]; автор пустой — это совет ===== */
+const QUOTES=[
+  ['Прекрасное в учёбе то, что её у тебя никто не отнимет.','Би Би Кинг'],
+  ['Хочешь, чтобы музыка стала делом жизни, — играй, играй, играй и играй!','Эдди Ван Хален'],
+  ['Знание говорит, а мудрость слушает.','Джими Хендрикс'],
+  ['Без отклонения от нормы прогресс невозможен.','Фрэнк Заппа'],
+  ['Пять минут с гитарой каждый день дают больше, чем час раз в неделю.',''],
+  ['Сначала медленно и чисто. Скорость придёт сама.',''],
+  ['Не смотри на гриф всё время — пальцы должны помнить дорогу.',''],
+];
+let qi=Math.floor(Math.random()*QUOTES.length);
+function showQuote(step=0){
+  qi=(qi+step+QUOTES.length)%QUOTES.length;
+  const [t,a]=QUOTES[qi];
+  $('qText').textContent=`«${t}»`;$('qBy').textContent=a||'совет';
+}
+$('quote').addEventListener('click',()=>{showQuote(1);replay($('quote'),'in');});
 
 /* ===== звания и лиги ===== */
 const RANKS=[[0,'Новичок'],[100,'Ученик'],[300,'Любитель'],[700,'Гитарист'],[1500,'Сессионщик'],[3000,'Виртуоз'],[6000,'Легенда']];
@@ -1416,6 +1438,7 @@ $('shareBtn').addEventListener('click',()=>{
   loadBank(cfg.sound);
   syncOrientation();
   if(fsSupported&&data.fs&&!tg.isFullscreen)setFullscreen(true);
+  showQuote();
   openMenu();
   syncXP();
 })();
