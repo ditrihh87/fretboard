@@ -310,6 +310,9 @@
   .tp-title b{display:block;font-family:var(--display);font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tp-title small{display:block;color:var(--tp-muted);font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tp-chip{border:none;background:var(--tp-card);color:var(--tp-ink);border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px}
+  .tp-zoom{display:none;gap:4px}
+  .tp-zoom .tp-chip{width:36px;padding:7px 0;font-size:18px;line-height:1}
+  .tp-zoom .tp-chip:disabled{opacity:.35}
   .tp-col{padding:9px 11px;display:flex;align-items:center}
   .tp-col i{width:18px;height:18px;border-radius:50%;display:block;background:conic-gradient(#D33A3F,#C97A0E,#9A8300,#3E9A45,#2E7FC0,#8456C2,#D33A3F)}
   .tp-col[aria-pressed="false"] i{background:var(--tp-muted);opacity:.55}
@@ -345,8 +348,9 @@
     .tp-ico{width:34px;height:34px;font-size:22px;border-radius:10px}
     .tp-title b{font-size:15px}.tp-title small{font-size:12px}
     .tp-chip{padding:7px 12px}
+    .tp-zoom{display:flex}
     .tp-legend{position:absolute;top:calc(12px + var(--sa-t));left:50%;transform:translateX(-50%);padding:0;z-index:3}
-    .tp-tracks{position:absolute;top:calc(6px + var(--sa-t));right:calc(110px + var(--sa-r));margin:0;padding:6px 10px;z-index:3;max-width:30vw}
+    .tp-tracks{position:absolute;top:calc(6px + var(--sa-t));right:calc(250px + var(--sa-r));margin:0;padding:6px 10px;z-index:3;max-width:22vw}
     .tp-scroll{grid-column:1/-1;padding:3vh max(4px,var(--sa-r)) 0 max(4px,var(--sa-l))}
     .tp-loading{grid-column:1/-1;grid-row:2}
     .tp-bar{grid-column:1/-1;display:flex;align-items:center;gap:12px;border-radius:16px 16px 0 0;padding:6px max(14px,var(--sa-r)) calc(6px + var(--sa-b)) max(14px,var(--sa-l))}
@@ -435,6 +439,7 @@
   <header class="tp-head">
     <button class="tp-ico" id="tpBack" aria-label="Назад">‹</button>
     <div class="tp-title"><b id="tpTitle"></b><small id="tpArtist"></small></div>
+    <span class="tp-zoom" id="tpZoom"><button class="tp-chip" id="tpZoomOut" aria-label="Мельче">−</button><button class="tp-chip" id="tpZoomIn" aria-label="Крупнее">+</button></span>
     <button class="tp-chip tp-col" id="tpColor" aria-label="Цветные цифры" aria-pressed="true"><i></i></button>
     <button class="tp-chip" id="tpView" aria-label="Вид">Таб</button>
   </header>
@@ -1182,12 +1187,20 @@ function tabRestyle(){
   if(tp.score){colorScore(tp.score);atApi.updateSettings();atApi.render();}
 }
 const tabLandscape=()=>innerWidth>innerHeight&&innerHeight<=520;
-const tabScale=()=>tabLandscape()?1.2:innerWidth<480?0.92:1.05;
+const ZOOM_MIN=0.6,ZOOM_MAX=1.5;
+const tabZoom=()=>Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,data.tabZoom||1));
+const tabScale=()=>tabLandscape()?1.2*tabZoom():innerWidth<480?0.92:1.05;
+function paintZoom(){$('tpZoomOut').disabled=tabZoom()<=ZOOM_MIN+1e-6;$('tpZoomIn').disabled=tabZoom()>=ZOOM_MAX-1e-6;}
+function setZoom(d){
+  data.tabZoom=Math.round(Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,tabZoom()+d))*100)/100;save();paintZoom();
+  try{tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged();}catch(_){}
+  if(atApi&&tp.score&&tabLandscape()){atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();}
+}
 let tabLayoutTimer=0;
 function tabRelayout(){
   if(!atApi||$('tabPlayer').hidden||!tp.score)return;
   const want=tabLandscape()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
-  if(atApi.settings.display.layoutMode===want)return;
+  if(atApi.settings.display.layoutMode===want&&atApi.settings.display.scale===tabScale())return;
   atApi.settings.display.layoutMode=want;atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();
 }
 addEventListener('resize',()=>{clearTimeout(tabLayoutTimer);tabLayoutTimer=setTimeout(tabRelayout,250);});
@@ -1232,12 +1245,12 @@ async function openTab(item,fileData){
   $('tpTitle').textContent=item?item.title:'Свой файл';$('tpArtist').textContent=item?item.artist||'':'';
   $('tpLoading').hidden=false;$('tpLoadText').textContent='Загружаю таб…';$('tpPlay').disabled=true;$('tpTracks').hidden=true;
   $('tpCur').textContent='0:00';$('tpEnd').textContent='0:00';$('tpProgFill').style.width='0';
-  $('tabPlayer').hidden=false;back(true);paintLegend();
+  $('tabPlayer').hidden=false;back(true);paintLegend();paintZoom();
   try{
     const api=await ensureApi();
     api.stop();tp.speedI=0;
     const wantL=tabLandscape()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
-    if(api.settings.display.layoutMode!==wantL){api.settings.display.layoutMode=wantL;api.settings.display.scale=tabScale();api.updateSettings();}
+    if(api.settings.display.layoutMode!==wantL||api.settings.display.scale!==tabScale()){api.settings.display.layoutMode=wantL;api.settings.display.scale=tabScale();api.updateSettings();}
 api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
     tabUI();
     if(fileData){let okLoad=false;try{okLoad=api.load(fileData);}catch(err){}
@@ -1260,6 +1273,8 @@ $('tpSpeed').addEventListener('click',()=>{if(!atApi)return;tp.speedI=(tp.speedI
 $('tpLoop').addEventListener('click',()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;tabUI();});
 $('tpMetro').addEventListener('click',()=>{if(!atApi)return;atApi.metronomeVolume=atApi.metronomeVolume>0?0:1;tabUI();});
 $('tpCount').addEventListener('click',()=>{if(!atApi)return;atApi.countInVolume=atApi.countInVolume>0?0:1;tabUI();});
+$('tpZoomOut').addEventListener('click',()=>setZoom(-0.1));
+$('tpZoomIn').addEventListener('click',()=>setZoom(0.1));
 $('tpColor').addEventListener('click',()=>{
   data.tabColor=!tabColored();save();
   try{tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged();}catch(_){}
