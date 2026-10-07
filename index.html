@@ -719,11 +719,11 @@ function buildBoard(){
     const w=narrow&&g.max>5?0.5*real+0.5/g.max:real;
     sizes.push((w*100).toFixed(3)+'fr');
   }
-  // вертикально: лады идут сверху вниз; горизонтально: слева направо, 1-я струна сверху
+  // вертикально: лады идут сверху вниз; горизонтально: слева направо, 1-я струна снизу
   if(H){b.style.gridTemplateColumns=sizes.join(' ');b.style.gridTemplateRows='';}
   else{b.style.gridTemplateRows=sizes.join(' ');b.style.gridTemplateColumns='';}
   const place=(el,fret,col)=>{ // col: 0 = номер лада, 1..6 = струны (6-я … 1-я)
-    if(H){el.style.gridColumn=fret+1;el.style.gridRow=col===0?7:7-col;}
+    if(H){el.style.gridColumn=fret+1;el.style.gridRow=col===0?7:col;} // 6-я (толстая) сверху, 1-я (тонкая) снизу — как видит гитарист
     else{el.style.gridRow=fret+1;el.style.gridColumn=col+1;}
   };
   const w=document.createElement('div');w.className='wood';
