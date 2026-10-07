@@ -335,6 +335,29 @@
   .tp-play.pause{padding-left:0;font-size:20px;letter-spacing:-2px}
   .tp-play:disabled{opacity:.5}
   .tp-play:active{transform:translateY(3px);box-shadow:0 3px 0 #b77a17}
+  /* альбомная ориентация на телефоне: всё в одну строку, таб — горизонтальной лентой */
+  @media (orientation:landscape) and (max-height:520px){
+    #tabPlayer{display:grid;grid-template-columns:auto 1fr auto auto;grid-template-rows:auto 1fr auto;}
+    .tp-head{grid-column:1/-1;padding:calc(4px + var(--sa-t)) max(10px,var(--sa-r)) 2px max(10px,var(--sa-l));gap:8px}
+    .tp-ico{width:34px;height:34px;font-size:22px;border-radius:10px}
+    .tp-title b{font-size:15px}.tp-title small{font-size:12px}
+    .tp-chip{padding:7px 12px}
+    .tp-legend{position:absolute;top:calc(12px + var(--sa-t));left:50%;transform:translateX(-50%);padding:0;z-index:3}
+    .tp-tracks{position:absolute;top:calc(6px + var(--sa-t));right:calc(110px + var(--sa-r));margin:0;padding:6px 10px;z-index:3;max-width:30vw}
+    .tp-scroll{grid-column:1/-1;padding:3vh max(4px,var(--sa-r)) 0 max(4px,var(--sa-l))}
+    .tp-loading{grid-column:1/-1;grid-row:2}
+    .tp-bar{grid-column:1/-1;display:flex;align-items:center;gap:12px;border-radius:16px 16px 0 0;padding:6px max(14px,var(--sa-r)) calc(6px + var(--sa-b)) max(14px,var(--sa-l))}
+    .tp-progress{order:2;flex:1;height:5px}
+    .tp-times{display:contents}
+    .tp-times #tpHint{display:none}
+    .tp-times #tpCur{order:1;margin:0}.tp-times #tpEnd{order:3;margin:0}
+    .tp-ctrls{order:4;flex:none;gap:4px}
+    .tp-btn{flex:none;width:52px;padding:4px 0}
+    .tp-btn small{display:none}
+    .tp-btn b{font-size:15px}
+    .tp-play{width:46px;height:46px;font-size:20px;box-shadow:0 4px 0 #b77a17}
+    .tp-play.pause{font-size:15px}
+  }
   /* курсор и подсветка alphaTab */
   #tpRender .at-cursor-bar{background:rgba(240,168,48,.13)}
   #tpRender .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
@@ -1151,6 +1174,16 @@ function tabRestyle(){
   paintLegend();
   if(tp.score){colorScore(tp.score);atApi.updateSettings();atApi.render();}
 }
+const tabLandscape=()=>innerWidth>innerHeight&&innerHeight<=520;
+const tabScale=()=>tabLandscape()?1.2:innerWidth<480?0.92:1.05;
+let tabLayoutTimer=0;
+function tabRelayout(){
+  if(!atApi||$('tabPlayer').hidden||!tp.score)return;
+  const want=tabLandscape()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
+  if(atApi.settings.display.layoutMode===want)return;
+  atApi.settings.display.layoutMode=want;atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();
+}
+addEventListener('resize',()=>{clearTimeout(tabLayoutTimer);tabLayoutTimer=setTimeout(tabRelayout,250);});
 const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 async function ensureApi(){
   await loadAlphaTab();
@@ -1158,7 +1191,7 @@ async function ensureApi(){
   const res=tabResources();
   atApi=new alphaTab.AlphaTabApi($('tpRender'),{
     core:{fontDirectory:AT_DIR+'font/',scriptFile:new URL(AT_DIR+'alphaTab.min.js',location.href).href,useWorkers:true},
-    display:{staveProfile:data.tabView==='score'?'ScoreTab':'Tab',scale:innerWidth<480?0.92:1.05,layoutMode:'Page',resources:{...res,tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
+    display:{staveProfile:data.tabView==='score'?'ScoreTab':'Tab',scale:tabScale(),layoutMode:tabLandscape()?'Horizontal':'Page',resources:{...res,tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
     notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false}},
     player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('tpScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
   });
@@ -1195,7 +1228,10 @@ async function openTab(item,fileData){
   $('tabPlayer').hidden=false;back(true);paintLegend();
   try{
     const api=await ensureApi();
-    api.stop();tp.speedI=0;api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
+    api.stop();tp.speedI=0;
+    const wantL=tabLandscape()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
+    if(api.settings.display.layoutMode!==wantL){api.settings.display.layoutMode=wantL;api.settings.display.scale=tabScale();api.updateSettings();}
+api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
     tabUI();
     if(fileData){api.load(fileData);return;}
     const src=item.tab;
