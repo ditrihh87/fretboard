@@ -304,7 +304,7 @@
   #tabPlayer{position:fixed;inset:0;z-index:25;display:flex;flex-direction:column;background:var(--tp-bg);color:var(--tp-ink);
     --tp-bg:#16202C;--tp-ink:#EEE6D3;--tp-card:#1E2B3C;--tp-muted:#93A1B3;--tp-line:#2A394B}
   html:not(.dark) #tabPlayer{--tp-bg:#F6F0E2;--tp-ink:#22201c;--tp-card:#fffaf0;--tp-muted:#7a7264;--tp-line:#e3d8c0}
-  .tp-head{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--sa-t)) max(12px,var(--sa-r)) 6px max(12px,var(--sa-l))}
+  .tp-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:calc(10px + var(--sa-t)) max(12px,var(--sa-r)) 6px max(12px,var(--sa-l))}
   .tp-ico{border:none;background:var(--tp-card);color:var(--tp-ink);width:42px;height:42px;border-radius:12px;font-size:26px;font-weight:800;line-height:1}
   .tp-title{flex:1;min-width:0}
   .tp-title b{display:block;font-family:var(--display);font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -316,7 +316,8 @@
   .tp-col{padding:9px 11px;display:flex;align-items:center}
   .tp-col i{width:18px;height:18px;border-radius:50%;display:block;background:conic-gradient(#D33A3F,#C97A0E,#9A8300,#3E9A45,#2E7FC0,#8456C2,#D33A3F)}
   .tp-col[aria-pressed="false"] i{background:var(--tp-muted);opacity:.55}
-  .tp-legend{display:flex;gap:10px;justify-content:center;padding:2px 12px 6px;font-size:12px;font-weight:800;color:var(--tp-muted)}
+  .tp-legend{order:9;flex-basis:100%;display:flex;gap:10px;justify-content:center;padding:0 0 2px;font-size:12px;font-weight:800;color:var(--tp-muted)}
+  .tp-legend em{font-style:normal}
   .tp-legend span{display:flex;align-items:center;gap:4px}
   .tp-legend i{width:10px;height:10px;border-radius:50%;display:block}
   .tp-tracks{margin:0 12px 6px;font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;border:none;background:var(--tp-card);color:var(--tp-ink)}
@@ -349,7 +350,9 @@
     .tp-title b{font-size:15px}.tp-title small{font-size:12px}
     .tp-chip{padding:7px 12px}
     .tp-zoom{display:flex}
-    .tp-legend{position:absolute;top:calc(12px + var(--sa-t));left:50%;transform:translateX(-50%);padding:0;z-index:3}
+    .tp-head{flex-wrap:nowrap}
+    .tp-legend{order:0;flex:none;flex-basis:auto;gap:7px;padding:0 4px}
+    .tp-legend em{display:none}
     .tp-tracks{position:absolute;top:calc(6px + var(--sa-t));right:calc(250px + var(--sa-r));margin:0;padding:6px 10px;z-index:3;max-width:22vw}
     .tp-scroll{grid-column:1/-1;padding:3vh max(4px,var(--sa-r)) 0 max(4px,var(--sa-l))}
     .tp-loading{grid-column:1/-1;grid-row:2}
@@ -439,11 +442,11 @@
   <header class="tp-head">
     <button class="tp-ico" id="tpBack" aria-label="Назад">‹</button>
     <div class="tp-title"><b id="tpTitle"></b><small id="tpArtist"></small></div>
+    <div class="tp-legend" id="tpLegend"></div>
     <span class="tp-zoom" id="tpZoom"><button class="tp-chip" id="tpZoomOut" aria-label="Мельче">−</button><button class="tp-chip" id="tpZoomIn" aria-label="Крупнее">+</button></span>
     <button class="tp-chip tp-col" id="tpColor" aria-label="Цветные цифры" aria-pressed="true"><i></i></button>
     <button class="tp-chip" id="tpView" aria-label="Вид">Таб</button>
   </header>
-  <div class="tp-legend" id="tpLegend"></div>
   <select class="tp-tracks" id="tpTracks" hidden aria-label="Партия"></select>
   <div class="tp-scroll" id="tpScroll"><div id="tpRender"></div></div>
   <div class="tp-loading" id="tpLoading"><span class="tp-spin"></span><b id="tpLoadText">Загружаю таб…</b></div>
@@ -1166,7 +1169,7 @@ function paintLegend(){
   const c=STR_COL[isDark()?'dark':'light'];
   $('tpLegend').style.visibility=tabColored()?'':'hidden';
   $('tpColor').setAttribute('aria-pressed',tabColored());
-  $('tpLegend').innerHTML='струны '+c.map((x,i)=>`<span><i style="background:${x}"></i>${6-i}</span>`).join('');
+  $('tpLegend').innerHTML='<em>струны</em>'+c.map((x,i)=>`<span><i style="background:${x}"></i>${6-i}</span>`).join('');
 }
 // раскрашиваем цифры ладов по струнам
 function colorScore(score){
@@ -1196,6 +1199,11 @@ function setZoom(d){
   try{tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged();}catch(_){}
   if(atApi&&tp.score&&tabLandscape()){atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();}
 }
+function fixSurfaceWidth(){
+  const surf=$('tpRender').querySelector('.at-surface');if(!surf)return;
+  let w=0;for(const c of surf.children)w=Math.max(w,(parseFloat(c.style.left)||0)+(parseFloat(c.style.width)||c.offsetWidth));
+  if(w>surf.offsetWidth+1){const px=Math.ceil(w+16)+'px';surf.style.width=px;const cur=$('tpRender').querySelector('.at-cursors');if(cur)cur.style.width=px;}
+}
 let tabLayoutTimer=0;
 function tabRelayout(){
   if(!atApi||$('tabPlayer').hidden||!tp.score)return;
@@ -1223,6 +1231,8 @@ async function ensureApi(){
     if(!tp.title){$('tpTitle').textContent=score.title||'Таб';$('tpArtist').textContent=score.artist||'';}
   });
   atApi.renderStarted.on(()=>{});
+  // alphaTab в горизонтальном режиме с масштабом считает ширину холста меньше, чем нарисовано, — конец таба обрезался
+  atApi.postRenderFinished.on(fixSurfaceWidth);
   atApi.renderFinished.on(()=>{if(atApi.isReadyForPlayback)$('tpLoading').hidden=true;else $('tpLoadText').textContent='Загружаю звук гитары…';});
   atApi.soundFontLoad.on(e=>{if(e.total)$('tpLoadText').textContent=`Загружаю звук гитары… ${Math.round(100*e.loaded/e.total)}%`;});
   atApi.playerReady.on(()=>{$('tpLoading').hidden=true;$('tpPlay').disabled=false;});
