@@ -1085,7 +1085,27 @@ function newQuestion(){
   g.locked=false;
 }
 
+// короткий сигнал «верно / неверно», как в Duolingo
+function chime(ok){
+  if(cfg.sound==='off')return;
+  try{
+    const ctx=getCtx(),t0=ctx.currentTime+0.01;
+    const tones=ok?[[783.99,0,0.16],[1174.66,0.08,0.32]]:[[233.08,0,0.18],[196,0.1,0.3]];
+    tones.forEach(([f,at,len])=>{
+      const o=ctx.createOscillator(),gn=ctx.createGain(),lp=ctx.createBiquadFilter();
+      o.type=ok?'sine':'triangle';o.frequency.value=f;
+      lp.type='lowpass';lp.frequency.value=ok?6000:900;
+      const v=ok?0.22:0.3;
+      gn.gain.setValueAtTime(0.0001,t0+at);
+      gn.gain.exponentialRampToValueAtTime(v,t0+at+0.012);
+      gn.gain.exponentialRampToValueAtTime(0.0001,t0+at+len);
+      o.connect(lp).connect(gn).connect(ctx.destination);
+      o.start(t0+at);o.stop(t0+at+len+0.05);
+    });
+  }catch(e){}
+}
 function answered(ok){
+  if(g.type==='ear')chime(ok);
   g.total++;
   if(ok){g.score++;g.streak++;}else{g.mistakes++;g.streak=0;}
   haptic(ok?'success':'error');
@@ -1142,7 +1162,7 @@ $('board').addEventListener('click',e=>{
   if(!cell||!g.playing||g.locked||!g.q||g.q.type==='name')return;
   const c=+cell.dataset.c,r=+cell.dataset.r;
   if(c!==g.q.c)return;
-  pluck(freqAt(c,r));
+  if(g.type!=='ear')pluck(freqAt(c,r)); // в тренажёре слуха ответ не озвучиваем — только сигнал
   g.q.type==='ear'?judgeEar(c,r):judgeFind(c,r);
 });
 
@@ -1219,7 +1239,8 @@ $('answers').addEventListener('click',e=>{
     if(!ok)$('answers').querySelector(`[data-iv="${g.q.iv}"]`).classList.add('ok');
     $('pNote').textContent=IVS[g.q.iv].t;
     clearMarks();drawIv(true,ok?'ok':'show',true);
-    playIv();answered(ok);return;
+    if(g.type!=='ear')playIv();
+    answered(ok);return;
   }
   if(b.dataset.next){nextAfterIntro();return;}
   if(b.dataset.ch){
