@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Гитарный клуб ditrihh</title>
+<title>ditrihh guitar club</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
@@ -468,7 +468,7 @@
     <!-- menu -->
     <div id="menuView">
       <div class="menuhead">
-        <h1>Гитарный клуб<span class="by">ditrihh</span></h1>
+        <h1>ditrihh<span class="by">guitar club</span></h1>
         <button class="avatar" id="profileBtn" aria-label="Мой профиль"><span id="avaMini"></span></button>
       </div>
       <figure class="quote" id="quote" title="Нажми — следующая фраза"><blockquote id="qText"></blockquote><figcaption id="qBy"></figcaption></figure>
@@ -1141,7 +1141,7 @@ $('profileBtn').addEventListener('click',openProfile);
 $('pBack').addEventListener('click',openMenu);
 $('pShare').addEventListener('click',()=>{
   const sn=streakNow(),lt=data.league?data.league.tier:0;
-  const text=`Я ${RANKS[rankOf(data.xp||0)][1].toLowerCase()} в «Гитарном клубе ditrihh»: ${data.xp||0} XP, лига «${LEAGUES[lt][0]}»${sn?`, ${sn} ${plural(sn,'день','дня','дней')} подряд`:''}. Присоединяйся!`;
+  const text=`Я ${RANKS[rankOf(data.xp||0)][1].toLowerCase()} в ditrihh guitar club: ${data.xp||0} XP, лига «${LEAGUES[lt][0]}»${sn?`, ${sn} ${plural(sn,'день','дня','дней')} подряд`:''}. Присоединяйся!`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);else if(navigator.share)navigator.share({text,url:BOT_LINK}).catch(()=>{});else window.open(url,'_blank');
 });
@@ -2007,10 +2007,10 @@ $('lbBack').addEventListener('click',openMenu);
 $('lbPlay').addEventListener('click',()=>startFree());
 $('shareBtn').addEventListener('click',()=>{
   const text=g.type==='ear'
-    ?`Тренирую слух в «Гитарном клубе ditrihh»: ${g.score} из 10. А ты отличишь ноты на слух?`
+    ?`Тренирую слух в ditrihh guitar club: ${g.score} из 10. А ты отличишь ноты на слух?`
     :g.type!=='free'
-    ?`Прохожу путь обучения в «Гитарном клубе ditrihh»: ${pathDone('notes')+pathDone('chords')+pathDone('intervals')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
-    :`Набрал ${g.score} очков за 60 секунд в «Гитарном клубе ditrihh». Побьёшь?`;
+    ?`Прохожу путь обучения в ditrihh guitar club: ${pathDone('notes')+pathDone('chords')+pathDone('intervals')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
+    :`Набрал ${g.score} очков за 60 секунд в ditrihh guitar club. Побьёшь?`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);
   else if(navigator.share)navigator.share({text,url:BOT_LINK}).catch(()=>{});
