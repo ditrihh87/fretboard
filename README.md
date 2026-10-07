@@ -1,6 +1,6 @@
-# Нота на грифе
+# Гитарные уроки от ditrihh
 
-Тренажёр нот на грифе гитары — Telegram Mini App [@notanagrife_bot](https://t.me/notanagrife_bot?startapp).
+Гитарные уроки в Telegram (ноты на грифе, аккорды, интервалы, тренажёр слуха) — Mini App [@notanagrife_bot](https://t.me/notanagrife_bot?startapp).
 
 - `index.html` — приложение (GitHub Pages: https://ditrihh87.github.io/fretboard/)
 - `samples/` — звуки гитары

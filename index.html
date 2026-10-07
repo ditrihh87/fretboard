@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Нота на грифе</title>
+<title>Гитарные уроки от ditrihh</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
@@ -231,6 +231,7 @@
   .lgresult.down{background:#f6dcdc;color:#9b2c2f}
   .lgresult.same{background:var(--p-card);color:var(--p-ink)}
   .ans.check{background:var(--amber);color:#1b1b1b}
+  .panel h1 .by{display:block;font-family:var(--body);font-weight:700;font-size:15px;color:var(--amber);margin-top:4px;letter-spacing:.2px}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -300,7 +301,7 @@
   <div class="panel">
     <!-- menu -->
     <div id="menuView">
-      <h1>Нота на грифе</h1>
+      <h1>Гитарные уроки<span class="by">от ditrihh</span></h1>
       <p class="lead">Учи гриф и соревнуйся с другими гитаристами.</p>
       <div class="rankline" id="rankLine"><b id="rankName">Новичок</b><span id="rankXP"></span><i><em id="rankBar"></em></i></div>
       <section class="today" id="today">
@@ -1392,10 +1393,10 @@ $('lbBack').addEventListener('click',openMenu);
 $('lbPlay').addEventListener('click',()=>startFree());
 $('shareBtn').addEventListener('click',()=>{
   const text=g.type==='ear'
-    ?`Тренирую слух в «Нота на грифе»: ${g.score} из 10. А ты отличишь ноты на слух?`
+    ?`Тренирую слух в «Гитарные уроки от ditrihh»: ${g.score} из 10. А ты отличишь ноты на слух?`
     :g.type!=='free'
-    ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone('notes')+pathDone('chords')+pathDone('intervals')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
-    :`Набрал ${g.score} очков за 60 секунд в «Нота на грифе». Побьёшь?`;
+    ?`Прохожу путь обучения в «Гитарные уроки от ditrihh»: ${pathDone('notes')+pathDone('chords')+pathDone('intervals')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
+    :`Набрал ${g.score} очков за 60 секунд в «Гитарные уроки от ditrihh». Побьёшь?`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);
   else if(navigator.share)navigator.share({text,url:BOT_LINK}).catch(()=>{});
