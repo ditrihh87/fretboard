@@ -62,6 +62,14 @@
   .dot.ok{background:var(--ok)}
   .dot.bad{background:var(--bad);color:#fff}
   .dot.show{background:transparent;border:3px solid var(--ok);color:var(--ok)}
+  .dot.o{background:transparent;border:2.5px solid var(--pearl);height:min(22px,70%);width:auto}
+  .dot.x{background:transparent;color:var(--bad);font-size:17px;font-weight:800;height:min(22px,70%)}
+  .dot.o.show{border-color:var(--ok)}.dot.x.show{color:var(--ok)}
+  .dot.o.ok{border-color:var(--ok)}.dot.x.ok{color:var(--ok)}
+  .dot.o.bad,.dot.x.bad{background:transparent;border-color:var(--bad);color:var(--bad)}
+  .dot.still{animation:none!important}
+  #levelsView .seg[data-k="topic"]{margin-top:14px}
+  .chordname{font-size:15px;color:var(--muted);margin-top:4px}
 
   /* горизонтальный гриф */
   #board.h{grid-template-columns:none;grid-template-rows:repeat(6,1fr) 22px}
@@ -217,6 +225,7 @@
   .lgresult.up{background:#dcefd9;color:#2f6b34}
   .lgresult.down{background:#f6dcdc;color:#9b2c2f}
   .lgresult.same{background:#fff8ea;color:var(--ink)}
+  .ans.check{background:var(--amber);color:#1b1b1b}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:#8a8273}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--wood)}
@@ -343,7 +352,8 @@
     <!-- levels -->
     <div id="levelsView" hidden>
       <h1>Путь обучения</h1>
-      <p class="lead">Короткие уроки по 2 минуты: найди ноту на грифе и назови ноту по точке. В конце раздела контрольная.</p>
+      <div class="row"><div class="seg" data-k="topic"></div></div>
+      <p class="lead" id="pathLead"></p>
       <div id="path"></div>
       <div class="btns"><button class="btn ghost" id="lvBack">В меню</button></div>
     </div>
@@ -395,7 +405,7 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
+const cfg={topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
 let data={find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
@@ -480,7 +490,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={ear:[['hl','Выше или ниже'],['ear','Найди на струне']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={topic:[['notes','Ноты на грифе'],['chords','Аккорды']],ear:[['hl','Выше или ниже'],['ear','Найди на струне']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -489,8 +499,8 @@ function renderMenu(){
   });
   $('inputRow').hidden=cfg.mode!=='find';
   $('fsRow').hidden=!fsSupported;
-  const pd=pathDone();
-  $('lvlSummary').textContent=pd>=NODES?'Весь путь пройден!':pd?`Раздел ${Math.floor(pd/3)+1} · пройдено ${pd} из ${NODES}`:'Начни с первого урока';
+  const pdN=pathDone('notes'),pdC=pathDone('chords');
+  $('lvlSummary').textContent=pdN||pdC?`Ноты ${pdN}/${nodesOf('notes')} · аккорды ${pdC}/${nodesOf('chords')}`:'Ноты на грифе и первые аккорды';
   // звание
   const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
   $('rankName').textContent=RANKS[ri][1];
@@ -522,24 +532,48 @@ function renderMenu(){
   $('bestLine').innerHTML=best?`Твой рекорд: <b>${best}</b>`:'Сыграй первый раунд и попади в таблицу';
 }
 /* ===== путь обучения: разделы = LEVELS, в каждом 2 урока + контрольная ===== */
+/* ===== аккорды: струны 6→1, -1 = не играть, 0 = открытая ===== */
+const CHORDS={
+  Em:{f:[0,2,2,0,0,0],p:[0,2,3,0,0,0],ru:'ми минор'},
+  Am:{f:[-1,0,2,2,1,0],p:[0,0,2,3,1,0],ru:'ля минор'},
+  E:{f:[0,2,2,1,0,0],p:[0,2,3,1,0,0],ru:'ми мажор'},
+  A:{f:[-1,0,2,2,2,0],p:[0,0,1,2,3,0],ru:'ля мажор'},
+  D:{f:[-1,-1,0,2,3,2],p:[0,0,0,1,3,2],ru:'ре мажор'},
+  Dm:{f:[-1,-1,0,2,3,1],p:[0,0,0,2,3,1],ru:'ре минор'},
+  G:{f:[3,2,0,0,0,3],p:[2,1,0,0,0,3],ru:'соль мажор'},
+  C:{f:[-1,3,2,0,1,0],p:[0,3,2,0,1,0],ru:'до мажор'},
+};
+const CHORD_UNITS=[
+  {t:'Em и Am',ch:['Em','Am']},{t:'E и A',ch:['E','A']},{t:'D и Dm',ch:['D','Dm']},
+  {t:'G и C',ch:['G','C']},{t:'Все открытые аккорды',ch:[]},
+];
+const TOPICS={
+  notes:{store:'path',units:LEVELS.map(L=>({t:L.t,sub:`лады 0–${L.m}`})),
+    lead:'Короткие уроки по 2 минуты: найди ноту на грифе и назови ноту по точке. В конце раздела контрольная.'},
+  chords:{store:'cpath',units:CHORD_UNITS.map((u,i)=>({t:u.t,sub:u.ch.length?'новые аккорды':'повторение всех восьми'})),
+    lead:'Первые 8 аккордов. Сначала знакомство с формой, потом узнай аккорд по точкам и поставь его сам. ✕ значит не играть струну.'},
+};
+const nodesOf=t=>TOPICS[t].units.length*3;
+const progOf=t=>(data[TOPICS[t].store]=data[TOPICS[t].store]||{});
 const NODE_KIND=['a','b','t'];
 const NODES=LEVELS.length*3;
 const OFFS=[0,52,76,52,0,-52,-76,-52];
-const nodeOpen=id=>id===0||(data.path[id-1]||0)>0;
-function pathDone(){let n=0;for(let i=0;i<NODES;i++)if((data.path[i]||0)>0)n++;return n;}
+function pathDone(t='notes'){const P=progOf(t);let n=0;for(let i=0;i<nodesOf(t);i++)if((P[i]||0)>0)n++;return n;}
 function renderPath(){
+  const t=cfg.topic,P=progOf(t),U=TOPICS[t].units;
+  $('pathLead').textContent=TOPICS[t].lead;
   let html='',cur=null;
-  for(let id=0;id<NODES;id++){
-    const u=Math.floor(id/3),k=NODE_KIND[id%3],L=LEVELS[u];
-    if(id%3===0)html+=`<div class="unit"><b>Раздел ${u+1}</b><span>${L.t} · лады 0–${L.m}</span></div>`;
-    const done=(data.path[id]||0)>0,open=nodeOpen(id),isCur=open&&!done&&cur===null;
+  for(let id=0;id<nodesOf(t);id++){
+    const u=Math.floor(id/3),k=NODE_KIND[id%3];
+    if(id%3===0)html+=`<div class="unit"><b>Раздел ${u+1}: ${U[u].t}</b><span>${U[u].sub}</span></div>`;
+    const done=(P[id]||0)>0,open=id===0||(P[id-1]||0)>0,isCur=open&&!done&&cur===null;
     if(isCur)cur=id;
     const glyph=done&&k!=='t'?'✓':k==='t'?'★':k==='b'?'♫':'♪';
     const name=k==='t'?'Контрольная':k==='b'?'Урок 2':'Урок 1';
     html+=`<div class="node-row" style="--x:${OFFS[id%OFFS.length]}px">
       ${isCur?`<span class="bubble ${OFFS[id%OFFS.length]>0?'l':'r'}">${id===0?'Начни здесь':'Дальше'}</span>`:''}
       <button class="node ${k==='t'?'test':''} ${done?'done':open?'':'locked'} ${isCur?'cur':''}" data-id="${id}" ${open?'':'disabled'} aria-label="${name}, раздел ${u+1}${done?', пройдено':open?'':', закрыто'}">${glyph}</button>
-      ${k==='t'&&done?`<span class="node-stars">${stars(data.path[id])}</span>`:''}
+      ${k==='t'&&done?`<span class="node-stars">${stars(P[id])}</span>`:''}
     </div>`;
   }
   $('path').innerHTML=html;
@@ -551,9 +585,22 @@ function lessonPlan(k){
   const mk=(f,n,e)=>[...Array(f).fill('find'),...Array(n).fill('name'),...Array(e).fill('ear')];
   return shuffle(k==='a'?mk(6,4,0):k==='b'?mk(4,6,0):mk(8,7,0));
 }
-function startNode(id){
-  const u=Math.floor(id/3),k=NODE_KIND[id%3],L=LEVELS[u];
-  Object.assign(g,{type:k==='t'?'test':'lesson',node:id,kind:k,max:L.m,cols:L.s.map(colOf),plan:lessonPlan(k)});
+function chordPlan(u,k){
+  const now=CHORD_UNITS[u].ch,pool=CHORD_UNITS.slice(0,u+1).flatMap(x=>x.ch);
+  const fresh=now.length?now:pool,pick=a=>a[Math.floor(Math.random()*a.length)];
+  const many=(type,n,src)=>{const out=[];for(let i=0;i<n;i++)out.push(`${type}:${src[i%src.length]}`);return out;};
+  if(k==='a')return [...now.map(c=>'intro:'+c),...shuffle([...many('cname',4,shuffle([...fresh,...pool])),...many('cbuild',2,shuffle([...fresh]))])];
+  if(k==='b')return shuffle([...many('cbuild',4,shuffle([...fresh])),...many('cname',4,shuffle([...pool]))]);
+  return shuffle([...many('cbuild',5,shuffle([...fresh,...pool])),...many('cname',5,shuffle([...pool,...fresh]))]);
+}
+function startNode(id,t=cfg.topic){
+  const u=Math.floor(id/3),k=NODE_KIND[id%3];
+  if(t==='chords'){
+    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:5,cols:[0,1,2,3,4,5],plan:chordPlan(u,k)});
+  }else{
+    const L=LEVELS[u];
+    Object.assign(g,{type:k==='t'?'test':'lesson',topic:t,node:id,kind:k,max:L.m,cols:L.s.map(colOf),plan:lessonPlan(k)});
+  }
   begin();
 }
 
@@ -564,11 +611,13 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(k==='max'||k==='goal')v=+v;else if(v==='true'||v==='false')v=v==='true';
   if(k==='goal'){data.goal=v;save();}
   if(k==='ear'){data.ear=v;save();}
+  if(k==='topic'){data.topic=v;save();}
   if(k==='fs'){setFullscreen(v);return;}
   if(k==='orient'){data.orient=v;save();}
   if(k==='sound'){data.sound=v;save();loadBank(v);setTimeout(()=>pluck(110),250);} // предпрослушка: открытая 5-я струна
   cfg[k]=v;renderMenu();
   if(!$('boardView').hidden)loadBoard();
+  if(k==='topic'&&!$('levelsView').hidden)openLevels();
 }));
 
 function show(view){['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
@@ -695,6 +744,8 @@ function buildBoard(){
 }
 function paintQuestion(){
   if(!g.q)return;
+  if(g.q.type==='cbuild'){renderBuild();return;}
+  if(g.q.chord){drawChord(g.q.chord,'mark',g.q.type==='intro');return;}
   if(g.q.type!=='name')document.querySelectorAll('.cell').forEach(el=>el.classList.add(+el.dataset.c===g.q.c?'target':'dim'));
   else putDot(g.q.c,g.q.r,'mark');
 }
@@ -811,8 +862,61 @@ function countUp(el){
 function starsAnimated(n){return [0,1,2].map(i=>i<n?`<span class="on" style="animation-delay:${.15+i*.22}s">★</span>`:'<span class="e">★</span>').join('');}
 
 /* ===== вопросы ===== */
+// показать форму аккорда на грифе
+function drawChord(name,cls='mark',fingers=true){
+  const ch=CHORDS[name];
+  ch.f.forEach((f,c)=>{
+    if(f<0)putDot(c,0,'x '+(cls==='mark'?'':cls),'✕');
+    else if(f===0)putDot(c,0,'o '+(cls==='mark'?'':cls),'');
+    else putDot(c,f,cls,fingers&&ch.p[c]?ch.p[c]:'');
+  });
+}
+function strum(name,down=true){
+  const f=CHORDS[name].f;
+  f.forEach((fr,c)=>{if(fr>=0)setTimeout(()=>pluck(freqAt(c,fr)),c*35);});
+  for(let c=0;c<6;c++)if(f[c]>=0)setTimeout(()=>vibrate(c),c*35);
+}
+function renderBuild(changed=-1){
+  clearMarks();
+  g.q.sel.forEach((f,c)=>{const st=c===changed?'':' still';if(f<0)putDot(c,0,'x'+st,'✕');else if(f===0)putDot(c,0,'o'+st,'');else putDot(c,f,'mark'+st,'');});
+}
+function chordQuestion(entry){
+  const [type,name]=entry.split(':');
+  g.q={type,chord:name};
+  const ch=CHORDS[name];
+  $('answers').style.gridTemplateColumns='';
+  if(type==='intro'){
+    $('pNote').textContent=name;
+    $('pSub').innerHTML=`Новый аккорд: ${ch.ru}<div class="chordname">цифры на точках — какими пальцами зажимать</div>`;
+    drawChord(name);
+    $('answers').innerHTML='<button class="ans wide" data-strum="1">▶ Послушать</button><button class="ans wide check" data-next="1">Запомнил, дальше</button>';
+    setTimeout(()=>{if(g.q&&g.q.chord===name&&g.q.type==='intro')strum(name);},350);
+  }else if(type==='cname'){
+    $('pNote').textContent='?';
+    $('pSub').textContent='какой это аккорд?';
+    drawChord(name,'mark',false);
+    const pool=CHORD_UNITS.flatMap(x=>x.ch);
+    const opts=shuffle([name,...shuffle(pool.filter(x=>x!==name)).slice(0,3)]);
+    $('answers').style.gridTemplateColumns='repeat(4,1fr)';
+    $('answers').innerHTML=opts.map(x=>`<button class="ans big2" data-ch="${x}">${x}</button>`).join('');
+  }else{ // cbuild
+    $('pNote').textContent=name;
+    $('pSub').textContent='поставь аккорд: нажми на нужные лады. Тап по началу струны: ○ открытая / ✕ не играть';
+    g.q.sel=[0,0,0,0,0,0];
+    renderBuild();
+    $('answers').innerHTML='<button class="ans wide check" data-check="1">Проверить</button>';
+  }
+  replay($('pNote'),'in');
+  g.locked=false;
+}
+function nextAfterIntro(){
+  g.total++;updateTop();g.locked=true;
+  setTimeout(()=>{if(!g.playing)return;g.total>=g.plan.length?endRound():newQuestion();},150);
+}
 function newQuestion(){
   clearMarks();$('answers').innerHTML='';
+  const entry=g.type==='free'||g.type==='ear'?null:g.plan[g.total];
+  if(entry&&entry.includes(':')){chordQuestion(entry);return;}
   let c,r,key,tries=0;
   do{c=g.cols[Math.floor(Math.random()*g.cols.length)];r=Math.floor(Math.random()*(g.max+1));key=c+':'+pcAt(c,r);tries++;}
   while(key===g.last&&tries<50);
@@ -895,6 +999,14 @@ function judgeFind(c,r){
 }
 $('board').addEventListener('click',e=>{
   const cell=e.target.closest('.cell');
+  if(cell&&g.playing&&!g.locked&&g.q&&g.q.type==='cbuild'){
+    const c=+cell.dataset.c,r=+cell.dataset.r,sel=g.q.sel;
+    if(r===0)sel[c]=sel[c]===0?-1:0;
+    else sel[c]=sel[c]===r?0:r;
+    if(sel[c]>=0)pluck(freqAt(c,sel[c]));
+    vibrate(c);renderBuild(c);
+    return;
+  }
   if(!cell||!g.playing||g.locked||!g.q||g.q.type==='name')return;
   const c=+cell.dataset.c,r=+cell.dataset.r;
   if(c!==g.q.c)return;
@@ -968,6 +1080,33 @@ $('answers').addEventListener('click',e=>{
   const b=e.target.closest('.ans');
   if(!b||!g.playing||g.locked)return;
   if(b.dataset.replay){playQuestion(0);return;}
+  if(b.dataset.strum){strum(g.q.chord);return;}
+  if(b.dataset.next){nextAfterIntro();return;}
+  if(b.dataset.ch){
+    const ok=b.dataset.ch===g.q.chord;
+    b.classList.add(ok?'ok':'bad');
+    if(!ok)$('answers').querySelector(`[data-ch="${g.q.chord}"]`).classList.add('ok');
+    $('pNote').textContent=g.q.chord;
+    clearMarks();drawChord(g.q.chord,ok?'ok':'show',true);
+    strum(g.q.chord);answered(ok);return;
+  }
+  if(b.dataset.check){
+    const want=CHORDS[g.q.chord].f,sel=g.q.sel;
+    const ok=want.every((f,c)=>f===sel[c]);
+    clearMarks();
+    want.forEach((f,c)=>{
+      const mine=sel[c];
+      if(mine===f){ if(f<0)putDot(c,0,'x ok','✕');else if(f===0)putDot(c,0,'o ok','');else putDot(c,f,'ok',CHORDS[g.q.chord].p[c]||''); }
+      else{
+        if(mine>0)putDot(c,mine,'bad','');
+        else if(mine<0&&f!==0)putDot(c,0,'x bad','✕');
+        else if(mine===0&&f<0)putDot(c,0,'o bad','');
+        if(f<0)putDot(c,0,'x show','✕');else if(f===0)putDot(c,0,'o show','');else putDot(c,f,'show',CHORDS[g.q.chord].p[c]||'');
+      }
+    });
+    b.classList.add(ok?'ok':'bad');
+    strum(g.q.chord);answered(ok);return;
+  }
   if(b.dataset.hl){
     const q=g.q,up=q.r2>q.r,ok=(b.dataset.hl==='up')===up;
     b.classList.add(ok?'ok':'bad');
@@ -1027,20 +1166,20 @@ async function endRound(){
     nextBtn.hidden=true;$('rRank').hidden=true;$('rBoardBtn').hidden=true;
     $('toMenuBtn').textContent='В меню';
   }else if(learn){
-    const isTest=g.type==='test',n=g.plan.length,u=Math.floor(g.node/3);
+    const isTest=g.type==='test',n=g.plan.length,u=Math.floor(g.node/3),T=TOPICS[g.topic||'notes'],P=progOf(g.topic||'notes'),N=T.units.length*3;
     const passed=!isTest||(g.mistakes<=MAX_MISTAKES&&g.total>=n);
     const st=isTest?(passed?(g.mistakes===0?3:g.mistakes===1?2:1):0):(passed?1:0);
     g.lastStars=st;
-    if(passed&&st>(data.path[g.node]||0))data.path[g.node]=st;
+    if(passed&&st>(P[g.node]||0))P[g.node]=st;
     xp=isTest?(passed?20:5):(g.mistakes===0?15:10);
     $('rTitle').textContent=isTest?(passed?'Контрольная сдана':'Почти получилось'):(g.mistakes===0?'Идеально!':'Урок пройден');
     $('rLead').textContent=isTest
       ?(passed?`Раздел ${u+1} закрыт. ${st===3?'Без единой ошибки.':'Три звезды дают за контрольную без ошибок.'}`:`Больше ${MAX_MISTAKES} ошибок. Повтори уроки раздела и попробуй снова.`)
-      :`Раздел ${u+1}: ${LEVELS[u].t}.`;
+      :`${g.topic==='chords'?'Аккорды':'Ноты'} · раздел ${u+1}: ${T.units[u].t}.`;
     $('rStars').innerHTML=starsAnimated(st);$('rStars').hidden=!isTest;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>верно</small></div><div><b>${g.mistakes}</b><small>ошибок</small></div>`;
     const next=g.node+1;
-    nextBtn.hidden=!(passed&&next<NODES);
+    nextBtn.hidden=!(passed&&next<N);
     nextBtn.textContent=next%3===2?'К контрольной':next%3===0?'Следующий раздел':'Следующий урок';
     $('rRank').hidden=true;$('rBoardBtn').hidden=true;
   }else{
@@ -1071,8 +1210,8 @@ async function endRound(){
   $('rStats').querySelectorAll('b').forEach(countUp);
 }
 
-$('nextBtn').addEventListener('click',()=>startNode(g.node+1));
-$('againBtn').addEventListener('click',()=>g.type==='free'?startFree():g.type==='ear'?startEar():startNode(g.node));
+$('nextBtn').addEventListener('click',()=>startNode(g.node+1,g.topic));
+$('againBtn').addEventListener('click',()=>g.type==='free'?startFree():g.type==='ear'?startEar():startNode(g.node,g.topic));
 $('toMenuBtn').addEventListener('click',()=>g.type==='free'||g.type==='ear'?openMenu():openLevels());
 $('levelsBtn').addEventListener('click',openLevels);
 $('lvBack').addEventListener('click',openMenu);
@@ -1093,7 +1232,7 @@ $('shareBtn').addEventListener('click',()=>{
   const text=g.type==='ear'
     ?`Тренирую слух в «Нота на грифе»: ${g.score} из 10. А ты отличишь ноты на слух?`
     :g.type!=='free'
-    ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone()} из ${NODES} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
+    ?`Прохожу путь обучения в «Нота на грифе»: ${pathDone('notes')+pathDone('chords')} уроков, ${streakNow()} ${plural(streakNow(),'день','дня','дней')} подряд. Присоединяйся!`
     :`Набрал ${g.score} очков за 60 секунд в «Нота на грифе». Побьёшь?`;
   const url=`https://t.me/share/url?url=${encodeURIComponent(BOT_LINK)}&text=${encodeURIComponent(text)}`;
   if(inTg)tg.openTelegramLink(url);
@@ -1105,6 +1244,7 @@ $('shareBtn').addEventListener('click',()=>{
   await load();
   if(data.orient)cfg.orient=data.orient;
   if(data.ear)cfg.ear=data.ear;
+  if(data.topic)cfg.topic=data.topic;
   data.path=data.path||{};data.day=data.day||{date:'',xp:0};data.goal=data.goal||20;cfg.goal=data.goal;
   LEVELS.forEach((_,u)=>{const st=Math.max(data.find[u]||0,data.name[u]||0);if(st&&!data.path[u*3+2]){data.path[u*3]=data.path[u*3]||1;data.path[u*3+1]=data.path[u*3+1]||1;data.path[u*3+2]=st;}});
   if(typeof data.sound==='string'&&SAMPLE_SETS[data.sound]||data.sound==='off')cfg.sound=data.sound;
