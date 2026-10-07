@@ -236,6 +236,41 @@
   .quote blockquote{font-size:15px;line-height:1.45;color:var(--p-ink2);font-style:italic}
   .quote figcaption{font-size:13px;font-weight:700;color:var(--p-muted);margin-top:4px}
   .quote figcaption:not(:empty)::before{content:"— "}
+  .ico-book{background:#EBD9F2;color:#6A3F80}
+  html.dark .ico-book{background:rgba(190,140,220,.18);color:#D2B2E6}
+  .search{width:100%;font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:none;background:var(--p-card);color:var(--p-ink);margin-bottom:10px;outline:none}
+  .search:focus{box-shadow:0 0 0 2px var(--amber)}
+  .songlist{display:flex;flex-direction:column;gap:6px}
+  .song{display:block;width:100%;text-align:left;border:none;background:var(--p-card);border-radius:14px;padding:12px 14px}
+  .song b{display:block;font-size:16px}
+  .song small{display:block;color:var(--p-muted);font-weight:700;font-size:13px;margin:2px 0 6px}
+  .chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chip{font-size:12px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--p-bg2);color:var(--p-ink2)}
+  .chip.known{background:rgba(111,191,115,.25);color:#2f6b34}
+  html.dark .chip.known{color:#8FD493}
+  .song .can{float:right;font-size:12px;font-weight:800;color:#3f8a44}
+  html.dark .song .can{color:#8FD493}
+  .songbar{position:sticky;top:var(--sa-t);z-index:3;display:flex;gap:6px;align-items:center;justify-content:space-between;background:var(--p-bg);padding:8px 0;margin:-8px 0 8px}
+  .sbgroup{display:flex;align-items:center;gap:4px;background:var(--p-bg2);border-radius:10px;padding:2px}
+  .sbgroup span{font-size:13px;font-weight:800;min-width:42px;text-align:center}
+  .sb{border:none;background:var(--p-bg2);color:var(--p-ink);border-radius:9px;min-width:40px;height:38px;font-weight:800;font-size:16px}
+  .sbgroup .sb{background:transparent}
+  #scrollBtn.on{background:var(--amber);color:#1b1b1b}
+  .songchords{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+  .songchords button{border:none;background:var(--p-card);border-radius:12px;padding:6px 6px 2px;color:var(--p-ink)}
+  .songchords svg{display:block;width:62px;height:76px}
+  .lyrics{--lf:17px;font-size:var(--lf);line-height:1.2;padding-bottom:40vh}
+  .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin:0 0 .55em;min-height:1em}
+  .lyrics .sg{display:inline-flex;flex-direction:column;white-space:pre}
+  .lyrics .ch{border:none;background:none;padding:0 .35em 0 0;font:inherit;font-weight:800;color:var(--amber);text-align:left;font-size:.92em;min-height:1.2em}
+  .lyrics .ln.only .ch{background:var(--p-card);border-radius:8px;padding:.25em .6em;margin:0 .35em .2em 0;color:var(--p-accent)}
+  html.dark .lyrics .ch{color:#F3C06A}
+  .lyrics .cm{display:block;font-size:.78em;font-weight:800;color:var(--p-muted);margin:1em 0 .4em;text-transform:none}
+  .chordpop{position:fixed;inset:0;z-index:30;background:rgba(10,14,20,.45);display:flex;align-items:flex-end;justify-content:center}
+  .cpbox{background:var(--p-bg);color:var(--p-ink);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + var(--sa-b));text-align:center}
+  .cpbox svg{width:150px;height:160px}
+  .cpname{font-family:var(--display);font-weight:800;font-size:24px;margin:2px 0 10px}
+  .cpbox .btn{width:100%}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -301,6 +336,7 @@
   <div id="answers"></div>
 </div>
 
+<div class="chordpop" id="chordPop" hidden><div class="cpbox"><div id="cpSvg"></div><div class="cpname" id="cpName"></div><button class="btn ghost" id="cpPlay">▶ Сыграть</button></div></div>
 <div id="sheet">
   <div class="panel">
     <!-- menu -->
@@ -326,6 +362,11 @@
       <button class="lvlcard" id="levelsBtn">
         <span class="ico ico-cap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4"/><path d="M21 10v5.5"/><circle cx="21" cy="17" r="1" fill="currentColor"/></svg></span>
         <span class="t">Путь обучения<small id="lvlSummary"></small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <button class="lvlcard" id="songsBtn">
+        <span class="ico ico-book" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5c2.8-1.3 5.6-1.3 8.5 0v14c-2.9-1.3-5.7-1.3-8.5 0z"/><path d="M20.5 5.5c-2.8-1.3-5.6-1.3-8.5 0v14c2.9-1.3 5.7-1.3 8.5 0z"/><path d="M15.2 8.2v5.3"/><circle cx="14.1" cy="13.6" r="1.2" fill="currentColor"/><path d="M15.2 8.2l2.2.8"/></svg></span>
+        <span class="t">Песенник<small id="songsSummary">Песни с аккордами и схемами</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="earBtn">
@@ -364,6 +405,27 @@
         <button class="btn big" id="lgPlay">Набрать XP</button>
         <button class="btn ghost" id="lgBack">В меню</button>
       </div>
+    </div>
+    <!-- songbook -->
+    <div id="songsView" hidden>
+      <h1>Песенник</h1>
+      <p class="lead">Песни с аккордами. Нажми на аккорд, чтобы увидеть схему и услышать его.</p>
+      <input class="search" id="songSearch" type="search" placeholder="Найти песню или исполнителя" autocomplete="off">
+      <div class="row"><div class="seg" data-k="sfilter"></div></div>
+      <div class="songlist" id="songList"></div>
+      <div class="btns"><button class="btn ghost" id="songsBack">В меню</button></div>
+    </div>
+    <div id="songView" hidden>
+      <div class="songbar">
+        <button class="sb" id="songBack" aria-label="К списку песен">‹</button>
+        <div class="sbgroup"><button class="sb" id="trDown" aria-label="Тон ниже">−</button><span id="trLabel">Тон</span><button class="sb" id="trUp" aria-label="Тон выше">+</button></div>
+        <div class="sbgroup"><button class="sb" id="fsDown" aria-label="Мельче">A−</button><button class="sb" id="fsUp" aria-label="Крупнее">A+</button></div>
+        <button class="sb" id="scrollBtn" aria-label="Автопрокрутка">▶</button>
+      </div>
+      <h1 id="songTitle"></h1>
+      <p class="lead" id="songArtist"></p>
+      <div class="songchords" id="songChords"></div>
+      <div class="lyrics" id="songBody"></div>
     </div>
     <!-- ear trainer -->
     <div id="earView" hidden>
@@ -434,7 +496,7 @@ const LEVELS=[
   {t:'4-я и 3-я',s:[4,3],m:12},{t:'2-я и 1-я',s:[2,1],m:12},{t:'Весь гриф',s:[6,5,4,3,2,1],m:12},
 ];
 
-const cfg={theme:'auto',ivset:'easy',topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
+const cfg={sfilter:'all',theme:'auto',ivset:'easy',topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
 let data={find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20};
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
@@ -546,7 +608,7 @@ function bumpStreak(){
 }
 
 /* ===== меню ===== */
-const SEGS={theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
+const SEGS={sfilter:[['all','Все песни'],['can','Могу сыграть']],theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[10,'10'],[20,'20'],[50,'50'],[100,'100']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
@@ -707,9 +769,10 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   cfg[k]=v;renderMenu();
   if(!$('boardView').hidden)loadBoard();
   if(k==='topic'&&!$('levelsView').hidden)openLevels();
+  if(k==='sfilter'&&!$('songsView').hidden)renderSongList();
 }));
 
-function show(view){['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+function show(view){if(view!=='songView'&&typeof stopScroll==='function'&&song.scroll)stopScroll();['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView','songsView','songView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
 function openLevels(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
   const cur=renderPath();
@@ -782,6 +845,98 @@ async function openLeague(){
     if(!r.me)list.insertAdjacentHTML('beforeend','<li class="empty">Тебя пока нет в таблице: набери первые XP на этой неделе.</li>');
   }catch(e){list.innerHTML='<li class="empty">Не удалось загрузить лигу. Проверь интернет и открой её ещё раз.</li>';}
 }
+/* ===== песенник: экраны ===== */
+let SONGS=[],songsLoaded=false,cur=null;
+const song={tr:0,fs:17,scroll:0,raf:0};
+const chordsIn=text=>[...new Set([...text.matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(x=>parseChord(x)))];
+function knownChords(){
+  const P=progOf('chords'),k=new Set();
+  CHORD_UNITS.forEach((u,i)=>{if((P[i*3+2]||0)>0)u.ch.forEach(c=>{k.add(c);if(!c.endsWith('m'))k.add(c+'7');});}); // знаешь E — сыграешь и E7
+  return k;
+}
+async function loadSongs(){
+  if(songsLoaded)return;
+  try{const r=await fetch('songs.json',{cache:'no-cache'});SONGS=await r.json();songsLoaded=true;}
+  catch(e){SONGS=[];}
+}
+function renderSongList(){
+  const q=($('songSearch').value||'').toLowerCase().trim(),known=knownChords();
+  const items=SONGS.map(sg=>({sg,ch:chordsIn(sg.text)})).map(x=>({...x,can:x.ch.length&&x.ch.every(c=>known.has(c))}))
+    .filter(x=>!q||(x.sg.title+' '+x.sg.artist).toLowerCase().includes(q))
+    .filter(x=>cfg.sfilter!=='can'||x.can);
+  if(!songsLoaded){$('songList').innerHTML='<p class="hint">Не удалось загрузить песни. Проверь интернет.</p>';return;}
+  if(!items.length){$('songList').innerHTML=`<p class="hint">${cfg.sfilter==='can'?'Пока нет песен из выученных аккордов. Пройди разделы «Аккорды» в пути обучения: каждый закрытый раздел открывает новые песни.':'Ничего не нашлось.'}</p>`;return;}
+  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}">${x.can?'<span class="can">✓ могу сыграть</span>':''}<b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
+}
+async function openSongs(){
+  stopScroll();clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('songsView');back(true);
+  await loadSongs();renderSongList();
+}
+$('songSearch').addEventListener('input',renderSongList);
+$('songList').addEventListener('click',e=>{const b=e.target.closest('.song');if(b)openSong(b.dataset.id);});
+function openSong(id){
+  cur=SONGS.find(x=>x.id===id);if(!cur)return;
+  song.tr=(data.songTr||{})[id]||0;song.fs=data.songFs||17;
+  show('songView');back(true);renderSong();
+}
+function renderSong(){
+  const t=cur.text,tr=song.tr;
+  $('songTitle').textContent=cur.title;$('songArtist').textContent=cur.artist||'';
+  $('trLabel').textContent=tr?(tr>0?'+':'')+tr:'Тон';
+  $('songBody').style.setProperty('--lf',song.fs+'px');
+  const all=chordsIn(t).map(c=>transposeChord(c,tr));
+  $('songChords').innerHTML=all.map(c=>`<button data-chord="${esc(c)}" aria-label="Аккорд ${esc(c)}">${chordSVG(c)}</button>`).join('');
+  let html='';
+  t.split('\n').forEach(line=>{
+    const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
+    if(cm){html+=`<span class="cm">${esc(cm[1])}</span>`;return;}
+    if(/^\s*\{.*\}\s*$/.test(line))return;
+    const parts=line.split(/(\[[^\]]+\])/);
+    const textOnly=parts.filter(p=>!/^\[/.test(p)).join('').trim()==='';
+    let segs='',pend=null;
+    parts.forEach(p=>{
+      const m=p.match(/^\[([^\]]+)\]$/);
+      if(m){if(pend!==null)segs+=seg(pend,'',textOnly);pend=transposeChord(m[1].trim(),tr);return;}
+      if(p===''&&pend===null)return;
+      segs+=seg(pend,p,textOnly);pend=null;
+    });
+    if(pend!==null)segs+=seg(pend,'',textOnly);
+    html+=`<div class="ln ${textOnly?'only':''}">${segs||'&nbsp;'}</div>`;
+  });
+  $('songBody').innerHTML=html;
+  function seg(ch,txt,textOnly){
+    const c=ch?`<button class="ch" data-chord="${esc(ch)}">${esc(ch)}</button>`:(textOnly?'':'<span class="ch">&nbsp;</span>');
+    return textOnly?c:`<span class="sg">${c}<span>${esc(txt)||' '}</span></span>`;
+  }
+}
+function setTr(d){song.tr=Math.max(-11,Math.min(11,song.tr+d));data.songTr=data.songTr||{};data.songTr[cur.id]=song.tr;save();renderSong();}
+$('trDown').addEventListener('click',()=>setTr(-1));
+$('trUp').addEventListener('click',()=>setTr(1));
+$('fsDown').addEventListener('click',()=>{song.fs=Math.max(13,song.fs-2);data.songFs=song.fs;save();renderSong();});
+$('fsUp').addEventListener('click',()=>{song.fs=Math.min(30,song.fs+2);data.songFs=song.fs;save();renderSong();});
+// автопрокрутка: 3 скорости по нажатию, четвёртое нажатие — стоп
+function stopScroll(){song.scroll=0;cancelAnimationFrame(song.raf);$('scrollBtn').classList.remove('on');$('scrollBtn').textContent='▶';}
+$('scrollBtn').addEventListener('click',()=>{
+  song.scroll=(song.scroll+1)%4;
+  if(!song.scroll){stopScroll();return;}
+  $('scrollBtn').classList.add('on');$('scrollBtn').textContent='▶'.repeat(song.scroll);
+  cancelAnimationFrame(song.raf);let last=performance.now(),acc=0;
+  const step=t=>{const dt=t-last;last=t;acc+=dt*[0,12,22,36][song.scroll]/1000;const n=Math.floor(acc);if(n){$('sheet').scrollTop+=n;acc-=n;}
+    if(song.scroll)song.raf=requestAnimationFrame(step);};
+  song.raf=requestAnimationFrame(step);
+});
+$('sheet').addEventListener('touchstart',()=>{if(song.scroll&&!$('songView').hidden)stopScroll();},{passive:true});
+$('songBack').addEventListener('click',()=>{stopScroll();openSongs();});
+$('songsBack').addEventListener('click',openMenu);
+// схема аккорда по нажатию
+function showChord(name){
+  $('cpSvg').innerHTML=chordSVG(name,false);$('cpName').textContent=name;$('chordPop').hidden=false;$('chordPop').dataset.name=name;
+  strumShape(chordShape(name));
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');if(b&&!$('songView').hidden)showChord(b.dataset.chord);});
+$('chordPop').addEventListener('click',e=>{if(e.target===$('chordPop'))$('chordPop').hidden=true;});
+$('cpPlay').addEventListener('click',()=>strumShape(chordShape($('chordPop').dataset.name)));
+
 function openSettings(){renderMenu();show('settingsView');back(true);}
 function submitScore(){
   const el=$('rRank');
@@ -960,6 +1115,70 @@ function drawChord(name,cls='mark',fingers=true){
     else if(f===0)putDot(c,0,'o '+(cls==='mark'?'':cls),'');
     else putDot(c,f,cls,fingers&&ch.p[c]?ch.p[c]:'');
   });
+}
+/* ===== песенник: аккорды, транспонирование, схемы ===== */
+const PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11,H:11};
+const SHARP=['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'];
+function parseChord(name){
+  const m=String(name).trim().match(/^([A-H])([#b]?)(.*)$/);
+  if(!m)return null;
+  const pc=(PC[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)+12)%12;
+  return {pc,q:m[3]};
+}
+function transposeChord(name,st){
+  if(!st)return name;
+  const parts=name.split('/');
+  return parts.map(p=>{const c=parseChord(p);return c?SHARP[(c.pc+st+120)%12]+c.q:p;}).join('/');
+}
+const normQ=q=>q.replace(/^min$/,'m').replace(/^maj$/,'').replace(/^-$/,'m');
+const OPEN={
+  'C':[-1,3,2,0,1,0],'A':[-1,0,2,2,2,0],'G':[3,2,0,0,0,3],'E':[0,2,2,1,0,0],'D':[-1,-1,0,2,3,2],
+  'Am':[-1,0,2,2,1,0],'Em':[0,2,2,0,0,0],'Dm':[-1,-1,0,2,3,1],
+  'E7':[0,2,0,1,0,0],'A7':[-1,0,2,0,2,0],'D7':[-1,-1,0,2,1,2],'G7':[3,2,0,0,0,1],'C7':[-1,3,2,3,1,0],'B7':[-1,2,1,2,0,2],
+  'Am7':[-1,0,2,0,1,0],'Em7':[0,2,0,0,0,0],'Dm7':[-1,-1,0,2,1,1],
+  'F':[1,3,3,2,1,1],'Fm':[1,3,3,1,1,1],'Bm':[-1,2,4,4,3,2],'Cmaj7':[-1,3,2,0,0,0],'Fmaj7':[-1,-1,3,2,1,0],
+  'Asus4':[-1,0,2,2,3,0],'Gsus4':[3,3,0,0,1,3],'Csus4':[-1,3,3,0,1,1],'Dsus4':[-1,-1,0,2,3,3],'Esus4':[0,2,2,2,0,0],'Asus2':[-1,0,2,2,0,0],'Dsus2':[-1,-1,0,2,3,0],
+};
+const BARRE={E:{'':[0,2,2,1,0,0],m:[0,2,2,0,0,0],'7':[0,2,0,1,0,0],m7:[0,2,0,0,0,0]},A:{'':[-1,0,2,2,2,0],m:[-1,0,2,2,1,0],'7':[-1,0,2,0,2,0],m7:[-1,0,2,0,1,0]}};
+// аппликатура: сначала открытая, иначе баррэ от 6-й или 5-й струны (что ниже по грифу)
+function chordShape(name){
+  const base=name.split('/')[0],c=parseChord(base);if(!c)return null;
+  const q=normQ(c.q),key=SHARP[c.pc]+q;
+  if(OPEN[key])return OPEN[key];
+  if(!(q in BARRE.E))return null;
+  const fe=(c.pc-4+12)%12||12,fa=(c.pc-9+12)%12||12;
+  const [shape,fr]=fe<=fa?[BARRE.E[q],fe]:[BARRE.A[q],fa];
+  return shape.map(x=>x<0?-1:x+fr);
+}
+// SVG-схема аккорда: струны слева 6-я, справа 1-я
+function chordSVG(name,label=true){
+  const f=chordShape(name);
+  if(!f)return `<svg viewBox="0 0 62 76"><text x="31" y="44" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">нет схемы</text><text x="31" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="currentColor">${esc(name)}</text></svg>`;
+  const pos=f.filter(x=>x>0),max=Math.max(0,...pos),min=pos.length?Math.min(...pos):1;
+  const base=max<=4?1:min;
+  const X=i=>9+i*9,Y=k=>14+k*10;
+  let g='';
+  for(let k=0;k<=5;k++)g+=`<line x1="9" x2="54" y1="${Y(k)}" y2="${Y(k)}" stroke="currentColor" stroke-width="${k===0&&base===1?2.6:1}" opacity="${k===0&&base===1?1:.55}"/>`;
+  for(let i=0;i<6;i++)g+=`<line x1="${X(i)}" x2="${X(i)}" y1="14" y2="64" stroke="currentColor" stroke-width="1" opacity=".55"/>`;
+ // баррэ: самый нижний лад зажат на крайних играющих струнах
+  const played=f.map((v,i)=>[v,i]).filter(([v])=>v>=0);
+  if(min>0&&played.length>=4){
+    const onMin=played.filter(([v])=>v===min).map(([,i])=>i);
+    const first=played[0][1],last=played[played.length-1][1];
+    if(onMin.includes(first)&&onMin.includes(last)&&onMin.length>=2)g+=`<rect x="${X(first)-3.6}" y="${Y(min-base)+1.4}" width="${X(last)-X(first)+7.2}" height="7.2" rx="3.6" fill="#F0A830"/>`;
+  }
+  f.forEach((v,i)=>{
+    if(v<0)g+=`<text x="${X(i)}" y="10" text-anchor="middle" font-size="8" font-weight="800" fill="#E5484D">✕</text>`;
+    else if(v===0)g+=`<circle cx="${X(i)}" cy="7.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.2"/>`;
+    else g+=`<circle cx="${X(i)}" cy="${Y(v-base)+5}" r="3.6" fill="#F0A830"/>`;
+  });
+  if(base>1)g+=`<text x="58" y="${Y(0)+8}" font-size="7.5" font-weight="800" fill="currentColor" text-anchor="start">${base}</text>`;
+  if(label)g+=`<text x="31" y="74" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">${esc(name)}</text>`;
+  return `<svg viewBox="0 0 66 ${label?78:68}">${g}</svg>`;
+}
+function strumShape(f){
+  if(!f)return;
+  f.forEach((fr,c)=>{if(fr>=0)setTimeout(()=>pluck(freqAt(c,fr)),c*35);});
 }
 function strum(name,down=true){
   const f=CHORDS[name].f;
@@ -1404,6 +1623,7 @@ $('menuBtn').addEventListener('click',openMenu);
 $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
+$('songsBtn').addEventListener('click',openSongs);
 $('leagueBtn').addEventListener('click',openLeague);
 $('lgBack').addEventListener('click',openMenu);
 $('lgPlay').addEventListener('click',openLevels);
