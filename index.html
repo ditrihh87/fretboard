@@ -349,9 +349,19 @@
         <div class="goal"><b id="goalTitle">Цель дня</b><small id="goalText"></small></div>
         <div class="flame" id="flame"><b id="flameN">0</b><small id="flameText">дней подряд</small></div>
       </section>
+      <button class="lvlcard" id="levelsBtn">
+        <span class="ico ico-cap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4"/><path d="M21 10v5.5"/><circle cx="21" cy="17" r="1" fill="currentColor"/></svg></span>
+        <span class="t">Путь обучения<small id="lvlSummary"></small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <button class="lvlcard" id="earBtn">
+        <span class="ico ico-ear" aria-hidden="true"><svg viewBox="-0.2 2.4 21.6 18.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9.5a5 5 0 0 1 10 0c0 3.2-2.4 4-3.4 5.8-.7 1.3-.6 2.5-1.6 3.6a2.6 2.6 0 0 1-4.2-.6"/><path d="M12 9.6a2 2 0 0 1 4 0c0 1.2-1 1.6-1.4 2.6"/><path d="M5.6 7.5a5.5 5.5 0 0 0 0 7"/><path d="M2.8 5.5a9 9 0 0 0 0 11"/></svg></span>
+        <span class="t">Тренажёр слуха<small id="earSummary">Выше или ниже · ноты на слух</small></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
       <button class="lvlcard" id="rateBtn">
         <span class="ico ico-podium" aria-hidden="true"><svg viewBox="1 1.2 22 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20.5h20"/><path d="M8.5 20.5V11h7v9.5"/><path d="M2.8 20.5v-5.5h5.7"/><path d="M15.5 16.5h5.7v4"/><path d="M12.00 2.20 L12.88 4.39 L15.23 4.55 L13.43 6.06 L14.00 8.35 L12.00 7.10 L10.00 8.35 L10.57 6.06 L8.77 4.55 L11.12 4.39Z" fill="currentColor"/></svg></span>
-        <span class="t">Игра на рейтинг<small id="rateSummary"></small></span>
+        <span class="t">Рейтинговая битва<small id="rateSummary"></small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="leagueBtn">
@@ -359,19 +369,9 @@
         <span class="t">Лига недели<small id="leagueSummary">Набирай XP и поднимайся в лигах</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
-      <button class="lvlcard" id="levelsBtn">
-        <span class="ico ico-cap" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4"/><path d="M21 10v5.5"/><circle cx="21" cy="17" r="1" fill="currentColor"/></svg></span>
-        <span class="t">Путь обучения<small id="lvlSummary"></small></span>
-        <span class="chev" aria-hidden="true">›</span>
-      </button>
       <button class="lvlcard" id="songsBtn">
         <span class="ico ico-book" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5c2.8-1.3 5.6-1.3 8.5 0v14c-2.9-1.3-5.7-1.3-8.5 0z"/><path d="M20.5 5.5c-2.8-1.3-5.6-1.3-8.5 0v14c2.9-1.3 5.7-1.3 8.5 0z"/><path d="M15.2 8.2v5.3"/><circle cx="14.1" cy="13.6" r="1.2" fill="currentColor"/><path d="M15.2 8.2l2.2.8"/></svg></span>
         <span class="t">Песенник<small id="songsSummary">Песни с аккордами и схемами</small></span>
-        <span class="chev" aria-hidden="true">›</span>
-      </button>
-      <button class="lvlcard" id="earBtn">
-        <span class="ico ico-ear" aria-hidden="true"><svg viewBox="-0.2 2.4 21.6 18.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9.5a5 5 0 0 1 10 0c0 3.2-2.4 4-3.4 5.8-.7 1.3-.6 2.5-1.6 3.6a2.6 2.6 0 0 1-4.2-.6"/><path d="M12 9.6a2 2 0 0 1 4 0c0 1.2-1 1.6-1.4 2.6"/><path d="M5.6 7.5a5.5 5.5 0 0 0 0 7"/><path d="M2.8 5.5a9 9 0 0 0 0 11"/></svg></span>
-        <span class="t">Тренажёр слуха<small id="earSummary">Выше или ниже · ноты на слух</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="setBtn">
@@ -466,7 +466,7 @@
     </div>
     <!-- leaderboard -->
     <div id="boardView" hidden>
-      <h1>Игра на рейтинг</h1>
+      <h1>Рейтинговая битва</h1>
       <p class="lead">60 секунд на весь гриф, лады 0–12: угадай как можно больше нот. Каждый понедельник рейтинг начинается заново.</p>
       <div class="row"><div class="seg" data-k="mode"></div></div>
       <p class="best" id="bestLine"></p>
@@ -810,7 +810,7 @@ async function openLeague(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('leagueView');back(true);
   const lt0=data.league?data.league.tier:0;
   $('lgTitle').textContent=`Лига ${leagueName(lt0)}`;
-  $('lgLead').textContent=`Набирай XP за уроки, тренажёр слуха и игру на рейтинг. До конца недели: ${untilWeekEnd()}.`;
+  $('lgLead').textContent=`Набирай XP за уроки, тренажёр слуха и рейтинговую битву. До конца недели: ${untilWeekEnd()}.`;
   $('lgResult').hidden=true;$('lgLegend').innerHTML='';
   const list=$('lgList');
   if(!API_URL||!inTg){list.innerHTML='<li class="empty">Лиги работают внутри Telegram: открой приложение через бота.</li>';return;}
@@ -1591,7 +1591,7 @@ async function endRound(){
     if(rec)data.best[k]=g.score;
     xp=g.total?Math.max(5,Math.min(20,Math.ceil(g.score/2))):0;
     $('rTitle').textContent=rec&&g.score>0?'Новый рекорд!':'Время вышло';
-    $('rLead').textContent=`Игра на рейтинг, лады 0–${g.max}.`;
+    $('rLead').textContent=`Рейтинговая битва, лады 0–${g.max}.`;
     $('rStars').hidden=true;
     $('rStats').innerHTML=`<div><b>${g.score}</b><small>очков</small></div><div><b>${g.total?Math.round(g.score/g.total*100):0}%</b><small>точность</small></div><div><b>${data.best[k]||0}</b><small>рекорд</small></div>`;
     nextBtn.hidden=true;$('rBoardBtn').hidden=false;
