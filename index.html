@@ -310,6 +310,9 @@
   .tp-title b{display:block;font-family:var(--display);font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tp-title small{display:block;color:var(--tp-muted);font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tp-chip{border:none;background:var(--tp-card);color:var(--tp-ink);border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px}
+  .tp-col{padding:9px 11px;display:flex;align-items:center}
+  .tp-col i{width:18px;height:18px;border-radius:50%;display:block;background:conic-gradient(#D33A3F,#C97A0E,#9A8300,#3E9A45,#2E7FC0,#8456C2,#D33A3F)}
+  .tp-col[aria-pressed="false"] i{background:var(--tp-muted);opacity:.55}
   .tp-legend{display:flex;gap:10px;justify-content:center;padding:2px 12px 6px;font-size:12px;font-weight:800;color:var(--tp-muted)}
   .tp-legend span{display:flex;align-items:center;gap:4px}
   .tp-legend i{width:10px;height:10px;border-radius:50%;display:block}
@@ -432,6 +435,7 @@
   <header class="tp-head">
     <button class="tp-ico" id="tpBack" aria-label="Назад">‹</button>
     <div class="tp-title"><b id="tpTitle"></b><small id="tpArtist"></small></div>
+    <button class="tp-chip tp-col" id="tpColor" aria-label="Цветные цифры" aria-pressed="true"><i></i></button>
     <button class="tp-chip" id="tpView" aria-label="Вид">Таб</button>
   </header>
   <div class="tp-legend" id="tpLegend"></div>
@@ -1152,13 +1156,16 @@ function tabResources(){
   return d?{staffLineColor:'#4A5A6E',barSeparatorColor:'#5D6E83',mainGlyphColor:'#EEE6D3',secondaryGlyphColor:'#93A1B3',barNumberColor:'#93A1B3'}
           :{staffLineColor:'#BFB29A',barSeparatorColor:'#A99C84',mainGlyphColor:'#22201c',secondaryGlyphColor:'#7a7264',barNumberColor:'#9b917f'};
 }
+const tabColored=()=>data.tabColor!==false;
 function paintLegend(){
   const c=STR_COL[isDark()?'dark':'light'];
+  $('tpLegend').style.visibility=tabColored()?'':'hidden';
+  $('tpColor').setAttribute('aria-pressed',tabColored());
   $('tpLegend').innerHTML='струны '+c.map((x,i)=>`<span><i style="background:${x}"></i>${6-i}</span>`).join('');
 }
 // раскрашиваем цифры ладов по струнам
 function colorScore(score){
-  const c=STR_COL[isDark()?'dark':'light'];
+  const c=tabColored()?STR_COL[isDark()?'dark':'light']:Array(6).fill(tabResources().mainGlyphColor);
   for(const t of score.tracks)for(const st of t.staves){
     const n=st.tuning&&st.tuning.length||6;
     for(const b of st.bars)for(const v of b.voices)for(const bt of v.beats)for(const nt of bt.notes){
@@ -1253,6 +1260,11 @@ $('tpSpeed').addEventListener('click',()=>{if(!atApi)return;tp.speedI=(tp.speedI
 $('tpLoop').addEventListener('click',()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;tabUI();});
 $('tpMetro').addEventListener('click',()=>{if(!atApi)return;atApi.metronomeVolume=atApi.metronomeVolume>0?0:1;tabUI();});
 $('tpCount').addEventListener('click',()=>{if(!atApi)return;atApi.countInVolume=atApi.countInVolume>0?0:1;tabUI();});
+$('tpColor').addEventListener('click',()=>{
+  data.tabColor=!tabColored();save();
+  try{tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged();}catch(_){}
+  paintLegend();if(atApi&&tp.score){colorScore(tp.score);atApi.render();}
+});
 $('tpView').addEventListener('click',()=>{
   data.tabView=data.tabView==='score'?'tab':'score';save();
   if(atApi){atApi.settings.display.staveProfile=data.tabView==='score'?alphaTab.StaveProfile.ScoreTab:alphaTab.StaveProfile.Tab;atApi.updateSettings();atApi.render();}
