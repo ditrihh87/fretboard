@@ -363,7 +363,8 @@
   #tpRender .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
   #tpRender .at-highlight *{fill:var(--amber);stroke:var(--amber)}
   #tpRender .at-selection div{background:rgba(111,191,115,.22)}
-  .filebtn{display:block;text-align:center;margin-top:10px;cursor:pointer}
+  .filebtn{display:block;width:100%;text-align:center;margin-top:10px;cursor:pointer}
+  .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
   .chip.tab{background:var(--amber);color:#1b1b1b}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
@@ -542,7 +543,7 @@
       <input class="search" id="songSearch" type="search" placeholder="Найти песню или исполнителя" autocomplete="off">
       <div class="row"><div class="seg" data-k="sfilter"></div></div>
       <div class="songlist" id="songList"></div>
-      <label class="btn ghost filebtn">Открыть свой файл Guitar Pro<input type="file" id="gpFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.musicxml,.xml,.mxl" hidden></label>
+      <button class="btn ghost filebtn" id="gpPick">Открыть свой файл Guitar Pro</button><input type="file" id="gpFile" class="vh" aria-hidden="true" tabindex="-1">
       <div class="btns"><button class="btn ghost" id="songsBack">В меню</button></div>
     </div>
     <div id="songView" hidden>
@@ -1208,7 +1209,7 @@ async function ensureApi(){
   atApi.playerReady.on(()=>{$('tpLoading').hidden=true;$('tpPlay').disabled=false;});
   atApi.playerStateChanged.on(e=>{const on=e.state===1;$('tpPlay').textContent=on?'❚❚':'▶';$('tpPlay').classList.toggle('pause',on);});
   atApi.playerPositionChanged.on(e=>{tp.dur=e.endTime;$('tpCur').textContent=fmtT(e.currentTime);$('tpEnd').textContent=fmtT(e.endTime);$('tpProgFill').style.width=(e.endTime?100*e.currentTime/e.endTime:0)+'%';});
-  atApi.error.on(e=>{$('tpLoading').hidden=false;$('tpLoadText').textContent='Не удалось открыть таб. Проверь файл или интернет.';});
+  atApi.error.on(e=>{$('tpLoading').hidden=false;$('tpLoadText').textContent='Не удалось открыть таб. Если это свой файл — пересохрани его в Guitar Pro как .gp5 или .gp.';console.error('alphaTab',e);});
   return atApi;
 }
 function tabUI(){
@@ -1233,7 +1234,9 @@ async function openTab(item,fileData){
     if(api.settings.display.layoutMode!==wantL){api.settings.display.layoutMode=wantL;api.settings.display.scale=tabScale();api.updateSettings();}
 api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
     tabUI();
-    if(fileData){api.load(fileData);return;}
+    if(fileData){let okLoad=false;try{okLoad=api.load(fileData);}catch(err){}
+      if(!okLoad)$('tpLoadText').textContent='Этот файл не открылся. Пересохрани его в Guitar Pro как .gp5 или .gp и попробуй снова.';
+      return;}
     const src=item.tab;
     if(/\.a?tex$/i.test(src)){const t=await (await fetch(src,{cache:'no-cache'})).text();api.tex(t);}
     else api.load(new URL(src,location.href).href);
@@ -1258,9 +1261,15 @@ $('tpView').addEventListener('click',()=>{
 });
 $('tpTracks').addEventListener('change',e=>{if(atApi&&tp.score)atApi.renderTracks([tp.score.tracks[+e.target.value]]);});
 $('tpProgress').addEventListener('click',e=>{if(!atApi||!tp.dur)return;const r=e.currentTarget.getBoundingClientRect();atApi.timePosition=tp.dur*(e.clientX-r.left)/r.width;});
+$('gpPick').addEventListener('click',()=>$('gpFile').click());
 $('gpFile').addEventListener('change',e=>{
   const f=e.target.files&&e.target.files[0];if(!f)return;
+  const ext=(f.name.match(/\.([^.]+)$/)||[])[1]||'';
+  const ok=/^(gp|gp3|gp4|gp5|gpx|xml|musicxml|mxl|capx)$/i.test(ext);
+  const say=t=>{try{inTg?tg.showAlert(t):alert(t);}catch(_){alert(t);}};
+  if(!ok){say(`Файл «${f.name}» не похож на таб Guitar Pro. Подходят .gp, .gp5, .gpx, .gp4, .gp3 и MusicXML. Файлы TuxGuitar (.tg) пересохрани в .gp5.`);e.target.value='';return;}
   const rd=new FileReader();
+  rd.onerror=()=>say('Не удалось прочитать файл. Попробуй выбрать его ещё раз.');
   rd.onload=()=>openTab({title:f.name.replace(/\.[^.]+$/,''),artist:'Свой файл'},new Uint8Array(rd.result));
   rd.readAsArrayBuffer(f);e.target.value='';
 });
