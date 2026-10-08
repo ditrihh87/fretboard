@@ -114,6 +114,7 @@
   #webbar nav{display:flex;gap:4px;flex:1}
   #webbar nav button,#webbar .wsite{border:none;background:transparent;color:inherit;opacity:.72;font:700 15px var(--body);padding:9px 14px;border-radius:10px;cursor:pointer;text-decoration:none;white-space:nowrap}
   #webbar nav button:hover,#webbar .wsite:hover{opacity:1;background:rgba(110,123,255,.14)}
+  #webbar .wsite.on{opacity:1;box-shadow:inset 0 -3px 0 var(--amber)}
   #webbar nav button.on{opacity:1;background:rgba(110,123,255,.2);box-shadow:inset 0 -3px 0 var(--amber)}
   #webbar .wava{width:40px;height:40px;border-radius:50%;border:none;background:var(--amber) center/cover;color:#1b1b1b;font-weight:800;cursor:pointer;margin-left:6px;overflow:hidden;padding:0}
   #webbar .wava img{width:100%;height:100%;object-fit:cover;display:block}
@@ -422,6 +423,7 @@
   .filebtn{display:block;width:100%;text-align:center;margin-top:10px;cursor:pointer}
   .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
   .chip.tab{background:var(--amber);color:#1b1b1b}
+  .chip.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -559,7 +561,7 @@
       </button>
       <button class="lvlcard" id="songsBtn">
         <span class="ico ico-book" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5c2.8-1.3 5.6-1.3 8.5 0v14c-2.9-1.3-5.7-1.3-8.5 0z"/><path d="M20.5 5.5c-2.8-1.3-5.6-1.3-8.5 0v14c2.9-1.3 5.7-1.3 8.5 0z"/><path d="M15.2 8.2v5.3"/><circle cx="14.1" cy="13.6" r="1.2" fill="currentColor"/><path d="M15.2 8.2l2.2.8"/></svg></span>
-        <span class="t">Песенник<small id="songsSummary">Аккорды и табы к песням и мелодиям</small></span>
+        <span class="t">Песенник<small id="songsSummary">Эксклюзивные табы и аккорды от ditrihh</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="setBtn">
@@ -615,7 +617,7 @@
     <!-- songbook -->
     <div id="songsView" hidden>
       <h1>Песенник</h1>
-      <p class="lead">Аккорды и табы к песням и мелодиям. Нажми на аккорд, чтобы увидеть схему и услышать его.</p>
+      <p class="lead">Эксклюзивные табы и проверенные аккорды от ditrihh. Нажми на аккорд, чтобы увидеть схему и услышать его.</p>
       <input class="search" id="songSearch" type="search" placeholder="Найти песню или исполнителя" autocomplete="off">
       <div class="row"><div class="seg" data-k="sfilter"></div></div>
       <div class="songlist" id="songList"></div>
@@ -693,6 +695,7 @@ const LINK_KEY='dgc_link';
 let link=null;try{link=JSON.parse(localStorage.getItem(LINK_KEY)||'null');}catch(e){}
 const linked=()=>!inTg&&!!(link&&link.token);
 const canSync=()=>!!API_URL&&(inTg||linked());
+const RQ=new URLSearchParams(location.search);
 const API_URL='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up'; // сервер рейтинга (Yandex Cloud Functions)
 const RATE_MAX=12; // игра на рейтинг — только весь гриф
 const QUESTIONS=20, MAX_MISTAKES=3, FREE_TIME=60;
@@ -721,6 +724,13 @@ const colOf=n=>6-n;
 /* ===== Telegram ===== */
 const tg=window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData!==undefined?window.Telegram.WebApp:null;
 const inTg=!!(tg&&tg.initData);
+// режим чтения: песню открыли со страницы сайта «Аккорды и табы» — шапка как у сайта, «назад» ведёт к списку
+const READER=!inTg&&RQ.has('song');
+if(READER){
+  document.documentElement.classList.add('reader');
+  document.querySelector('#webbar nav').innerHTML='<a class="wsite" href="index.html#school">Школа</a><a class="wsite on" href="songs.html">Аккорды и табы</a><a class="wsite" href="index.html#stream">Стримы</a>';
+  document.querySelector('#webbar .wsite[href="index.html#stream"]:not(nav *)')?.remove();
+}
 if(tg){
   try{tg.ready();tg.expand();tg.setHeaderColor('#141137');tg.setBackgroundColor('#141137');tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}
   try{tg.BackButton.onClick(()=>{if(!$('tabPlayer').hidden)closeTab();else openMenu();});}catch(e){}
@@ -749,7 +759,7 @@ if(fsSupported){
 // тема: авто = как в Telegram (или как в системе вне Telegram)
 function applyTheme(){
   const sys=inTg&&tg.colorScheme?tg.colorScheme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
-  const dark=cfg.theme==='dark'||(cfg.theme==='auto'&&sys);
+  const dark=cfg.theme==='dark'||(cfg.theme==='auto'&&(sys||(typeof READER!=='undefined'&&READER)));
   document.documentElement.classList.toggle('dark',dark);
   if(typeof tabRestyle==='function')tabRestyle();
 }
@@ -1104,9 +1114,10 @@ function renderSongList(){
   const items=SONGS.map(sg=>({sg,ch:chordsIn(sg.text)})).map(x=>({...x,can:x.ch.length&&x.ch.every(c=>known.has(c))}))
     .filter(x=>!q||(x.sg.title+' '+x.sg.artist).toLowerCase().includes(q))
     .filter(x=>cfg.sfilter!=='chords'||!x.sg.tab).filter(x=>cfg.sfilter!=='tab'||x.sg.tab);
+  items.sort((a,b)=>(b.sg.exclusive?1:0)-(a.sg.exclusive?1:0));
   if(!songsLoaded){$('songList').innerHTML='<p class="hint">Не удалось загрузить песни. Проверь интернет.</p>';return;}
   if(!items.length){$('songList').innerHTML=`<p class="hint">Ничего не нашлось.</p>`;return;}
-  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}"><b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
+  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}"><b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.exclusive?'<span class="chip ex">★ ЭКСКЛЮЗИВ</span>':''}${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
 }
 async function openSongs(){
   stopScroll();clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('songsView');back(true);
@@ -1167,7 +1178,7 @@ $('scrollBtn').addEventListener('click',()=>{
   song.raf=requestAnimationFrame(step);
 });
 $('sheet').addEventListener('touchstart',()=>{if(song.scroll&&!$('songView').hidden)stopScroll();},{passive:true});
-$('songBack').addEventListener('click',()=>{stopScroll();openSongs();});
+$('songBack').addEventListener('click',()=>{stopScroll();if(READER){location.href='songs.html';return;}openSongs();});
 $('songsBack').addEventListener('click',openMenu);
 // схема аккорда по нажатию
 function showChord(name){
@@ -1425,6 +1436,7 @@ api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
   }catch(e){$('tpLoadText').textContent='Не удалось загрузить плеер. Проверь интернет и попробуй ещё раз.';}
 }
 function closeTab(){
+  if(READER){location.href='songs.html';return;}
   if(atApi)atApi.pause();
   $('tabPlayer').hidden=true;
   if(!$('songsView').hidden)renderSongList();
@@ -2202,6 +2214,8 @@ $('shareBtn').addEventListener('click',()=>{
   if(fsSupported&&data.fs&&!tg.isFullscreen)setFullscreen(true);
   showQuote();
   openMenu();
+  // ссылка на песню с сайта: app.html?song=id
+  if(RQ.get('song')){await loadSongs();if(SONGS.some(x=>x.id===RQ.get('song')))openSong(RQ.get('song'));}
   syncXP();
 })();
 </script>
