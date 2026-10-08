@@ -40,8 +40,15 @@
   .ver{margin-left:auto;font-weight:800;font-size:12px;color:#8FD493;display:flex;align-items:center;gap:5px}
   .item h3{font-family:var(--display);font-weight:400;font-size:21px;line-height:1.15}
   .item .by{color:var(--muted);font-weight:700;font-size:14px}
-  .chords{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-  .chords span{background:rgba(239,236,251,.08);border-radius:8px;padding:4px 9px;font-weight:800;font-size:13px}
+  .item{position:relative}
+  .item h3 a.go{color:inherit;text-decoration:none}
+  .item h3 a.go::after{content:"";position:absolute;inset:0;border-radius:20px}
+  .meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+  .rt b{color:#F3C06A;font-weight:800;font-size:15px}
+  .rt small{color:var(--muted);font-weight:700;font-size:13px}
+  .save{position:relative;z-index:2;border:none;background:rgba(239,236,251,.08);color:#CFCCF2;font:800 13px var(--body);padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .save:hover{background:rgba(239,236,251,.16)}
+  .save.on{background:rgba(255,95,207,.18);color:#FF9BE2}
   .empty{color:var(--muted);font-weight:700;padding:30px 0}
   .ask{display:flex;flex-wrap:wrap;align-items:center;gap:18px;justify-content:space-between;background:linear-gradient(90deg,rgba(110,123,255,.18),rgba(255,95,207,.12));border-radius:22px;padding:24px 26px;margin-bottom:80px}
   .ask h3{font-family:var(--display);font-weight:400;font-size:22px}
@@ -72,6 +79,7 @@
       <button data-f="chords" aria-pressed="false">Аккорды</button>
       <button data-f="tab" aria-pressed="false">Табы</button>
       <button data-f="ex" aria-pressed="false">★ Эксклюзив</button>
+      <button data-f="saved" aria-pressed="false">♥ Сохранённые</button>
     </div>
   </section>
 
@@ -98,28 +106,34 @@
   </div>
 </footer>
 
+<script src="rate.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 $('yr').textContent=new Date().getFullYear();
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const chordsIn=t=>[...new Set([...(t||'').matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(Boolean))];
-let SONGS=[],filter='all';
+let SONGS=[],filter='all',RT={};
 function render(){
   const q=$('q').value.toLowerCase().trim();
   const items=SONGS.filter(s=>!q||(s.title+' '+(s.artist||'')).toLowerCase().includes(q))
-    .filter(s=>filter==='all'||(filter==='ex'?!!s.exclusive:filter==='tab'?!!s.tab:!s.tab));
+    .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
-  if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.length?'Песни скоро появятся здесь — следи за стримами.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
+  if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.length?'Песни скоро появятся здесь — следи за стримами.':filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
   $('list').innerHTML=items.map(s=>{
-    const ch=chordsIn(s.text);
-    return `<a class="item" href="song.html?id=${encodeURIComponent(s.id)}">
+    const r=RT[s.id],sv=DR.isSaved(s.id);
+    return `<article class="item">
       <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
-      <h3>${esc(s.title)}</h3><div class="by">${esc(s.artist||'')}</div>
-      ${ch.length?`<div class="chords">${ch.slice(0,8).map(c=>`<span>${esc(c)}</span>`).join('')}</div>`:''}
-    </a>`;}).join('');
+      <h3><a class="go" href="song.html?id=${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3><div class="by">${esc(s.artist||'')}</div>
+      <div class="meta">
+        <span class="rt ${r?'':'none'}" title="${r?`Рейтинг ${r.avg} из 5`:'Пока без оценок'}">${r?`<b>★ ${r.avg.toFixed(1)}</b> <small>${r.n} ${DR.plural(r.n)}</small>`:'<small>Пока без оценок</small>'}</span>
+        <button class="save ${sv?'on':''}" data-save="${esc(s.id)}" aria-pressed="${sv}" aria-label="${sv?'Убрать из сохранённых':'Сохранить'}">${sv?'♥ Сохранено':'♡ Сохранить'}</button>
+      </div>
+    </article>`;}).join('');
 }
 $('q').addEventListener('input',render);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-save]');if(!b)return;DR.toggleSave(b.dataset.save);render();});
+DR.ratings().then(r=>{RT=r;if(SONGS.length)render();});
 document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
   filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));render();
 }));

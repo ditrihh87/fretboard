@@ -228,6 +228,27 @@ async function handleLeague(body, user, token) {
   return reply(200, { ...leagueView(list, user.id, u.tier), week: u.week, result });
 }
 
+/* ===== Рейтинг песен: оценка 1–5 от каждого посетителя (анонимный id из браузера) ===== */
+const okSong = v => typeof v === 'string' && /^[a-z0-9-]{1,80}$/.test(v);
+const okVoter = v => typeof v === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(v);
+async function handleRatings(token) {
+  return reply(200, { ratings: await loadJSON('ratings/summary.json', token, {}) });
+}
+async function handleRate(body, token) {
+  const stars = Math.round(Number(body.stars));
+  if (!okSong(body.song) || !okVoter(body.voter) || !(stars >= 1 && stars <= 5)) return reply(400, { error: 'bad rating' });
+  const key = `ratings/songs/${body.song}.json`;
+  const votes = await loadJSON(key, token, {});
+  votes[body.voter] = stars;
+  await saveList(key, votes, token);
+  const vals = Object.values(votes), n = vals.length;
+  const avg = Math.round(vals.reduce((a, b) => a + b, 0) / n * 10) / 10;
+  const sum = await loadJSON('ratings/summary.json', token, {});
+  sum[body.song] = { avg, n };
+  await saveList('ratings/summary.json', sum, token);
+  return reply(200, { avg, n, mine: stars });
+}
+
 module.exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HEADERS, body: '' };
   if (event.httpMethod && event.httpMethod !== 'POST') return reply(405, { error: 'POST only' });
@@ -244,6 +265,11 @@ module.exports.handler = async (event, context) => {
   if (body.action === 'twitch') {
     try { return await handleTwitch(token); }
     catch (e) { console.error(e); return reply(502, { error: 'twitch' }); }
+  }
+
+  if (body.action === 'ratings' || body.action === 'rate') {
+    try { return body.action === 'rate' ? await handleRate(body, token) : await handleRatings(token); }
+    catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
   if (body.action === 'claim') {

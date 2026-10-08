@@ -28,6 +28,16 @@
   .grp{display:flex;align-items:center;gap:2px;background:rgba(37,31,94,.8);border-radius:12px;padding:3px}
   .credits{color:var(--muted);font-weight:600;font-size:14px;margin-top:6px}
   .credits:empty{display:none}
+  .rbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px}
+  .stars{display:flex}
+  .stars button{border:none;background:transparent;color:rgba(239,236,251,.25);font-size:26px;line-height:1;padding:0 2px;cursor:pointer;transition:transform .1s}
+  .stars button.on{color:#F0A830}
+  .stars button.hov{color:#F3C06A;transform:scale(1.12)}
+  .rinfo{color:var(--muted);font-weight:700;font-size:14px}
+  .rinfo b{color:#F3C06A}
+  .save{border:none;background:rgba(239,236,251,.08);color:#CFCCF2;font:800 14px var(--body);padding:8px 14px;border-radius:999px;cursor:pointer}
+  .save:hover{background:rgba(239,236,251,.16)}
+  .save.on{background:rgba(255,95,207,.18);color:#FF9BE2}
   .easynote{margin:10px 0 0;padding:10px 14px;border-radius:12px;background:rgba(240,168,48,.12);color:#F3D9A8;font-weight:700;font-size:14px}
   .easynote b{color:#F3C06A}
   .grp span{min-width:56px;text-align:center;font-weight:800;font-size:14px;color:#CFCCF2}
@@ -115,6 +125,7 @@
   </div>
 </footer>
 
+<script src="rate.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 $('yr').textContent=new Date().getFullYear();
@@ -208,7 +219,7 @@ function renderChordsPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ch">Аккорды</span><span class="type ver">✓ проверено ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:'',SONG.chordsBy?'Аккорды: '+SONG.chordsBy:''].filter(Boolean).map(esc).join(' · ')}</div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:'',SONG.chordsBy?'Аккорды: '+SONG.chordsBy:''].filter(Boolean).map(esc).join(' · ')}</div><div class="rbox" id="rateBox"></div></div></div>
     <div class="panel">
       <div class="bar">
         <div class="grp"><button class="ib" id="trDown" aria-label="Тон ниже">−</button><span id="trLabel">Тон</span><button class="ib" id="trUp" aria-label="Тон выше">+</button></div>
@@ -271,6 +282,26 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');i
 $('pop').addEventListener('click',e=>{if(e.target===$('pop'))$('pop').hidden=true;});
 $('popPlay').onclick=()=>strumChord($('pop').dataset.name);
 
+/* ===== рейтинг и «Сохранить» ===== */
+let RTS=null;
+async function paintRate(){
+  const box=$('rateBox');if(!box)return;
+  const id=SONG.id,mine=DR.mine(id),sv=DR.isSaved(id);
+  if(!RTS)RTS=await DR.ratings();
+  const r=RTS[id];
+  box.innerHTML=`<div class="stars" role="radiogroup" aria-label="Оцени песню">${[1,2,3,4,5].map(n=>`<button data-star="${n}" class="${n<=mine?'on':''}" role="radio" aria-checked="${n===mine}" aria-label="${n} из 5">★</button>`).join('')}</div>
+    <span class="rinfo">${r?`<b>${r.avg.toFixed(1)}</b> · ${r.n} ${DR.plural(r.n)}`:'Оцени первым'}${mine?` · твоя: ${mine}`:''}</span>
+    <button class="save ${sv?'on':''}" id="saveBtn" aria-pressed="${sv}">${sv?'♥ Сохранено':'♡ Сохранить'}</button>`;
+  box.querySelectorAll('[data-star]').forEach(b=>{
+    b.onmouseenter=()=>box.querySelectorAll('[data-star]').forEach(x=>x.classList.toggle('hov',+x.dataset.star<=+b.dataset.star));
+    b.onmouseleave=()=>box.querySelectorAll('[data-star]').forEach(x=>x.classList.remove('hov'));
+    b.onclick=async()=>{const n=+b.dataset.star;box.querySelector('.rinfo').textContent='Сохраняю…';
+      try{const res=await DR.rate(id,n);RTS[id]={avg:res.avg,n:res.n};}catch(e){alert('Не получилось сохранить оценку. Попробуй ещё раз.');}
+      paintRate();};
+  });
+  $('saveBtn').onclick=()=>{DR.toggleSave(id);paintRate();};
+}
+
 /* ===== таб-плеер (alphaTab, MPL-2.0) ===== */
 const AT_DIR='vendor/alphatab/',SPEEDS=[1,.75,.5,1.25];
 const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8'];
@@ -311,7 +342,7 @@ async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:'',SONG.chordsBy?'Аккорды: '+SONG.chordsBy:''].filter(Boolean).map(esc).join(' · ')}</div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:'',SONG.chordsBy?'Аккорды: '+SONG.chordsBy:''].filter(Boolean).map(esc).join(' · ')}</div><div class="rbox" id="rateBox"></div></div></div>
     <div class="panel">
       <div class="bar">
         <div class="legend" id="legend">${SC.map((c,i)=>`<span><i style="background:${c}"></i>${6-i}</span>`).join('')}</div>
@@ -386,6 +417,7 @@ async function renderTabPage(){
   document.title=`${SONG.title}${SONG.artist?' — '+SONG.artist:''} — ${SONG.tab?'таб':'аккорды'} от ditrihh`;
   const md=document.querySelector('meta[name="description"]');if(md)md.content=`${SONG.title}${SONG.artist?' ('+SONG.artist+')':''}: ${SONG.tab?'таб со звуком':'аккорды со схемами'} от ditrihh — проверено на гитаре.`;
   if(SONG.tab)renderTabPage();else renderChordsPage();
+  paintRate();
 })();
 </script>
 </body>
