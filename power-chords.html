@@ -107,7 +107,7 @@ function shapes(pc){
   const s6={t:f6?'От 6-й струны':'Открытый',f:[f6,f6+2,f6+2,-1,-1,-1]};
   const s5={t:'От 5-й струны',f:[-1,f5,f5+2,f5+2,-1,-1]};
   const low=f6<=f5?s6:s5;
-  return [s6,s5,{t:'Две ноты',f:low.f.map((x,i)=>i===low.f.findIndex(v=>v>=0)+2?-1:x)}];
+  return [s6,...(f5<12?[s5]:[]),{t:'Две ноты',f:low.f.map((x,i)=>i===low.f.findIndex(v=>v>=0)+2?-1:x)}];
 }
 
 /* звук: сэмплы гитары, если есть, иначе простой синтез */
