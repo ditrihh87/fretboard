@@ -359,6 +359,10 @@
   .tp-title small{display:block;color:var(--tp-muted);font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tp-chip{border:none;background:var(--tp-card);color:var(--tp-ink);border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px}
   .tp-zoom{display:none;gap:4px}
+  #tabPlayer.line .tp-zoom{display:flex}
+  .tp-lay{white-space:nowrap}
+  .tp-lay span{font-size:15px}
+  @media (max-width:420px){.tp-lay{font-size:0;padding:9px 12px}.tp-lay span{font-size:17px}}
   .tp-zoom .tp-chip{width:36px;padding:7px 0;font-size:18px;line-height:1}
   .tp-zoom .tp-chip:disabled{opacity:.35}
   .tp-col{padding:9px 11px;display:flex;align-items:center}
@@ -510,6 +514,7 @@
     <div class="tp-legend" id="tpLegend"></div>
     <span class="tp-zoom" id="tpZoom"><button class="tp-chip" id="tpZoomOut" aria-label="Мельче">−</button><button class="tp-chip" id="tpZoomIn" aria-label="Крупнее">+</button></span>
     <button class="tp-chip tp-col" id="tpColor" aria-label="Цветные цифры" aria-pressed="true"><i></i></button>
+    <button class="tp-chip tp-lay" id="tpLayout" aria-label="Раскладка таба">↵ Перенос</button>
     <button class="tp-chip" id="tpView" aria-label="Вид">Таб</button>
   </header>
   <select class="tp-tracks" id="tpTracks" hidden aria-label="Партия"></select>
@@ -1353,12 +1358,20 @@ function tabRestyle(){
 const tabLandscape=()=>innerWidth>innerHeight&&innerHeight<=520;
 const ZOOM_MIN=0.6,ZOOM_MAX=1.5;
 const tabZoom=()=>Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,data.tabZoom||1));
-const tabScale=()=>tabLandscape()?1.2*tabZoom():innerWidth<480?0.92:1.05;
+// раскладка таба: «в строку» (лента) или «с переносом»; по умолчанию — по положению телефона
+const tabHoriz=()=>data.tabLayout?data.tabLayout==='line':tabLandscape();
+const tabScale=()=>tabHoriz()?(tabLandscape()?1.2:0.95)*tabZoom():innerWidth<480?0.92:1.05;
+function paintLayout(){
+  const h=tabHoriz();
+  $('tpLayout').innerHTML=h?'<span aria-hidden="true">⟶</span> Строка':'<span aria-hidden="true">↵</span> Перенос';
+  $('tpLayout').setAttribute('aria-label',h?'Таб в одну строку — нажми, чтобы переносить по строкам':'Таб с переносом — нажми, чтобы сделать в одну строку');
+  $('tabPlayer').classList.toggle('line',h);
+}
 function paintZoom(){$('tpZoomOut').disabled=tabZoom()<=ZOOM_MIN+1e-6;$('tpZoomIn').disabled=tabZoom()>=ZOOM_MAX-1e-6;}
 function setZoom(d){
   data.tabZoom=Math.round(Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,tabZoom()+d))*100)/100;save();paintZoom();
   try{tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged();}catch(_){}
-  if(atApi&&tp.score&&tabLandscape()){atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();}
+  if(atApi&&tp.score&&tabHoriz()){atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();}
 }
 function fixSurfaceWidth(){
   const surf=$('tpRender').querySelector('.at-surface');if(!surf)return;
@@ -1371,7 +1384,8 @@ function fixSurfaceWidth(){
 let tabLayoutTimer=0;
 function tabRelayout(){
   if(!atApi||$('tabPlayer').hidden||!tp.score)return;
-  const want=tabLandscape()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
+  paintLayout();
+  const want=tabHoriz()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
   if(atApi.settings.display.layoutMode===want&&atApi.settings.display.scale===tabScale())return;
   atApi.settings.display.layoutMode=want;atApi.settings.display.scale=tabScale();atApi.updateSettings();atApi.render();
 }
@@ -1383,7 +1397,7 @@ async function ensureApi(){
   const res=tabResources();
   atApi=new alphaTab.AlphaTabApi($('tpRender'),{
     core:{fontDirectory:AT_DIR+'font/',scriptFile:new URL(AT_DIR+'alphaTab.min.js',location.href).href,useWorkers:true},
-    display:{staveProfile:data.tabView==='score'?'ScoreTab':'Tab',scale:tabScale(),layoutMode:tabLandscape()?'Horizontal':'Page',resources:{...res,tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
+    display:{staveProfile:data.tabView==='score'?'ScoreTab':'Tab',scale:tabScale(),layoutMode:tabHoriz()?'Horizontal':'Page',resources:{...res,tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
     notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false}},
     player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('tpScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
   });
@@ -1419,11 +1433,11 @@ async function openTab(item,fileData){
   $('tpTitle').textContent=item?item.title:'Свой файл';$('tpArtist').textContent=item?item.artist||'':'';
   $('tpLoading').hidden=false;$('tpLoadText').textContent='Загружаю таб…';$('tpPlay').disabled=true;$('tpTracks').hidden=true;
   $('tpCur').textContent='0:00';$('tpEnd').textContent='0:00';$('tpProgFill').style.width='0';
-  $('tabPlayer').hidden=false;back(true);paintLegend();paintZoom();
+  $('tabPlayer').hidden=false;back(true);paintLegend();paintZoom();paintLayout();
   try{
     const api=await ensureApi();
     api.stop();tp.speedI=0;
-    const wantL=tabLandscape()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
+    const wantL=tabHoriz()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;
     if(api.settings.display.layoutMode!==wantL||api.settings.display.scale!==tabScale()){api.settings.display.layoutMode=wantL;api.settings.display.scale=tabScale();api.updateSettings();}
 api.playbackSpeed=1;api.isLooping=false;api.playbackRange=null;
     tabUI();
@@ -1455,6 +1469,12 @@ $('tpSpeed').addEventListener('click',()=>{if(!atApi)return;tp.speedI=(tp.speedI
 $('tpLoop').addEventListener('click',()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;tabUI();});
 $('tpMetro').addEventListener('click',()=>{if(!atApi)return;atApi.metronomeVolume=atApi.metronomeVolume>0?0:1;tabUI();});
 $('tpCount').addEventListener('click',()=>{if(!atApi)return;atApi.countInVolume=atApi.countInVolume>0?0:1;tabUI();});
+$('tpLayout').addEventListener('click',()=>{
+  data.tabLayout=tabHoriz()?'page':'line';save();
+  try{tg&&tg.HapticFeedback&&tg.HapticFeedback.selectionChanged();}catch(_){}
+  paintLayout();paintZoom();
+  if(atApi&&tp.score){const st=atApi.settings.display;st.layoutMode=tabHoriz()?alphaTab.LayoutMode.Horizontal:alphaTab.LayoutMode.Page;st.scale=tabScale();atApi.updateSettings();atApi.render();$('tpScroll').scrollTo(0,0);}
+});
 $('tpZoomOut').addEventListener('click',()=>setZoom(-0.1));
 $('tpZoomIn').addEventListener('click',()=>setZoom(0.1));
 $('tpColor').addEventListener('click',()=>{
