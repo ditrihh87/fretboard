@@ -1,4 +1,4 @@
-# ditrihh guitar club
+# ditrihh
 
 Гитарный клуб в Telegram: уроки, тренажёры, лиги и песенник (ноты на грифе, аккорды, интервалы, тренажёр слуха) — Mini App [@notanagrife_bot](https://t.me/notanagrife_bot?startapp).
 

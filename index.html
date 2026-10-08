@@ -7,9 +7,12 @@
   (function(){var l=location;if(/tgWebApp/.test(l.hash+l.search)){l.replace('app.html'+l.search+l.hash);}})();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ditrihh guitar club — гитара с нуля, табы и стримы</title>
+<title>ditrihh — гитара с нуля, табы и стримы</title>
+<link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
+<link rel="apple-touch-icon" href="brand/ditrihh-icon-1024.png">
 <meta name="description" content="Гитарный клуб ditrihh: учись играть на гитаре как в игре — уроки, тренажёр грифа и слуха, звания и лиги, табы с цветными струнами и живые стримы каждый день.">
-<meta property="og:title" content="ditrihh guitar club">
+<meta property="og:title" content="ditrihh">
+<meta property="og:image" content="brand/ditrihh-logo-dark.png">
 <meta property="og:description" content="Гитара с нуля как в игре: уроки, тренажёры, табы и стримы каждый день.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0C0A24">
@@ -45,8 +48,7 @@
   /* шапка */
   header.nav{position:sticky;top:0;z-index:20;background:rgba(12,10,36,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(110,123,255,.22)}
   .nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
-  .logo{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.3px;white-space:nowrap}
-  .logo span{color:var(--amber);font-family:var(--body);font-weight:800;font-size:13px;margin-left:6px;letter-spacing:.3px}
+  .logo img{height:30px;width:auto;display:block}
   .nav nav{display:flex;gap:22px;margin-left:auto;font-weight:700;font-size:15px;color:var(--muted)}
   .nav nav a:hover{color:var(--paper)}
   .nav .btn{padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 4px 0 var(--amber-d)}
@@ -58,7 +60,8 @@
   .hero{padding:72px 0 40px;position:relative}
   .hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
   .hero h1{font-family:var(--display);font-weight:800;font-size:clamp(52px,8.6vw,104px);line-height:.92;letter-spacing:-2px;text-shadow:0 0 30px rgba(110,123,255,.55),0 0 80px rgba(110,123,255,.3)}
-  .hero h1 small{display:block;font-family:var(--body);font-weight:800;font-size:clamp(20px,2.6vw,30px);letter-spacing:.5px;color:var(--amber);margin-top:10px}
+  .hero h1 img{width:min(100%,560px);height:auto;margin:-6% 0 -4% -5%;display:block}
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .hero p{font-size:20px;color:#CFCCF2;margin-top:22px;max-width:520px}
   .hero .ctas{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
   .hero .note{margin-top:18px;color:var(--muted);font-size:14px}
@@ -171,7 +174,7 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="logo" href="#top">ditrihh<span>guitar club</span></a>
+    <a class="logo" href="#top" aria-label="ditrihh — на главную"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"></a>
     <nav aria-label="Разделы">
       <a href="#school">Школа</a>
       <a href="#stream">Стримы</a>
@@ -187,7 +190,7 @@
   <section class="hero">
     <div class="wrap">
       <div>
-        <h1>ditrihh<small>guitar club</small></h1>
+        <h1><img src="brand/ditrihh-logo.svg" alt="ditrihh"><span class="vh">ditrihh — уроки гитары, табы и стримы</span></h1>
         <p>Учись играть на гитаре как в игре: короткие уроки, тренажёры грифа и слуха, звания и лиги. А каждый вечер — живой стрим, где можно спросить и послушать.</p>
         <div class="ctas">
           <a class="btn main" href="app.html">Начать учиться — бесплатно</a>
@@ -330,7 +333,7 @@
 
 <footer>
   <div class="wrap">
-    <div><b style="color:var(--paper)">ditrihh guitar club</b> · © <span id="yr">2026</span></div>
+    <div><b style="color:var(--paper)">ditrihh</b> · © <span id="yr">2026</span></div>
     <div class="soc">
       <a href="https://t.me/notanagrife_bot" target="_blank" rel="noopener">Telegram</a>
       <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">Twitch</a>
