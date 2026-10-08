@@ -11,7 +11,7 @@ header span{font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px
 .goal .bar{height:9px;border-radius:99px;background:rgba(239,236,251,.08);margin-top:8px;overflow:hidden}
 .goal .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6E7BFF,#A06BFF,#FF5FCF);box-shadow:0 0 10px rgba(160,107,255,.6)}
 nav{display:flex;gap:3px;background:rgba(28,24,72,.8);border-radius:10px;padding:3px;margin-bottom:10px}
-nav button{flex:1;border:none;background:transparent;color:#A4A1D8;font:800 11.5px system-ui,sans-serif;padding:7px 2px;border-radius:8px;cursor:pointer}
+nav button{flex:1;border:none;background:transparent;color:#A4A1D8;font:800 12px system-ui,sans-serif;padding:7px 4px;border-radius:8px;cursor:pointer}
 nav button.on{background:#F0A830;color:#1b1b1b}
 .list{list-style:none;display:grid;gap:6px}
 .list li{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:rgba(28,24,72,.65)}
