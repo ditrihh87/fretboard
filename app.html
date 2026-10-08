@@ -1121,7 +1121,7 @@ function renderSongList(){
     .filter(x=>cfg.sfilter!=='chords'||!x.sg.tab).filter(x=>cfg.sfilter!=='tab'||x.sg.tab);
   items.sort((a,b)=>(b.sg.exclusive?1:0)-(a.sg.exclusive?1:0));
   if(!songsLoaded){$('songList').innerHTML='<p class="hint">Не удалось загрузить песни. Проверь интернет.</p>';return;}
-  if(!items.length){$('songList').innerHTML=`<p class="hint">Ничего не нашлось.</p>`;return;}
+  if(!items.length){$('songList').innerHTML=`<p class="hint">${SONGS.length?'Ничего не нашлось.':'Песни скоро появятся здесь — следи за стримами.'}</p>`;return;}
   $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}"><b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.exclusive?'<span class="chip ex">★ ЭКСКЛЮЗИВ</span>':''}${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
 }
 async function openSongs(){
