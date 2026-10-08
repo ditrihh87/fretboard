@@ -1145,7 +1145,7 @@ function openSong(id){
 }
 function renderSong(){
   const t=cur.text;let tr=song.tr;
-  $('songTitle').textContent=cur.title;$('songArtist').textContent=(cur.artist||'')+((c=>c?'\n'+c:'')([cur.words&&cur.words===cur.music?'Слова и музыка: '+cur.words:'',cur.words&&cur.words!==cur.music?'Слова: '+cur.words:'',cur.music&&cur.words!==cur.music?'Музыка: '+cur.music:'',cur.chordsBy?'Аккорды: '+cur.chordsBy:''].filter(Boolean).join(' · ')));
+  $('songTitle').textContent=cur.title;$('songArtist').textContent=(cur.artist||'')+((c=>c?'\n'+c:'')([cur.words&&cur.words===cur.music?'Слова и музыка: '+cur.words:'',cur.words&&cur.words!==cur.music?'Слова: '+cur.words:'',cur.music&&cur.words!==cur.music?'Музыка: '+cur.music:''].filter(Boolean).join('\n')));
   const ez=song.easy?easyCapo(chordsIn(t)):null;
   if(ez)tr=-ez.k;
   $('easyBtn').setAttribute('aria-pressed',!!ez);$('easyBtn').classList.toggle('on',!!ez);
