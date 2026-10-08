@@ -139,6 +139,7 @@
       <div class="tabs" role="tablist" aria-label="Площадка">
         <button class="tab" role="tab" aria-selected="true" data-p="twitch"><span class="pl" style="background:#9146FF"></span>Twitch</button>
         <button class="tab" role="tab" aria-selected="false" data-p="youtube"><span class="pl" style="background:#FF3B30"></span>YouTube</button>
+        <button class="tab" role="tab" aria-selected="false" data-p="vk"><span class="pl" style="background:#0077FF"></span>VK Play Live</button>
       </div>
       <div class="player">
         <div class="screen" id="screen">
@@ -151,7 +152,7 @@
           <div class="poster"><p>Чат трансляции появится здесь вместе с плеером.</p></div>
         </div>
       </div>
-      <p class="ext">Удобнее в приложении? <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a> · <a href="https://www.youtube.com/@ditrihh/live" target="_blank" rel="noopener">youtube.com/@ditrihh</a></p>
+      <p class="ext">Удобнее в приложении? <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a> · <a href="https://www.youtube.com/@ditrihh/live" target="_blank" rel="noopener">youtube.com/@ditrihh</a> · <a href="https://live.vkvideo.ru/ditrihh" target="_blank" rel="noopener">VK Play Live</a></p>
     </div>
   </section>
 
@@ -289,15 +290,17 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
 
 /* плеер: грузим iframe только по нажатию */
 const host=location.hostname||'localhost';
+const VK_CHANNEL='ditrihh'; // имя канала на VK Play Live (live.vkvideo.ru/ИМЯ)
 const P={
   twitch:{video:`https://player.twitch.tv/?channel=ditrihh&parent=${host}&autoplay=true`,chat:`https://www.twitch.tv/embed/ditrihh/chat?parent=${host}&darkpopout`,text:'Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.'},
-  youtube:{video:'https://www.youtube.com/embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1',chat:null,text:'Нажми, чтобы включить трансляцию на YouTube. Если эфира нет, YouTube так и скажет.'}
+  youtube:{video:'https://www.youtube.com/embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1',chat:null,text:'Нажми, чтобы включить трансляцию на YouTube. Если эфира нет, YouTube так и скажет.',noChat:'Чат YouTube смотри на самом YouTube — встроить его можно только во время эфира.'},
+  vk:{video:`https://live.vkvideo.ru/app/embed/${VK_CHANNEL}?autoplay=true`,chat:null,text:'Нажми, чтобы включить трансляцию на VK Play Live.',noChat:`Чат VK Play Live — на <a href="https://live.vkvideo.ru/${VK_CHANNEL}" target="_blank" rel="noopener">странице канала</a>.`}
 };
 let cur='twitch',on=false;
 function poster(){
   $('screen').innerHTML=`<div class="poster"><button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button><p>${P[cur].text}</p></div>`;
   $('playBtn').onclick=start;
-  $('chat').innerHTML=`<div class="poster"><p>${P[cur].chat?'Чат трансляции появится здесь вместе с плеером.':'Чат YouTube смотри на самом YouTube — встроить его можно только во время эфира.'}</p></div>`;
+  $('chat').innerHTML=`<div class="poster"><p>${P[cur].chat?'Чат трансляции появится здесь вместе с плеером.':P[cur].noChat}</p></div>`;
 }
 function start(){
   on=true;
