@@ -135,6 +135,19 @@
   html.web #songList,html.web .songlist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media (min-width:1300px){html.web #menuView{grid-template-columns:1fr 1fr 1fr}}
 
+  .linkbox{background:var(--p-card);border-radius:16px;padding:16px;margin:18px 0 4px}
+  .linkbox p{color:var(--p-muted);font-size:14px;margin:4px 0 12px;line-height:1.45}
+  .linkbox b{font-size:16px}
+  .linkbox .row2{display:flex;gap:8px;flex-wrap:wrap}
+  .linkbox .btn{flex:1;min-width:150px}
+  .linkbox .wait{display:flex;align-items:center;gap:10px;font-weight:700}
+  .linkbox .wait i{width:18px;height:18px;border-radius:50%;border:3px solid var(--p-faint);border-top-color:var(--amber);animation:spin 1s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .linkban{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;border-radius:16px;padding:12px 14px;margin:0 0 12px;background:linear-gradient(90deg,rgba(110,123,255,.18),rgba(255,95,207,.12));color:var(--p-ink);cursor:pointer}
+  .linkban>span:first-child{font-size:22px}
+  .linkban b{display:block;font-size:15px}.linkban small{color:var(--p-muted);font-weight:700;font-size:13px}
+  html.web #menuView>.linkban{grid-column:1/-1;margin:0}
+
   /* sheet */
   #sheet{position:fixed;inset:0;background:var(--p-bg);display:flex;justify-content:center;align-items:flex-start;z-index:10;overflow:auto;-webkit-overflow-scrolling:touch}
   .panel{background:var(--p-bg);color:var(--p-ink);width:100%;max-width:520px;min-height:100%;padding:calc(22px + var(--sa-t)) 18px calc(24px + var(--sa-b))}
@@ -523,6 +536,7 @@
       </div>
       <figure class="quote" id="quote" title="Нажми — следующая фраза"><blockquote id="qText"></blockquote><figcaption id="qBy"></figcaption></figure>
       <div class="rankline" id="rankLine"><b id="rankName">Новичок</b><span id="rankXP"></span><i><em id="rankBar"></em></i></div>
+      <button class="linkban" id="linkBan" hidden><span>🔗</span><span><b>Играешь в Telegram?</b><small>Привяжи аккаунт — прогресс, XP и лига будут общими</small></span></button>
       <section class="today" id="today">
         <svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" class="track"/><circle cx="28" cy="28" r="23" class="fill" id="ringFill"/></svg>
         <div class="goal"><b id="goalTitle">Цель дня</b><small id="goalText"></small></div>
@@ -592,6 +606,7 @@
       <div class="week" id="pWeek"></div>
       <h2>Прогресс по темам</h2>
       <div class="topics" id="pTopics"></div>
+      <div class="linkbox" id="pLink" hidden></div>
       <div class="btns">
         <button class="btn" id="pShare">Поделиться профилем</button>
         <button class="btn ghost" id="pBack">В меню</button>
@@ -673,6 +688,11 @@
 <script>
 /* ===== настрой под себя ===== */
 const BOT_LINK='https://t.me/notanagrife_bot?startapp'; // ссылка на Mini App
+/* привязка Telegram на сайте: токен от сервера хранится в браузере */
+const LINK_KEY='dgc_link';
+let link=null;try{link=JSON.parse(localStorage.getItem(LINK_KEY)||'null');}catch(e){}
+const linked=()=>!inTg&&!!(link&&link.token);
+const canSync=()=>!!API_URL&&(inTg||linked());
 const API_URL='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up'; // сервер рейтинга (Yandex Cloud Functions)
 const RATE_MAX=12; // игра на рейтинг — только весь гриф
 const QUESTIONS=20, MAX_MISTAKES=3, FREE_TIME=60;
@@ -689,7 +709,8 @@ const LEVELS=[
 ];
 
 const cfg={sfilter:'all',theme:'auto',ivset:'easy',topic:'notes',ear:'hl',goal:20,orient:'h',mode:'find',input:'tap',max:5,names:'letters',sound:'acoustic'};
-let data={find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20};
+const freshData=()=>({find:[],name:[],best:{},streak:{last:'',n:0},path:{},xp:0,day:{date:'',xp:0},goal:20});
+let data=freshData();
 const g={type:null,lvl:0,max:5,cols:[],total:0,score:0,mistakes:0,streak:0,time:FREE_TIME,playing:false,locked:false,q:null,last:'',timer:null,lastStars:0};
 
 const $=id=>document.getElementById(id);
@@ -751,7 +772,21 @@ const store={
   }
 };
 async function load(){try{const v=await store.get('progress');if(v)data=Object.assign(data,JSON.parse(v));}catch(e){}}
-const save=()=>store.set('progress',JSON.stringify(data));
+const save=()=>{data._t=Date.now();store.set('progress',JSON.stringify(data));pushSoon();};
+/* общий прогресс: Telegram ↔ сайт через сервер; побеждает более свежая версия */
+let pushT=0;
+function pushNow(){clearTimeout(pushT);pushT=0;if(!canSync())return Promise.resolve();return api({action:'save',progress:JSON.stringify(data)}).catch(()=>{});}
+function pushSoon(){if(!canSync())return;clearTimeout(pushT);pushT=setTimeout(pushNow,4000);}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&pushT)pushNow();});
+function adopt(rem){const pend=data.pendingXP||0;data=Object.assign(freshData(),rem);data.pendingXP=pend;store.set('progress',JSON.stringify(data));}
+async function pullRemote(){
+  if(!canSync())return;
+  try{
+    const r=await api({action:'load'});
+    if(r.data){const rem=JSON.parse(r.data);if((rem._t||0)>(data._t||0))adopt(rem);else if((data._t||0)>(rem._t||0))pushSoon();}
+    else if(data._t||data.xp)pushSoon();
+  }catch(e){}
+}
 
 /* ===== фразы на главном экране: [текст, автор]; автор пустой — это совет ===== */
 const QUOTES=[
@@ -784,7 +819,7 @@ function untilWeekEnd(){
   return d?`${d} ${plural(d,'день','дня','дней')} ${h} ч`:`${h} ч ${Math.floor(left%3600e3/60e3)} мин`;
 }
 function syncXP(){
-  if(!API_URL||!inTg)return;
+  if(!canSync())return;
   const add=Math.min(300,data.pendingXP||0);if(add<=0)return;
   api({action:'xp',add,total:data.xp}).then(r=>{data.pendingXP-=add;data.league={tier:r.tier,place:r.me&&r.me.rank,xp:r.me&&r.me.xp};save();if(!$('menuView').hidden)renderMenu();if(data.pendingXP>0)syncXP();}).catch(()=>{});
 }
@@ -811,6 +846,7 @@ function bumpStreak(){
 const SEGS={sfilter:[['all','Все'],['chords','Аккорды'],['tab','Табы']],theme:[['auto','Авто'],['light','Светлая'],['dark','Тёмная']],ivset:[['easy','Октава, квинта, кварта'],['all','Все 7']],topic:[['notes','Ноты'],['chords','Аккорды'],['intervals','Интервалы']],ear:[['hl','Выше/ниже'],['ear','Найди ноту'],['iv','Интервалы']],goal:[[20,'20'],[50,'50'],[100,'100'],[150,'150']],orient:[['h','Горизонтально'],['v','Вертикально']],fs:[[true,'Вкл'],[false,'Выкл']],input:[['tap','Касанием'],['mic','Играю на гитаре']],mode:[['find','Найди на грифе'],['name','Назови ноту']],max:[[5,'Лады 0–5'],[12,'0–12']],names:[['letters','C D E'],['solfege','до ре ми']],sound:[['acoustic','Акустика'],['electric','Электро'],['nylon','Нейлон'],['off','Выкл']]};
 function stars(n){return '★'.repeat(n)+`<span class="e">${'★'.repeat(3-n)}</span>`;}
 function renderMenu(){
+  $('linkBan').hidden=inTg||linked()||!API_URL;
   document.querySelectorAll('.seg[data-k]').forEach(el=>{
     const k=el.dataset.k;
     el.innerHTML=SEGS[k].map(([v,t])=>`<button data-v="${v}" aria-pressed="${cfg[k]===v}">${t}</button>`).join('');
@@ -989,7 +1025,8 @@ function openMenu(){
 /* ===== рейтинг ===== */
 function api(body){
   return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify(Object.assign({initData:tg?tg.initData:''},body))})
+    keepalive:true,
+    body:JSON.stringify(Object.assign({initData:tg?tg.initData:''},linked()?{token:link.token}:{},body))})
     .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();});
 }
 const esc=t=>String(t).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
@@ -1015,7 +1052,7 @@ async function openLeague(){
   $('lgLead').textContent=`Набирай XP за уроки, тренажёр слуха и рейтинговую битву. До конца недели: ${untilWeekEnd()}.`;
   $('lgResult').hidden=true;$('lgLegend').innerHTML='';
   const list=$('lgList');
-  if(!API_URL||!inTg){list.innerHTML='<li class="empty">Лиги работают внутри Telegram: открой приложение через бота.</li>';return;}
+  if(!canSync()){list.innerHTML='<li class="empty">Лиги работают после привязки Telegram: открой профиль и нажми «Привязать Telegram».</li>';return;}
   list.innerHTML='<li class="empty">Загружаю лигу…</li>';
   try{
     syncXP();
@@ -1142,7 +1179,65 @@ $('chordPop').addEventListener('click',e=>{if(e.target===$('chordPop'))$('chordP
 $('cpPlay').addEventListener('click',()=>strumShape(chordShape($('chordPop').dataset.name)));
 
 /* ===== профиль ===== */
-function tgUser(){try{return (tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||null;}catch(e){return null;}}
+/* ===== привязка Telegram к сайту ===== */
+let linkState=null,linkPoll=0;
+function paintLink(){
+  const box=$('pLink');
+  if(inTg||!API_URL){box.hidden=true;return;}
+  box.hidden=false;
+  if(linked()){
+    const u=link.user||{};
+    box.innerHTML=`<b>✓ Telegram привязан</b><p>${esc([u.first_name,u.last_name].filter(Boolean).join(' ')||'Аккаунт')}${u.username?' · @'+esc(u.username):''}. Прогресс, XP и лига общие на сайте и в боте.</p><div class="row2"><button class="btn ghost" id="lkOff">Отвязать</button></div>`;
+    $('lkOff').onclick=unlinkTg;
+  }else if(linkState){
+    box.innerHTML=`<div class="wait"><i></i>Ждём подтверждения в Telegram…</div><p>В Telegram откроется бот — нажми «Запустить» или «Открыть», и привязка завершится сама.</p><div class="row2"><a class="btn" href="${linkState.url}" target="_blank" rel="noopener">Открыть Telegram ещё раз</a><button class="btn ghost" id="lkCancel">Отмена</button></div>`;
+    $('lkCancel').onclick=()=>stopLink('');
+  }else{
+    box.innerHTML=`<b>Привяжи Telegram</b><p>Если играешь в боте @notanagrife_bot, привяжи его — прогресс, XP, звание и лига станут общими здесь и в Telegram.</p><div class="row2"><button class="btn" id="lkOn">Привязать Telegram</button></div>${linkState===false?'':''}`;
+    $('lkOn').onclick=startLink;
+  }
+}
+function startLink(){
+  const a=new Uint8Array(18);crypto.getRandomValues(a);
+  const nonce=btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const url=`https://t.me/notanagrife_bot?startapp=link_${nonce}`;
+  linkState={nonce,url,since:Date.now()};
+  window.open(url,'_blank');
+  if($('profileView').hidden)openProfile();else paintLink();
+  clearInterval(linkPoll);
+  linkPoll=setInterval(async()=>{
+    if(!linkState){clearInterval(linkPoll);return;}
+    if(Date.now()-linkState.since>15*60e3){stopLink('Время вышло — нажми «Привязать Telegram» ещё раз.');return;}
+    try{const r=await api({action:'claim',nonce:linkState.nonce});
+      if(r.token){clearInterval(linkPoll);await finishLink(r);}
+      else if(r.expired)stopLink('Ссылка устарела — нажми «Привязать Telegram» ещё раз.');
+    }catch(e){}
+  },2500);
+}
+function stopLink(msg){clearInterval(linkPoll);linkState=null;paintLink();if(msg)alert(msg);}
+async function finishLink(r){
+  link={token:r.token,user:r.user};linkState=null;
+  try{localStorage.setItem(LINK_KEY,JSON.stringify(link));}catch(e){}
+  try{
+    const rr=await api({action:'load'});
+    if(rr.data){
+      const rem=JSON.parse(rr.data),lx=data.xp||0,rx=rem.xp||0;
+      let keepLocal=false;
+      if(lx>rx)keepLocal=confirm(`В Telegram у тебя ${rx} XP, а здесь, на сайте, — ${lx} XP.\n\nОК — оставить прогресс с сайта (он заменит прогресс в Telegram).\nОтмена — взять прогресс из Telegram.`);
+      if(!keepLocal)adopt(rem);
+    }
+    data._t=Date.now();store.set('progress',JSON.stringify(data));
+    await pushNow();
+  }catch(e){}
+  location.reload();
+}
+async function unlinkTg(){
+  if(!confirm('Отвязать Telegram? Прогресс на этом устройстве останется, но перестанет обновляться из бота.'))return;
+  try{await api({action:'unlink'});}catch(e){}
+  link=null;try{localStorage.removeItem(LINK_KEY);}catch(e){}
+  location.reload();
+}
+function tgUser(){try{const u=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;if(u)return u;}catch(e){}return linked()?link.user:null;}
 function myName(){const u=tgUser();return u?[u.first_name,u.last_name].filter(Boolean).join(' '):'Гитарист';}
 function paintAvatar(el){
   const u=tgUser(),photo=u&&u.photo_url;
@@ -1152,7 +1247,7 @@ function paintAvatar(el){
 }
 const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 function openProfile(){
-  renderMenu();show('profileView');back(true);
+  renderMenu();show('profileView');back(true);paintLink();
   const u=tgUser();
   paintAvatar($('avaBig'));
   $('pName').textContent=myName();
@@ -1371,7 +1466,7 @@ $('gpFile').addEventListener('change',e=>{
 function openSettings(){renderMenu();show('settingsView');back(true);}
 function submitScore(){
   const el=$('rRank');
-  if(!API_URL||!inTg||!g.total){el.hidden=true;return;}
+  if(!canSync()||!g.total){el.hidden=true;return;}
   el.hidden=false;el.textContent='Отправляю результат в рейтинг…';
   api({action:'submit',mode:cfg.mode,max:g.max,score:g.score,total:g.total})
     .then(r=>{el.textContent=r.me?`Ты на ${r.me.rank}-м месте в рейтинге недели`:'Результат сохранён';})
@@ -2055,6 +2150,7 @@ $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
 $('songsBtn').addEventListener('click',openSongs);
+$('linkBan').addEventListener('click',startLink);
 /* веб-навигация */
 const WEBGO={menu:openMenu,levels:openLevels,ear:openEar,rate:openBoard,songs:openSongs,settings:openSettings};
 document.querySelectorAll('#webbar nav button').forEach(b=>b.addEventListener('click',()=>{if(!$('tabPlayer').hidden)closeTab();WEBGO[b.dataset.go]();}));
@@ -2082,6 +2178,16 @@ $('shareBtn').addEventListener('click',()=>{
 
 (async()=>{
   await load();
+  await pullRemote();
+  // открыли бота по ссылке привязки с сайта
+  const sp=(inTg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';
+  if(sp.startsWith('link_')&&API_URL){
+    (async()=>{
+      try{await pushNow();await api({action:'link',nonce:sp.slice(5)});
+        tg.showAlert('Готово! Telegram привязан к сайту. Вернись в браузер — прогресс подтянется через пару секунд.');}
+      catch(e){tg.showAlert('Не получилось привязать. Нажми «Привязать Telegram» на сайте ещё раз.');}
+    })();
+  }
   if(data.orient)cfg.orient=data.orient;
   if(data.ear)cfg.ear=data.ear;
   if(data.theme)cfg.theme=data.theme;applyTheme();

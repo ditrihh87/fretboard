@@ -1,4 +1,5 @@
-// Сервер рейтинга «Нота на грифе» для Yandex Cloud Functions (Node.js 18+)
+// Сервер ditrihh (Yandex Cloud Functions, Node.js 18+): рейтинг недели, лиги, сохранение прогресса,
+// привязка Telegram-аккаунта к сайту.
 // Переменные окружения: BOT_TOKEN — токен бота, BUCKET — приватный бакет для данных.
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
@@ -56,6 +57,70 @@ async function saveList(key, list, token) {
     body: JSON.stringify(list),
   });
   if (!r.ok) throw new Error('storage write ' + r.status);
+}
+
+async function deleteObj(key, token) {
+  await fetch(objUrl(key), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+}
+
+/* ===== Привязка Telegram к сайту и общий прогресс ===== */
+const LINK_TTL = 15 * 60 * 1000;      // ссылка привязки живёт 15 минут
+const MAX_PROGRESS = 96 * 1024;       // предел размера прогресса
+const sha = t => crypto.createHash('sha256').update(String(t)).digest('hex');
+const okNonce = n => typeof n === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(n);
+const pubUser = u => ({ id: u.id, first_name: u.first_name || '', last_name: u.last_name || '', username: u.username || '', photo_url: u.photo_url || '' });
+
+// Аккаунт = ключ хранения прогресса. Сейчас tg_<id>; позже появятся vk_<id> и ya_<id> (вход через VK ID / Яндекс ID),
+// а Telegram будет привязываться к ним через alias/tg_<id>.json → { acc }.
+async function accOfTg(id, token) {
+  const a = await loadJSON(`alias/tg_${id}.json`, token, null);
+  return a && a.acc ? a.acc : `tg_${id}`;
+}
+// вход с сайта: токен, выданный после подтверждения в Telegram
+async function userFromToken(tok, token) {
+  if (typeof tok !== 'string' || tok.length < 20 || tok.length > 100) return null;
+  const rec = await loadJSON(`tokens/${sha(tok)}.json`, token, null);
+  return rec && rec.user ? Object.assign({}, rec.user, { acc: rec.acc || `tg_${rec.user.id}` }) : null;
+}
+
+// сайт спрашивает: подтвердил ли человек привязку в Telegram?
+async function handleClaim(body, token) {
+  if (!okNonce(body.nonce)) return reply(400, { error: 'bad nonce' });
+  const key = `links/${body.nonce}.json`;
+  const link = await loadJSON(key, token, null);
+  if (!link) return reply(200, { pending: true });
+  await deleteObj(key, token);
+  if (Date.now() - link.t > LINK_TTL) return reply(200, { expired: true });
+  const tok = crypto.randomBytes(32).toString('base64url');
+  const acc = await accOfTg(link.user.id, token);
+  await saveList(`tokens/${sha(tok)}.json`, { user: link.user, acc, t: Date.now() }, token);
+  return reply(200, { token: tok, user: link.user });
+}
+
+async function handleUser(body, user, viaTg, token) {
+  const acc = user.acc || await accOfTg(user.id, token);
+  if (body.action === 'link') {            // подтверждение привязки — только из самого Telegram
+    if (!viaTg) return reply(403, { error: 'telegram only' });
+    if (!okNonce(body.nonce)) return reply(400, { error: 'bad nonce' });
+    await saveList(`links/${body.nonce}.json`, { user: pubUser(user), t: Date.now() }, token);
+    return reply(200, { ok: true });
+  }
+  if (body.action === 'save') {
+    const p = body.progress;
+    if (typeof p !== 'string' || p.length > MAX_PROGRESS) return reply(400, { error: 'bad progress' });
+    try { JSON.parse(p); } catch { return reply(400, { error: 'bad progress' }); }
+    await saveList(`progress/${acc}.json`, { data: p, t: Date.now() }, token);
+    return reply(200, { ok: true });
+  }
+  if (body.action === 'load') {
+    const rec = await loadJSON(`progress/${acc}.json`, token, null);
+    return reply(200, { data: rec ? rec.data : null, t: rec ? rec.t : 0 });
+  }
+  if (body.action === 'unlink') {
+    if (typeof body.token === 'string') await deleteObj(`tokens/${sha(body.token)}.json`, token);
+    return reply(200, { ok: true });
+  }
+  return null;
 }
 
 function view(list, myId) {
@@ -135,11 +200,25 @@ module.exports.handler = async (event, context) => {
     body = JSON.parse(raw || '{}');
   } catch { return reply(400, { error: 'bad json' }); }
 
-  const user = verify(body.initData, process.env.BOT_TOKEN);
-  if (!user) return reply(401, { error: 'unauthorized' });
-
   const token = context && context.token && context.token.access_token;
   if (!token) return reply(500, { error: 'no service account' });
+
+  if (body.action === 'claim') {
+    try { return await handleClaim(body, token); }
+    catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
+
+  let user = verify(body.initData, process.env.BOT_TOKEN);
+  const viaTg = !!user;
+  if (!user && body.token) {
+    try { user = await userFromToken(body.token, token); } catch (e) { console.error(e); }
+  }
+  if (!user) return reply(401, { error: 'unauthorized' });
+
+  if (['link', 'save', 'load', 'unlink'].includes(body.action)) {
+    try { return await handleUser(body, user, viaTg, token); }
+    catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
 
   if (body.action === 'league' || body.action === 'xp') {
     try { return await handleLeague(body, user, token); }
