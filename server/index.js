@@ -1,7 +1,8 @@
 // Сервер ditrihh (Yandex Cloud Functions, Node.js 18+): рейтинг недели, лиги, сохранение прогресса,
 // привязка Telegram-аккаунта к сайту.
 // Переменные окружения: BOT_TOKEN — токен бота, BUCKET — приватный бакет для данных,
-// VK_CLIENT_ID — ID приложения VK ID, YA_CLIENT_ID — ClientID приложения Яндекс ID.
+// VK_CLIENT_ID — ID приложения VK ID, YA_CLIENT_ID — ClientID приложения Яндекс ID,
+// BOT_TOKEN_NEW — токен второго бота (@ditrihh_bot): приложение работает из обоих ботов.
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
 const crypto = require('node:crypto');
@@ -351,7 +352,7 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
-  let user = verify(body.initData, process.env.BOT_TOKEN);
+  let user = verify(body.initData, process.env.BOT_TOKEN) || verify(body.initData, process.env.BOT_TOKEN_NEW);
   const viaTg = !!user;
   if (!user && body.token) {
     try { user = await userFromToken(body.token, token); } catch (e) { console.error(e); }
