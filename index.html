@@ -1202,6 +1202,9 @@ function setZoom(d){
 function fixSurfaceWidth(){
   const surf=$('tpRender').querySelector('.at-surface');if(!surf)return;
   let w=0;for(const c of surf.children)w=Math.max(w,(parseFloat(c.style.left)||0)+(parseFloat(c.style.width)||c.offsetWidth));
+  // подпись «rendered by alphaTab» — отдельная узкая полоска внизу; прячем (авторство alphaTab указано в README, лицензия MPL этого не запрещает)
+  const last=surf.lastElementChild;
+  if(last&&last.tagName==='DIV'&&(parseFloat(last.style.height)||99)<24&&surf.children.length>1){last.style.display='none';const top=parseFloat(last.style.top);if(top>0)surf.style.height=top+'px';}
   if(w>surf.offsetWidth+1){const px=Math.ceil(w+16)+'px';surf.style.width=px;const cur=$('tpRender').querySelector('.at-cursors');if(cur)cur.style.width=px;}
 }
 let tabLayoutTimer=0;
