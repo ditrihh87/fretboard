@@ -1444,6 +1444,13 @@ function closeTab(){
 }
 $('tpBack').addEventListener('click',closeTab);
 $('tpPlay').addEventListener('click',()=>{unlockAudio();atApi&&atApi.playPause();});
+// клавиатура в таб-плеере: пробел — играть/пауза, Esc — закрыть
+document.addEventListener('keydown',e=>{
+  if($('tabPlayer').hidden||e.ctrlKey||e.metaKey||e.altKey)return;
+  const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='SELECT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  if(e.code==='Space'||e.key===' '){e.preventDefault();if(!$('tpPlay').disabled)$('tpPlay').click();}
+  else if(e.key==='Escape'){e.preventDefault();closeTab();}
+});
 $('tpSpeed').addEventListener('click',()=>{if(!atApi)return;tp.speedI=(tp.speedI+1)%SPEEDS.length;atApi.playbackSpeed=SPEEDS[tp.speedI];tabUI();});
 $('tpLoop').addEventListener('click',()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;tabUI();});
 $('tpMetro').addEventListener('click',()=>{if(!atApi)return;atApi.metronomeVolume=atApi.metronomeVolume>0?0:1;tabUI();});
