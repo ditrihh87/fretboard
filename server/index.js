@@ -402,9 +402,9 @@ async function daSync(token, report) {
     for (const d of j.data || []) if (!known.has(d.id)) { store.list.push(pick(d)); known.add(d.id); }
     store.back = j.links && j.links.next && oldest() >= cutoff ? store.back + 1 : 0; changed = true;
   }
-  // подчищаем старое, но последние 5 донатов оставляем всегда
+  // подчищаем старое, но последние 10 донатов оставляем всегда
   const before = store.list.length;
-  store.list = store.list.filter((d, i) => i < 5 || daTs(d.t) >= cutoff);
+  store.list = store.list.filter((d, i) => i < 10 || daTs(d.t) >= cutoff);
   if (store.list.length !== before) changed = true;
   rep.count = store.list.length; rep.historyDone = !store.back; rep.ms = Date.now() - t0;
   if (changed) await saveList('da/all.json', store, token);
@@ -415,7 +415,7 @@ function daStats(list) {
   const top = items => {
     const m = new Map();
     for (const d of items) { const k = d.n.toLowerCase(); const e = m.get(k) || { name: d.n, rub: 0, count: 0 }; e.rub += toRub(d.a, d.c); e.count++; m.set(k, e); }
-    return [...m.values()].filter(e => e.name !== 'Аноним').sort((a, b) => b.rub - a.rub).slice(0, 5);
+    return [...m.values()].filter(e => e.name !== 'Аноним').sort((a, b) => b.rub - a.rub).slice(0, 10);
   };
   // календарные периоды по Москве: сегодня с 00:00, неделя с понедельника, месяц с 1-го числа
   const now = Date.now(), MSK = 3 * 3600e3, m = new Date(now + MSK);
@@ -426,7 +426,7 @@ function daStats(list) {
   const sum = l => l.reduce((s, d) => s + toRub(d.a, d.c), 0);
   const day = since(dayStart), week = since(weekStart), month = since(monthStart);
   const out = {
-    last: list.slice(0, 5).map(d => ({ name: d.n, amount: d.a, currency: d.c, t: d.t })),
+    last: list.slice(0, 10).map(d => ({ name: d.n, amount: d.a, currency: d.c, t: d.t })),
     topDay: top(day), topWeek: top(week), topMonth: top(month), topAll: top(list),
     dayRub: sum(day), weekRub: sum(week), monthRub: sum(month), count: list.length, updated: now,
   };
