@@ -105,6 +105,36 @@
   .ans.ok{background:var(--ok);color:#1b1b1b}
   .ans.bad{background:var(--bad)}
 
+  /* ===== широкий экран в браузере (не Telegram): верхняя навигация и раскладка в несколько колонок ===== */
+  #webbar{display:none}
+  html.web #webbar{display:flex;position:fixed;top:0;left:0;right:0;height:64px;z-index:20;align-items:center;gap:6px;padding:0 28px;background:rgba(12,10,36,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(110,123,255,.22);color:#EFECFB}
+  html.web:not(.dark) #webbar{background:rgba(255,255,255,.85);color:#1A1640;border-bottom-color:#E3DFF7}
+  #webbar .wlogo{display:block;margin-right:18px}
+  #webbar .wlogo img{height:30px;display:block}
+  #webbar nav{display:flex;gap:4px;flex:1}
+  #webbar nav button,#webbar .wsite{border:none;background:transparent;color:inherit;opacity:.72;font:700 15px var(--body);padding:9px 14px;border-radius:10px;cursor:pointer;text-decoration:none;white-space:nowrap}
+  #webbar nav button:hover,#webbar .wsite:hover{opacity:1;background:rgba(110,123,255,.14)}
+  #webbar nav button.on{opacity:1;background:rgba(110,123,255,.2);box-shadow:inset 0 -3px 0 var(--amber)}
+  #webbar .wava{width:40px;height:40px;border-radius:50%;border:none;background:var(--amber) center/cover;color:#1b1b1b;font-weight:800;cursor:pointer;margin-left:6px;overflow:hidden;padding:0}
+  #webbar .wava img{width:100%;height:100%;object-fit:cover;display:block}
+  html.web #sheet{padding-top:64px}
+  html.web #app{padding-top:84px;height:100vh;max-width:1180px!important;justify-content:center}
+  html.web #board{flex:0 1 auto;height:min(54vh,480px)}
+  html.web #sheet{background:radial-gradient(900px 520px at 10% 0%,rgba(110,123,255,.2),transparent 60%),radial-gradient(800px 500px at 100% 30%,rgba(255,95,207,.1),transparent 60%),var(--p-bg)}
+  html.web .panel,html.web.dark .panel{background:transparent}
+  html.web .panel{max-width:1040px;padding:36px 32px 56px}
+  html.web #menuView .menuhead{display:none}
+  html.web #menuView{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;align-items:stretch}
+  html.web #menuView[hidden]{display:none}
+  html.web #menuView>.quote,html.web #menuView>.rankline{grid-column:1/-1;margin:0}
+  html.web #menuView>.quote blockquote{font-size:22px}
+  html.web #menuView>.today,html.web #menuView>.lvlcard{margin:0;min-height:104px}
+  html.web #menuView>.lvlcard .t{font-size:20px}
+  html.web .lvlcard:hover,html.web .song:hover{transform:translateY(-2px)}
+  html.web .lvlcard,html.web .song{transition:transform .15s}
+  html.web #songList,html.web .songlist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (min-width:1300px){html.web #menuView{grid-template-columns:1fr 1fr 1fr}}
+
   /* sheet */
   #sheet{position:fixed;inset:0;background:var(--p-bg);display:flex;justify-content:center;align-items:flex-start;z-index:10;overflow:auto;-webkit-overflow-scrolling:touch}
   .panel{background:var(--p-bg);color:var(--p-ink);width:100%;max-width:520px;min-height:100%;padding:calc(22px + var(--sa-t)) 18px calc(24px + var(--sa-b))}
@@ -430,6 +460,19 @@
 </style>
 </head>
 <body>
+<header id="webbar" aria-label="Навигация">
+  <a class="wlogo" href="index.html" title="На главную сайта"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"></a>
+  <nav>
+    <button data-go="menu">Главная</button>
+    <button data-go="levels">Путь обучения</button>
+    <button data-go="ear">Слух</button>
+    <button data-go="rate">Битва</button>
+    <button data-go="songs">Песенник</button>
+    <button data-go="settings">Настройки</button>
+  </nav>
+  <a class="wsite" href="index.html#stream">Стримы</a>
+  <button class="wava" id="webAva" aria-label="Мой профиль"></button>
+</header>
 <div id="app">
   <header class="top">
     <div class="stat" id="s1"><b></b><small></small></div>
@@ -776,7 +819,7 @@ function renderMenu(){
   $('fsRow').hidden=!fsSupported;
   const pdN=pathDone('notes'),pdC=pathDone('chords'),pdI=pathDone('intervals');
   $('lvlSummary').textContent=pdN||pdC||pdI?`Ноты ${pdN}/${nodesOf('notes')} · аккорды ${pdC}/${nodesOf('chords')} · интервалы ${pdI}/${nodesOf('intervals')}`:'Ноты, аккорды и интервалы';
-  paintAvatar($('avaMini'));
+  paintAvatar($('avaMini'));paintAvatar($('webAva'));
   // звание
   const tx=data.xp||0,ri=rankOf(tx),nx=RANKS[ri+1];
   $('rankName').textContent=RANKS[ri][1];
@@ -928,7 +971,10 @@ document.querySelectorAll('.seg[data-k]').forEach(el=>el.addEventListener('click
   if(k==='sfilter'&&!$('songsView').hidden)renderSongList();
 }));
 
-function show(view){if(view!=='songView'&&typeof stopScroll==='function'&&song.scroll)stopScroll();['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView','songsView','songView','profileView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
+const NAVMAP={menuView:'menu',levelsView:'levels',earView:'ear',boardView:'rate',songsView:'songs',songView:'songs',settingsView:'settings',profileView:'',leagueView:'',resultView:''};
+function webMode(){document.documentElement.classList.toggle('web',!inTg&&innerWidth>=900);}
+function webNav(view){document.querySelectorAll('#webbar nav button').forEach(b=>b.classList.toggle('on',NAVMAP[view]===b.dataset.go));}
+function show(view){webNav(view);if(view!=='songView'&&typeof stopScroll==='function'&&song.scroll)stopScroll();['menuView','resultView','boardView','levelsView','settingsView','earView','leagueView','songsView','songView','profileView'].forEach(v=>$(v).hidden=v!==view);$('sheet').hidden=false;$('sheet').scrollTop=0;}
 function openLevels(){
   clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('levelsView');back(true);
   const cur=renderPath();
@@ -2009,6 +2055,11 @@ $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
 $('songsBtn').addEventListener('click',openSongs);
+/* веб-навигация */
+const WEBGO={menu:openMenu,levels:openLevels,ear:openEar,rate:openBoard,songs:openSongs,settings:openSettings};
+document.querySelectorAll('#webbar nav button').forEach(b=>b.addEventListener('click',()=>{if(!$('tabPlayer').hidden)closeTab();WEBGO[b.dataset.go]();}));
+$('webAva').addEventListener('click',()=>{if(!$('tabPlayer').hidden)closeTab();openProfile();});
+webMode();addEventListener('resize',webMode);
 $('lgBack').addEventListener('click',openProfile);
 $('lgPlay').addEventListener('click',openLevels);
 $('earBack').addEventListener('click',openMenu);
