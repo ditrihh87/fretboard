@@ -6,6 +6,33 @@
 <title>ditrihh</title>
 <link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+/* ===== Школа закрыта на переработку: видна только по секретной ссылке =====
+   Сайт: app.html?dev=КЛЮЧ · Telegram: t.me/ditrihh_bot?startapp=dev_КЛЮЧ — дальше открывается сама на этом устройстве.
+   Чтобы открыть школу всем, поставь SCHOOL_OPEN=true. */
+(function(){
+  var SCHOOL_OPEN=false, KEYHASH=3137592198;
+  function h(s){var x=0x811c9dc5;s=unescape(encodeURIComponent(s));for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,0x01000193)>>>0;}return x;}
+  var q=new URLSearchParams(location.search),tg=window.Telegram&&Telegram.WebApp,sp='';
+  try{sp=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';}catch(e){}
+  var key=q.get('dev')||(sp.indexOf('dev_')===0?sp.slice(4):'');
+  var ok=false;try{if(key&&h(key)===KEYHASH)localStorage.setItem('dgc_dev','1');ok=localStorage.getItem('dgc_dev')==='1';}catch(e){ok=!!key&&h(key)===KEYHASH;}
+  if(q.get('dev')==='off'){try{localStorage.removeItem('dgc_dev');}catch(e){}ok=false;}
+  window.SCHOOL_DEV=ok;
+  if(SCHOOL_OPEN||ok)return;
+  window.SCHOOL_CLOSED=true;
+  document.documentElement.style.background='#0C0A24';
+  document.write('<style>body>*:not(#soon){display:none!important}#soon{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:radial-gradient(700px 420px at 20% 0%,rgba(110,123,255,.25),transparent 60%),radial-gradient(600px 400px at 100% 100%,rgba(255,95,207,.15),transparent 60%),#0C0A24;color:#EFECFB;font-family:Manrope,system-ui,sans-serif;z-index:99}#soon img{width:min(260px,70vw)}#soon h1{font-family:"Russo One",Manrope,sans-serif;font-weight:400;font-size:28px;margin:8px 0 0}#soon p{color:#B9B4E6;font-weight:600;max-width:420px;line-height:1.5;margin:0}#soon .b{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px}#soon a{text-decoration:none;font-weight:800;padding:12px 18px;border-radius:14px;background:#F0A830;color:#1b1b1b}#soon a.g{background:rgba(239,236,251,.1);color:#EFECFB}</style>');
+  document.addEventListener('DOMContentLoaded',function(){
+    var site=location.origin+location.pathname.replace(/[^/]*$/,'');
+    var d=document.createElement('div');d.id='soon';
+    d.innerHTML='<img src="brand/ditrihh-logo.svg" alt="ditrihh"><h1>Школа скоро откроется</h1><p>Сейчас перерабатываю её целиком, чтобы учиться было ещё удобнее. А пока — табы, правильные аккорды и стримы каждый вечер.</p><div class="b"><a href="'+site+'songs.html?type=tab" data-ext>★ Табы</a><a href="'+site+'songs.html?type=chords" data-ext>Аккорды</a><a class="g" href="'+site+'index.html#stream" data-ext>▶ Стримы</a></div>';
+    document.body.appendChild(d);
+    if(tg){try{tg.ready();tg.expand();}catch(e){}
+      d.addEventListener('click',function(e){var a=e.target.closest('a[data-ext]');if(a){e.preventDefault();tg.openLink(a.href);}});}
+  });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -703,6 +730,7 @@
 </div>
 
 <script>
+if(window.SCHOOL_CLOSED)throw new Error("школа закрыта на переработку");
 /* ===== настрой под себя ===== */
 const BOT_LINK='https://t.me/ditrihh_bot?startapp'; // ссылка на Mini App
 /* вход на сайт: ID приложений VK ID (id.vk.com) и Яндекс ID (oauth.yandex.ru). Пусто — кнопка не показывается */
