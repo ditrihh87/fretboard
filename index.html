@@ -70,6 +70,58 @@
     </div>
   </section>
 
+  <section id="tabs" class="tabsec">
+    <div class="wrap">
+      <div>
+        <div class="kicker">Аккорды и табы</div>
+        <h2>Эксклюзивные табы от ditrihh</h2>
+        <p class="lead">Мои аранжировки — таких табов больше нет нигде. А аккорды к песням подбираю сам и проверяю на гитаре — без ошибок, которыми полны сайты с аккордами.</p>
+        <ul class="ticks">
+          <li>Аккорды над словами — с транспонированием, схемами и автопрокруткой</li>
+          <li>Табы с цветными струнами и настоящим звуком гитары</li>
+          <li>Замедление до 50%, повтор участка, метроном и отсчёт</li>
+          <li>Новые аранжировки — регулярно, по заявкам со стримов</li>
+        </ul>
+        <div style="margin-top:30px;display:flex;flex-wrap:wrap;gap:10px"><a class="btn main" href="songs.html?type=tab">★ Все табы</a><a class="btn ghost" href="songs.html?type=chords">Все аккорды</a></div>
+      </div>
+      <div class="tabview" aria-hidden="true">
+        <div class="legend"><span><i style="background:#D33A3F"></i>6</span><span><i style="background:#C97A0E"></i>5</span><span><i style="background:#9A8300"></i>4</span><span><i style="background:#3E9A45"></i>3</span><span><i style="background:#2E7FC0"></i>2</span><span><i style="background:#8456C2"></i>1</span></div>
+        <svg id="tabsvg" viewBox="0 0 520 170"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="stream">
+    <div class="wrap">
+      <div class="stream-head">
+        <div>
+          <div class="kicker">Стримы</div>
+          <h2>Играю вживую каждый день</h2>
+          <p class="lead" id="stAbout">Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.</p>
+          <script>(function(){var a=window.ABOUT;if(!a)return;var j=Math.floor(Math.random()*(a.t.length-1));if(j>=a.i)j++;document.getElementById("stAbout").textContent=a.t[j];})();</script>
+        </div>
+        <div class="sched"><small>Следующий эфир</small><b id="nextLive">сегодня в 00:00</b><small id="nextIn">по Москве</small></div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Площадка">
+        <button class="tab" role="tab" aria-selected="true" data-p="twitch"><span class="pl" style="background:#9146FF"></span>Twitch</button>
+        <button class="tab" role="tab" aria-selected="false" data-p="youtube"><span class="pl" style="background:#FF3B30"></span>YouTube</button>
+        <button class="tab" role="tab" aria-selected="false" data-p="vk"><span class="pl" style="background:#0077FF"></span>VK Play Live</button>
+      </div>
+      <div class="player">
+        <div class="screen" id="screen">
+          <div class="poster">
+            <button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button>
+            <p id="posterText">Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.</p>
+          </div>
+        </div>
+        <div class="chat" id="chat">
+          <div class="poster"><p>Чат трансляции появится здесь вместе с плеером.</p></div>
+        </div>
+      </div>
+      <p class="ext">Удобнее в приложении? <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a> · <a href="https://www.youtube.com/@ditrihh/live" target="_blank" rel="noopener">youtube.com/@ditrihh</a> · <a href="https://live.vkvideo.ru/ditrihh" target="_blank" rel="noopener">VK Play Live</a></p>
+    </div>
+  </section>
+
   <section id="school">
     <div class="wrap">
       <div class="kicker">Школа</div>
@@ -116,58 +168,6 @@
         </div>
       </div>
       <div style="margin-top:32px"><a class="btn main" href="app.html">Пройти первый урок</a></div>
-    </div>
-  </section>
-
-  <section id="stream">
-    <div class="wrap">
-      <div class="stream-head">
-        <div>
-          <div class="kicker">Стримы</div>
-          <h2>Играю вживую каждый день</h2>
-          <p class="lead" id="stAbout">Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.</p>
-          <script>(function(){var a=window.ABOUT;if(!a)return;var j=Math.floor(Math.random()*(a.t.length-1));if(j>=a.i)j++;document.getElementById("stAbout").textContent=a.t[j];})();</script>
-        </div>
-        <div class="sched"><small>Следующий эфир</small><b id="nextLive">сегодня в 00:00</b><small id="nextIn">по Москве</small></div>
-      </div>
-      <div class="tabs" role="tablist" aria-label="Площадка">
-        <button class="tab" role="tab" aria-selected="true" data-p="twitch"><span class="pl" style="background:#9146FF"></span>Twitch</button>
-        <button class="tab" role="tab" aria-selected="false" data-p="youtube"><span class="pl" style="background:#FF3B30"></span>YouTube</button>
-        <button class="tab" role="tab" aria-selected="false" data-p="vk"><span class="pl" style="background:#0077FF"></span>VK Play Live</button>
-      </div>
-      <div class="player">
-        <div class="screen" id="screen">
-          <div class="poster">
-            <button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button>
-            <p id="posterText">Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.</p>
-          </div>
-        </div>
-        <div class="chat" id="chat">
-          <div class="poster"><p>Чат трансляции появится здесь вместе с плеером.</p></div>
-        </div>
-      </div>
-      <p class="ext">Удобнее в приложении? <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a> · <a href="https://www.youtube.com/@ditrihh/live" target="_blank" rel="noopener">youtube.com/@ditrihh</a> · <a href="https://live.vkvideo.ru/ditrihh" target="_blank" rel="noopener">VK Play Live</a></p>
-    </div>
-  </section>
-
-  <section id="tabs" class="tabsec">
-    <div class="wrap">
-      <div>
-        <div class="kicker">Аккорды и табы</div>
-        <h2>Эксклюзивные табы от ditrihh</h2>
-        <p class="lead">Мои аранжировки — таких табов больше нет нигде. А аккорды к песням подбираю сам и проверяю на гитаре — без ошибок, которыми полны сайты с аккордами.</p>
-        <ul class="ticks">
-          <li>Аккорды над словами — с транспонированием, схемами и автопрокруткой</li>
-          <li>Табы с цветными струнами и настоящим звуком гитары</li>
-          <li>Замедление до 50%, повтор участка, метроном и отсчёт</li>
-          <li>Новые аранжировки — регулярно, по заявкам со стримов</li>
-        </ul>
-        <div style="margin-top:30px;display:flex;flex-wrap:wrap;gap:10px"><a class="btn main" href="songs.html?type=tab">★ Все табы</a><a class="btn ghost" href="songs.html?type=chords">Все аккорды</a></div>
-      </div>
-      <div class="tabview" aria-hidden="true">
-        <div class="legend"><span><i style="background:#D33A3F"></i>6</span><span><i style="background:#C97A0E"></i>5</span><span><i style="background:#9A8300"></i>4</span><span><i style="background:#3E9A45"></i>3</span><span><i style="background:#2E7FC0"></i>2</span><span><i style="background:#8456C2"></i>1</span></div>
-        <svg id="tabsvg" viewBox="0 0 520 170"></svg>
-      </div>
     </div>
   </section>
 
