@@ -116,7 +116,7 @@ function render(){
   if(!items.length){$('list').innerHTML=`<p class="empty">${filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
   $('list').innerHTML=items.map(s=>{
     const ch=chordsIn(s.text);
-    return `<a class="item" href="app.html?song=${encodeURIComponent(s.id)}">
+    return `<a class="item" href="song.html?id=${encodeURIComponent(s.id)}">
       <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
       <h3>${esc(s.title)}</h3><div class="by">${esc(s.artist||'')}</div>
       ${ch.length?`<div class="chords">${ch.slice(0,8).map(c=>`<span>${esc(c)}</span>`).join('')}</div>`:''}
