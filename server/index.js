@@ -363,6 +363,8 @@ async function handleDaConnect(body, token) {
 // все донаты храним у себя (без сообщений): сначала новые, потом понемногу дочитываем историю.
 // За один вызов работаем не дольше DA_BUDGET_MS, чтобы функция не упёрлась в таймаут.
 const DA_BUDGET_MS = 2500;
+const DA_KEEP_MS = 40 * 864e5;            // храним и дочитываем только последние 40 дней — для топа за месяц и неделю хватает
+const daTs = t => Date.parse(String(t || '').replace(' ', 'T') + 'Z') || 0;
 async function daSync(token, report) {
   const t0 = Date.now(), rep = report || {};
   const at = await daToken(token);
@@ -392,11 +394,18 @@ async function daSync(token, report) {
   }
   if (fresh.length) { store.list = fresh.concat(store.list); changed = true; }
   // 2) история — продолжаем с сохранённой страницы, сколько успеем
+  const cutoff = Date.now() - DA_KEEP_MS;
+  const oldest = () => store.list.length ? daTs(store.list[store.list.length - 1].t) : Infinity;
+  if (store.back && oldest() < cutoff) store.back = 0;      // старше 40 дней не нужно
   while (store.back && Date.now() - t0 < DA_BUDGET_MS) {
     const j = await getPage(store.back); if (!j) break;
     for (const d of j.data || []) if (!known.has(d.id)) { store.list.push(pick(d)); known.add(d.id); }
-    store.back = j.links && j.links.next ? store.back + 1 : 0; changed = true;
+    store.back = j.links && j.links.next && oldest() >= cutoff ? store.back + 1 : 0; changed = true;
   }
+  // подчищаем старое, но последние 5 донатов оставляем всегда
+  const before = store.list.length;
+  store.list = store.list.filter((d, i) => i < 5 || daTs(d.t) >= cutoff);
+  if (store.list.length !== before) changed = true;
   rep.count = store.list.length; rep.historyDone = !store.back; rep.ms = Date.now() - t0;
   if (changed) await saveList('da/all.json', store, token);
   return store.list;
@@ -460,8 +469,8 @@ async function handleDaGet(q, token) {
     try { await daSync(token, rep); } catch (e) { err = String(e && e.message || e); }
     await deleteObj('cache/da_stats.json', token).catch(() => {});
     const rows = [['Токен DonationAlerts', rep.token ? 'есть' : 'нет — подключи заново'], ['Ответ DonationAlerts', rep.httpStatus || '—'],
-      ['Страниц прочитано сейчас', rep.pages || 0], ['Всего донатов в DonationAlerts', rep.total ?? '—'], ['Сохранено у нас', rep.count ?? 0],
-      ['История загружена', rep.historyDone ? 'да' : 'ещё нет — обнови страницу ещё раз'], ['Время', (rep.ms || 0) + ' мс'], ['Ошибка', rep.error || err || 'нет']];
+      ['Страниц прочитано сейчас', rep.pages || 0], ['Всего донатов в DonationAlerts', rep.total ?? '—'], ['Сохранено у нас (за 40 дней)', rep.count ?? 0],
+      ['Последние 40 дней загружены', rep.historyDone ? 'да' : 'ещё нет — обнови страницу ещё раз'], ['Время', (rep.ms || 0) + ' мс'], ['Ошибка', rep.error || err || 'нет']];
     return page('Диагностика DonationAlerts', rows.map(r => `${r[0]}: <b style="color:#EFECFB">${r[1]}</b>`).join('<br>'), !(rep.error || err) && rep.token);
   }
   if (q.code) {
