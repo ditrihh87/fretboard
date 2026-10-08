@@ -497,9 +497,9 @@
     <button data-go="levels">Путь обучения</button>
     <button data-go="ear">Слух</button>
     <button data-go="rate">Битва</button>
-    <button data-go="songs">Песенник</button>
     <button data-go="settings">Настройки</button>
   </nav>
+  <a class="wsite" href="songs.html">Аккорды и табы</a>
   <a class="wsite" href="index.html#stream">Стримы</a>
   <button class="wava" id="webAva" aria-label="Мой профиль"></button>
 </header>
@@ -573,11 +573,6 @@
       <button class="lvlcard" id="rateBtn">
         <span class="ico ico-podium" aria-hidden="true"><svg viewBox="1 1.2 22 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20.5h20"/><path d="M8.5 20.5V11h7v9.5"/><path d="M2.8 20.5v-5.5h5.7"/><path d="M15.5 16.5h5.7v4"/><path d="M12.00 2.20 L12.88 4.39 L15.23 4.55 L13.43 6.06 L14.00 8.35 L12.00 7.10 L10.00 8.35 L10.57 6.06 L8.77 4.55 L11.12 4.39Z" fill="currentColor"/></svg></span>
         <span class="t">Рейтинговая битва<small id="rateSummary"></small></span>
-        <span class="chev" aria-hidden="true">›</span>
-      </button>
-      <button class="lvlcard" id="songsBtn">
-        <span class="ico ico-book" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5c2.8-1.3 5.6-1.3 8.5 0v14c-2.9-1.3-5.7-1.3-8.5 0z"/><path d="M20.5 5.5c-2.8-1.3-5.6-1.3-8.5 0v14c2.9-1.3 5.7-1.3 8.5 0z"/><path d="M15.2 8.2v5.3"/><circle cx="14.1" cy="13.6" r="1.2" fill="currentColor"/><path d="M15.2 8.2l2.2.8"/></svg></span>
-        <span class="t">Песенник<small id="songsSummary">Эксклюзивные табы и аккорды от ditrihh</small></span>
         <span class="chev" aria-hidden="true">›</span>
       </button>
       <button class="lvlcard" id="setBtn">
@@ -747,7 +742,8 @@ const colOf=n=>6-n;
 const tg=window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData!==undefined?window.Telegram.WebApp:null;
 const inTg=!!(tg&&tg.initData);
 // режим чтения: песню открыли со страницы сайта «Аккорды и табы» — шапка как у сайта, «назад» ведёт к списку
-const READER=!inTg&&RQ.has('song');
+if(!inTg&&RQ.has('song'))location.replace('song.html?id='+encodeURIComponent(RQ.get('song')));
+const READER=false; // песенник живёт только на сайте
 if(READER){
   document.documentElement.classList.add('reader');
   document.querySelector('#webbar nav').innerHTML='<a class="wsite" href="index.html#school">Школа</a><a class="wsite on" href="songs.html">Аккорды и табы</a><a class="wsite" href="index.html#stream">Стримы</a>';
@@ -2291,10 +2287,9 @@ $('menuBtn').addEventListener('click',openMenu);
 $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
-$('songsBtn').addEventListener('click',openSongs);
 $('linkBan').addEventListener('click',()=>openProfile());
 /* веб-навигация */
-const WEBGO={menu:openMenu,levels:openLevels,ear:openEar,rate:openBoard,songs:openSongs,settings:openSettings};
+const WEBGO={menu:openMenu,levels:openLevels,ear:openEar,rate:openBoard,settings:openSettings};
 document.querySelectorAll('#webbar nav button').forEach(b=>b.addEventListener('click',()=>{if(!$('tabPlayer').hidden)closeTab();WEBGO[b.dataset.go]();}));
 $('webAva').addEventListener('click',()=>{if(!$('tabPlayer').hidden)closeTab();openProfile();});
 webMode();addEventListener('resize',webMode);
@@ -2346,7 +2341,6 @@ $('shareBtn').addEventListener('click',()=>{
   showQuote();
   openMenu();
   // ссылка на песню с сайта: app.html?song=id
-  if(RQ.get('song')){await loadSongs();if(SONGS.some(x=>x.id===RQ.get('song')))openSong(RQ.get('song'));}
   syncXP();
 })();
 </script>
