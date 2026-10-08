@@ -1,6 +1,7 @@
 // Сервер ditrihh (Yandex Cloud Functions, Node.js 18+): рейтинг недели, лиги, сохранение прогресса,
 // привязка Telegram-аккаунта к сайту.
-// Переменные окружения: BOT_TOKEN — токен бота, BUCKET — приватный бакет для данных.
+// Переменные окружения: BOT_TOKEN — токен бота, BUCKET — приватный бакет для данных,
+// VK_CLIENT_ID — ID приложения VK ID, YA_CLIENT_ID — ClientID приложения Яндекс ID.
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
 const crypto = require('node:crypto');
@@ -91,10 +92,77 @@ async function handleClaim(body, token) {
   if (!link) return reply(200, { pending: true });
   await deleteObj(key, token);
   if (Date.now() - link.t > LINK_TTL) return reply(200, { expired: true });
+  // уже вошёл через VK/Яндекс — привязываем Telegram к этому аккаунту
+  const sess = body.token ? await userFromToken(body.token, token) : null;
+  if (sess && sess.acc && !/^tg_/.test(sess.acc)) {
+    await attachTg(sess.acc, link.user, token);
+    return reply(200, { token: body.token, user: sess, tg: link.user });
+  }
   const tok = crypto.randomBytes(32).toString('base64url');
   const acc = await accOfTg(link.user.id, token);
   await saveList(`tokens/${sha(tok)}.json`, { user: link.user, acc, t: Date.now() }, token);
   return reply(200, { token: tok, user: link.user });
+}
+
+/* ===== Вход через VK ID и Яндекс ID ===== */
+const progressXp = rec => { try { return Number(JSON.parse(rec.data).xp) || 0; } catch { return 0; } };
+async function accMeta(acc, token) { return loadJSON(`accounts/${acc}.json`, token, {}); }
+// привязать Telegram к аккаунту сайта: дальше бот пишет прогресс туда же; берём прогресс, где больше опыта
+async function attachTg(acc, tgUser, token) {
+  const tgAcc = `tg_${tgUser.id}`;
+  const [mine, theirs] = await Promise.all([loadJSON(`progress/${acc}.json`, token, null), loadJSON(`progress/${tgAcc}.json`, token, null)]);
+  if (theirs && (!mine || progressXp(theirs) > progressXp(mine))) await saveList(`progress/${acc}.json`, { data: theirs.data, t: Date.now() }, token);
+  await saveList(`alias/tg_${tgUser.id}.json`, { acc }, token);
+  const meta = await accMeta(acc, token);
+  meta.tg = pubUser(tgUser);
+  await saveList(`accounts/${acc}.json`, meta, token);
+}
+async function issueSession(user, provider, token) {
+  const alias = await loadJSON(`alias/${user.id}.json`, token, null);
+  const acc = alias && alias.acc ? alias.acc : user.id;
+  const meta = await accMeta(acc, token);
+  meta[provider] = user; meta.t = Date.now();
+  await saveList(`accounts/${acc}.json`, meta, token);
+  const tok = crypto.randomBytes(32).toString('base64url');
+  await saveList(`tokens/${sha(tok)}.json`, { user, acc, t: Date.now() }, token);
+  return reply(200, { token: tok, user, tg: meta.tg || null });
+}
+async function handleLoginYa(body, token) {
+  if (!process.env.YA_CLIENT_ID) return reply(503, { error: 'yandex not configured' });
+  if (typeof body.access_token !== 'string' || body.access_token.length > 200) return reply(400, { error: 'bad token' });
+  const r = await fetch('https://login.yandex.ru/info?format=json', { headers: { Authorization: 'OAuth ' + body.access_token } });
+  if (!r.ok) return reply(401, { error: 'yandex rejected' });
+  const j = await r.json();
+  // токен должен быть выдан именно нашему приложению — иначе чужое приложение могло бы войти от имени человека
+  if (String(j.client_id) !== String(process.env.YA_CLIENT_ID)) return reply(401, { error: 'wrong client' });
+  const user = { id: `ya_${j.id}`, first_name: j.first_name || j.display_name || '', last_name: j.last_name || '', username: j.login || '',
+    photo_url: j.default_avatar_id && !j.is_avatar_empty ? `https://avatars.yandex.net/get-yapic/${j.default_avatar_id}/islands-200` : '', provider: 'ya' };
+  return issueSession(user, 'ya', token);
+}
+const VK_HOSTS = ['https://id.vk.ru', 'https://id.vk.com'];
+async function vkPost(path, params) {
+  let last;
+  for (const h of VK_HOSTS) {
+    try { const r = await fetch(h + path, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(params) });
+      const j = await r.json(); if (r.ok && !j.error) return j; last = j; } catch (e) { last = { error: String(e) }; }
+  }
+  throw new Error('vk ' + JSON.stringify(last));
+}
+async function handleLoginVk(body, token) {
+  const client_id = process.env.VK_CLIENT_ID;
+  if (!client_id) return reply(503, { error: 'vk not configured' });
+  const okStr = (v, n) => typeof v === 'string' && v.length > 0 && v.length <= n;
+  if (!okStr(body.code, 2000) || !okStr(body.code_verifier, 200) || !okStr(body.device_id, 200) || !okStr(body.redirect_uri, 300) || !okStr(body.state, 200)) return reply(400, { error: 'bad params' });
+  if (!/^https:\/\/(www\.)?ditrihh\.ru\/|^https:\/\/ditrihh87\.github\.io\/|^http:\/\/localhost(:\d+)?\//.test(body.redirect_uri)) return reply(400, { error: 'bad redirect' });
+  let tk;
+  try { tk = await vkPost('/oauth2/auth', { grant_type: 'authorization_code', code: body.code, code_verifier: body.code_verifier, client_id, device_id: body.device_id, redirect_uri: body.redirect_uri, state: body.state }); }
+  catch (e) { console.error(e); return reply(401, { error: 'vk rejected' }); }
+  let u = {};
+  try { const info = await vkPost('/oauth2/user_info', { client_id, access_token: tk.access_token }); u = info.user || {}; } catch (e) { console.error(e); }
+  const id = u.user_id || tk.user_id;
+  if (!id) return reply(401, { error: 'vk no user' });
+  const user = { id: `vk_${id}`, first_name: u.first_name || '', last_name: u.last_name || '', username: '', photo_url: u.avatar || '', provider: 'vk' };
+  return issueSession(user, 'vk', token);
 }
 
 async function handleUser(body, user, viaTg, token) {
@@ -211,7 +279,8 @@ function leagueView(list, id, tier) {
 }
 
 async function handleLeague(body, user, token) {
-  const { u, result } = await settleUser(user.id, token);
+  const lid = user.lid || user.id;
+  const { u, result } = await settleUser(lid, token);
   const key = `league/${u.week}/${u.tier}.json`;
   let list = await loadList(key, token);
   if (body.action === 'xp') {
@@ -219,13 +288,13 @@ async function handleLeague(body, user, token) {
     const total = Math.max(0, Math.floor(Number(body.total)) || 0);
     if (!(add > 0 && add <= MAX_XP_CALL)) return reply(400, { error: 'bad xp' });
     const name = displayName(user);
-    let mine = list.find(e => e.id === user.id);
-    if (!mine) { mine = { id: user.id, name, xp: 0, total, t: Date.now() }; list.push(mine); }
+    let mine = list.find(e => e.id === lid);
+    if (!mine) { mine = { id: lid, name, xp: 0, total, t: Date.now() }; list.push(mine); }
     mine.name = name; mine.total = Math.max(mine.total || 0, total);
     if (mine.xp + add <= MAX_XP_WEEK) { mine.xp += add; mine.t = Date.now(); }
     await saveList(key, list, token);
   }
-  return reply(200, { ...leagueView(list, user.id, u.tier), week: u.week, result });
+  return reply(200, { ...leagueView(list, lid, u.tier), week: u.week, result });
 }
 
 /* ===== Рейтинг песен: оценка 1–5 от каждого посетителя (анонимный id из браузера) ===== */
@@ -272,6 +341,11 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
+  if (body.action === 'login_vk' || body.action === 'login_ya') {
+    try { return body.action === 'login_vk' ? await handleLoginVk(body, token) : await handleLoginYa(body, token); }
+    catch (e) { console.error(e); return reply(502, { error: 'login' }); }
+  }
+
   if (body.action === 'claim') {
     try { return await handleClaim(body, token); }
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
@@ -283,6 +357,10 @@ module.exports.handler = async (event, context) => {
     try { user = await userFromToken(body.token, token); } catch (e) { console.error(e); }
   }
   if (!user) return reply(401, { error: 'unauthorized' });
+  // единая личность для лиг и рейтинга: аккаунт сайта (vk_/ya_), если Telegram к нему привязан
+  if (!user.acc) { try { user.acc = await accOfTg(user.id, token); } catch (e) { user.acc = `tg_${user.id}`; } }
+  const lid = /^tg_/.test(user.acc) ? user.id : user.acc;
+  user.lid = lid;
 
   if (['link', 'save', 'load', 'unlink'].includes(body.action)) {
     try { return await handleUser(body, user, viaTg, token); }
@@ -305,14 +383,14 @@ module.exports.handler = async (event, context) => {
       const total = Math.floor(Number(body.total));
       if (!(score >= 0 && total >= score && score <= MAX_SCORE)) return reply(400, { error: 'bad score' });
       const name = displayName(user);
-      const mine = list.find(e => e.id === user.id);
-      if (!mine) list.push({ id: user.id, name, score, t: Date.now() });
+      const mine = list.find(e => e.id === lid);
+      if (!mine) list.push({ id: lid, name, score, t: Date.now() });
       else { mine.name = name; if (score > mine.score) { mine.score = score; mine.t = Date.now(); } }
       list.sort((a, b) => b.score - a.score || a.t - b.t);
       list = list.slice(0, MAX_PLAYERS);
       await saveList(key, list, token);
     }
-    return reply(200, view(list, user.id));
+    return reply(200, view(list, lid));
   } catch (e) {
     console.error(e);
     return reply(502, { error: 'storage' });

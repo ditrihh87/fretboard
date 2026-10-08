@@ -141,6 +141,8 @@
   .linkbox b{font-size:16px}
   .linkbox .row2{display:flex;gap:8px;flex-wrap:wrap}
   .linkbox .btn{flex:1;min-width:150px}
+  .linkbox .lgvk{background:#0077FF;color:#fff}
+  .linkbox .lgya{background:#FC3F1D;color:#fff}
   .linkbox .wait{display:flex;align-items:center;gap:10px;font-weight:700}
   .linkbox .wait i{width:18px;height:18px;border-radius:50%;border:3px solid var(--p-faint);border-top-color:var(--amber);animation:spin 1s linear infinite;flex:none}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -552,7 +554,7 @@
       </div>
       <figure class="quote" id="quote" title="Нажми — следующая фраза"><blockquote id="qText"></blockquote><figcaption id="qBy"></figcaption></figure>
       <div class="rankline" id="rankLine"><b id="rankName">Новичок</b><span id="rankXP"></span><i><em id="rankBar"></em></i></div>
-      <button class="linkban" id="linkBan" hidden><span>🔗</span><span><b>Играешь в Telegram?</b><small>Привяжи аккаунт — прогресс, XP и лига будут общими</small></span></button>
+      <button class="linkban" id="linkBan" hidden><span>👤</span><span><b>Войди, чтобы прогресс не потерялся</b><small>Через VK ID или Яндекс ID — и привяжи Telegram, если играешь в боте</small></span></button>
       <section class="today" id="today">
         <svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" class="track"/><circle cx="28" cy="28" r="23" class="fill" id="ringFill"/></svg>
         <div class="goal"><b id="goalTitle">Цель дня</b><small id="goalText"></small></div>
@@ -707,6 +709,9 @@
 <script>
 /* ===== настрой под себя ===== */
 const BOT_LINK='https://t.me/notanagrife_bot?startapp'; // ссылка на Mini App
+/* вход на сайт: ID приложений VK ID (id.vk.com) и Яндекс ID (oauth.yandex.ru). Пусто — кнопка не показывается */
+const VK_APP_ID='';
+const YA_CLIENT_ID='';
 /* привязка Telegram на сайте: токен от сервера хранится в браузере */
 const LINK_KEY='dgc_link';
 let link=null;try{link=JSON.parse(localStorage.getItem(LINK_KEY)||'null');}catch(e){}
@@ -1219,21 +1224,73 @@ $('cpPlay').addEventListener('click',()=>strumShape(chordShape($('chordPop').dat
 /* ===== профиль ===== */
 /* ===== привязка Telegram к сайту ===== */
 let linkState=null,linkPoll=0;
+const PROV={vk:'VK ID',ya:'Яндекс ID',tg:'Telegram'};
+const canVk=()=>!!VK_APP_ID,canYa=()=>!!YA_CLIENT_ID;
+function loginBtns(){return `${canVk()?'<button class="btn lgvk" id="lgVk">Войти через VK ID</button>':''}${canYa()?'<button class="btn lgya" id="lgYa">Войти через Яндекс ID</button>':''}`;}
+function wireLogin(){const a=$('lgVk'),b=$('lgYa');if(a)a.onclick=()=>startOAuth('vk');if(b)b.onclick=()=>startOAuth('ya');}
 function paintLink(){
   const box=$('pLink');
   if(inTg||!API_URL){box.hidden=true;return;}
   box.hidden=false;
-  if(linked()){
-    const u=link.user||{};
-    box.innerHTML=`<b>✓ Telegram привязан</b><p>${esc([u.first_name,u.last_name].filter(Boolean).join(' ')||'Аккаунт')}${u.username?' · @'+esc(u.username):''}. Прогресс, XP и лига общие на сайте и в боте.</p><div class="row2"><button class="btn ghost" id="lkOff">Отвязать</button></div>`;
-    $('lkOff').onclick=unlinkTg;
-  }else if(linkState){
+  if(linkState){
     box.innerHTML=`<div class="wait"><i></i>Ждём подтверждения в Telegram…</div><p>В Telegram откроется бот — нажми «Запустить» или «Открыть», и привязка завершится сама.</p><div class="row2"><a class="btn" href="${linkState.url}" target="_blank" rel="noopener">Открыть Telegram ещё раз</a><button class="btn ghost" id="lkCancel">Отмена</button></div>`;
-    $('lkCancel').onclick=()=>stopLink('');
-  }else{
-    box.innerHTML=`<b>Привяжи Telegram</b><p>Если играешь в боте @notanagrife_bot, привяжи его — прогресс, XP, звание и лига станут общими здесь и в Telegram.</p><div class="row2"><button class="btn" id="lkOn">Привязать Telegram</button></div>${linkState===false?'':''}`;
-    $('lkOn').onclick=startLink;
+    $('lkCancel').onclick=()=>stopLink('');return;
   }
+  if(linked()){
+    const u=link.user||{},prov=link.prov||(String(u.id).startsWith('vk_')?'vk':String(u.id).startsWith('ya_')?'ya':'tg');
+    const nm=esc([u.first_name,u.last_name].filter(Boolean).join(' ')||'Аккаунт')+(u.username?' · @'+esc(u.username):'');
+    const tgu=prov==='tg'?u:link.tg;
+    box.innerHTML=`<b>✓ Вход через ${PROV[prov]}</b><p>${nm}. Прогресс, XP и лига сохраняются на сервере.</p>`+
+      (prov==='tg'?'':tgu?`<p>✓ Telegram привязан: ${esc([tgu.first_name,tgu.last_name].filter(Boolean).join(' '))}${tgu.username?' · @'+esc(tgu.username):''} — в боте тот же прогресс.</p>`
+        :`<p>Играешь в боте @notanagrife_bot? Привяжи Telegram — прогресс станет общим.</p>`)+
+      `<div class="row2">${prov!=='tg'&&!tgu?'<button class="btn" id="lkOn">Привязать Telegram</button>':''}<button class="btn ghost" id="lkOff">Выйти</button></div>`;
+    const on=$('lkOn');if(on)on.onclick=startLink;$('lkOff').onclick=logout;return;
+  }
+  const lb=loginBtns();
+  box.innerHTML=`<b>Войди, чтобы прогресс не потерялся</b><p>Прогресс, XP, звание и лига сохранятся на сервере и будут на любом устройстве.</p>${lb?`<div class="row2">${lb}</div>`:''}<p style="margin-top:12px">Играешь в боте @notanagrife_bot? Можно ${lb?'и ':''}просто привязать Telegram.</p><div class="row2"><button class="btn ${lb?'ghost':''}" id="lkOn">Привязать Telegram</button></div>`;
+  wireLogin();$('lkOn').onclick=startLink;
+}
+/* ===== вход через VK ID и Яндекс ID ===== */
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const rnd=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return b64u(a);};
+const REDIR=()=>location.origin+location.pathname;
+async function startOAuth(prov){
+  const st={prov,state:rnd(24),t:Date.now()};
+  if(prov==='vk'){
+    st.verifier=rnd(48);
+    const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(st.verifier)));
+    try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
+    location.href='https://id.vk.ru/authorize?'+new URLSearchParams({response_type:'code',client_id:VK_APP_ID,redirect_uri:REDIR(),state:st.state,code_challenge:ch,code_challenge_method:'S256',scope:'vkid.personal_info'});
+  }else{
+    try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
+    location.href='https://oauth.yandex.ru/authorize?'+new URLSearchParams({response_type:'token',client_id:YA_CLIENT_ID,redirect_uri:REDIR(),state:st.state,force_confirm:'no'});
+  }
+}
+// вернулись с VK/Яндекса: забираем код или токен из адреса и входим
+async function finishOAuth(){
+  if(inTg)return false;
+  const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
+  const code=q.get('code'),tok=h.get('access_token'),err=q.get('error')||h.get('error');
+  if(!code&&!tok&&!err)return false;
+  let st=null;try{st=JSON.parse(sessionStorage.getItem('dgc_oauth')||'null');sessionStorage.removeItem('dgc_oauth');}catch(e){}
+  history.replaceState(null,'',REDIR());
+  if(err){if(err!=='access_denied')alert('Не получилось войти. Попробуй ещё раз.');return false;}
+  const state=q.get('state')||h.get('state');
+  if(!st||st.state!==state){alert('Вход устарел — нажми кнопку входа ещё раз.');return false;}
+  try{
+    const r=st.prov==='vk'
+      ?await api({action:'login_vk',code,code_verifier:st.verifier,device_id:q.get('device_id')||'',state,redirect_uri:REDIR()})
+      :await api({action:'login_ya',access_token:tok});
+    link=null; // вход заменяет прежнюю сессию
+    await finishLink(Object.assign(r,{prov:st.prov}));
+    return true;
+  }catch(e){alert('Не получилось войти. Попробуй ещё раз.');return false;}
+}
+async function logout(){
+  if(!confirm('Выйти из аккаунта? Прогресс останется на сервере — войдёшь снова, и он вернётся.'))return;
+  try{await api({action:'unlink'});}catch(e){}
+  link=null;try{localStorage.removeItem(LINK_KEY);}catch(e){}
+  location.reload();
 }
 function startLink(){
   const a=new Uint8Array(18);crypto.getRandomValues(a);
@@ -1254,14 +1311,15 @@ function startLink(){
 }
 function stopLink(msg){clearInterval(linkPoll);linkState=null;paintLink();if(msg)alert(msg);}
 async function finishLink(r){
-  link={token:r.token,user:r.user};linkState=null;
+  const prevProv=link&&link.prov;
+  link={token:r.token,user:r.user,prov:r.prov||(r.tg?prevProv:null)||'tg',tg:r.tg||null};linkState=null;
   try{localStorage.setItem(LINK_KEY,JSON.stringify(link));}catch(e){}
   try{
     const rr=await api({action:'load'});
     if(rr.data){
       const rem=JSON.parse(rr.data),lx=data.xp||0,rx=rem.xp||0;
       let keepLocal=false;
-      if(lx>rx)keepLocal=confirm(`В Telegram у тебя ${rx} XP, а здесь, на сайте, — ${lx} XP.\n\nОК — оставить прогресс с сайта (он заменит прогресс в Telegram).\nОтмена — взять прогресс из Telegram.`);
+      if(lx>rx)keepLocal=confirm(`В аккаунте у тебя ${rx} XP, а здесь, в этом браузере, — ${lx} XP.\n\nОК — оставить прогресс из браузера.\nОтмена — взять прогресс из аккаунта.`);
       if(!keepLocal)adopt(rem);
     }
     data._t=Date.now();store.set('progress',JSON.stringify(data));
@@ -2234,7 +2292,7 @@ $('rateBtn').addEventListener('click',openBoard);
 $('setBtn').addEventListener('click',openSettings);
 $('earBtn').addEventListener('click',openEar);
 $('songsBtn').addEventListener('click',openSongs);
-$('linkBan').addEventListener('click',startLink);
+$('linkBan').addEventListener('click',()=>openProfile());
 /* веб-навигация */
 const WEBGO={menu:openMenu,levels:openLevels,ear:openEar,rate:openBoard,songs:openSongs,settings:openSettings};
 document.querySelectorAll('#webbar nav button').forEach(b=>b.addEventListener('click',()=>{if(!$('tabPlayer').hidden)closeTab();WEBGO[b.dataset.go]();}));
@@ -2262,6 +2320,7 @@ $('shareBtn').addEventListener('click',()=>{
 
 (async()=>{
   await load();
+  if(await finishOAuth())return;
   await pullRemote();
   // открыли бота по ссылке привязки с сайта
   const sp=(inTg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';

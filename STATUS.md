@@ -25,7 +25,7 @@
 
 ## Что осталось / ждёт решения
 1. **HTTPS для ditrihh.ru**: GitHub → Settings → Pages → дождаться «DNS check successful» → включить **Enforce HTTPS**. После этого в BotFather поменять адрес мини-приложения на `https://ditrihh.ru/` и сделать `/setname` → `ditrihh guitar club` (или просто ditrihh), `/setuserpic` → `brand/ditrihh-avatar-640.png`.
-2. **Вход на сайт через VK ID и Яндекс ID** (основной вход; Google/Apple не используем). Нужно зарегистрировать приложения на id.vk.com и oauth.yandex.ru с доменом ditrihh.ru, ключи — в переменные функции. Telegram остаётся привязкой.
+2. **Вход на сайт через VK ID и Яндекс ID** — код готов (app.html + server). Осталось: зарегистрировать приложения на id.vk.com и oauth.yandex.ru с redirect `https://ditrihh.ru/app.html`, вписать ID в `VK_APP_ID` / `YA_CLIENT_ID` в app.html и в переменные функции `VK_CLIENT_ID` / `YA_CLIENT_ID`. Telegram привязывается к аккаунту из профиля.
 3. **Продажа эксклюзивных табов**: пока нет статуса самозанятого — коды доступа через Boosty и/или Telegram Stars в боте; карты (Prodamus/ЮKassa) — когда появится статус.
 4. **Курс «Первая песня уверенно за 10 дней»** для акустики (сталь) — план предложен, ждёт решения по песне и видеоурокам.
 5. Эксклюзивные аранжировки в `tabs/` + `songs.json` с `"exclusive": true` — ждут файлов Guitar Pro.
