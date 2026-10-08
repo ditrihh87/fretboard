@@ -55,6 +55,7 @@
         <div><label for="music">Музыка</label><input type="text" id="music"></div>
       </div>
       <input type="hidden" id="chordsBy" value="">
+      <label for="yandex">Ссылка на трек в Яндекс Музыке</label><input type="text" id="yandex" placeholder="https://music.yandex.ru/album/…/track/…">
       <label class="chk"><input type="checkbox" id="exclusive"> Моя аранжировка (★ Эксклюзив)</label>
       <label for="src">Текст с аккордами</label>
       <textarea id="src" spellcheck="false" placeholder="Вступление: Am F C G }x2&#10;&#10;Куплет 1:&#10;Am          F&#10;Первая строка куплета&#10;C           G&#10;Вторая строка куплета&#10;&#10;Припев:&#10;F     G     Am&#10;Строка припева"></textarea>
@@ -195,6 +196,7 @@ function build(){
   if(artist)ONE.artist=artist;
   if($('words').value.trim())ONE.words=$('words').value.trim();
   if($('music').value.trim())ONE.music=$('music').value.trim();
+  if($('yandex').value.trim())ONE.yandex=$('yandex').value.trim();
   if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
   if($('exclusive').checked)ONE.exclusive=true;
   ONE.text=text;
@@ -204,7 +206,7 @@ function build(){
   $('msg').textContent=`Готово: в песеннике будет ${others.length+1} ${plural(others.length+1)}${replaced?' (песня с таким названием заменена)':''}.`;
 }
 const plural=n=>n%10===1&&n%100!==11?'песня':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'песни':'песен';
-['title','artist','words','music','chordsBy','src'].forEach(id=>$(id).addEventListener('input',build));
+['title','artist','words','music','chordsBy','yandex','src'].forEach(id=>$(id).addEventListener('input',build));
 $('exclusive').addEventListener('change',build);
 async function copy(t,what){
   if(!t){$('msg').className='msg bad';$('msg').textContent='Сначала заполни название и текст.';return;}

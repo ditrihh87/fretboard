@@ -28,6 +28,14 @@
   .grp{display:flex;align-items:center;gap:2px;background:rgba(37,31,94,.8);border-radius:12px;padding:3px}
   .credits{color:var(--muted);font-weight:600;font-size:14px;line-height:1.5;margin-top:6px}
   .credits:empty{display:none}
+  .ym{margin-top:12px}
+  .ymbtn{display:inline-flex;align-items:center;gap:8px;border:none;background:#FFCC00;color:#1b1b1b;font:800 14px var(--body);padding:9px 16px 9px 10px;border-radius:999px;cursor:pointer}
+  .ymbtn:hover{filter:brightness(1.05)}
+  .ymlogo{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#1b1b1b;color:#FFCC00;font-size:13px}
+  .ymframe{margin-top:10px;max-width:640px}
+  .ymframe iframe{display:block;width:100%;height:180px;border:none;border-radius:14px;background:rgba(239,236,251,.06)}
+  .ymext{display:inline-block;margin-top:6px;color:var(--muted);font-weight:700;font-size:13px;text-decoration:none}
+  .ymext:hover{color:var(--paper)}
   .rbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px}
   .stars{display:flex}
   .stars button{border:none;background:transparent;color:rgba(239,236,251,.25);font-size:26px;line-height:1;padding:0 2px;cursor:pointer;transition:transform .1s}
@@ -219,7 +227,7 @@ function renderChordsPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ch">Аккорды</span><span class="type ver">✓ проверено ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
     <div class="panel">
       <div class="bar">
         <div class="grp"><button class="ib" id="trDown" aria-label="Тон ниже">−</button><span id="trLabel">Тон</span><button class="ib" id="trUp" aria-label="Тон выше">+</button></div>
@@ -282,6 +290,21 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');i
 $('pop').addEventListener('click',e=>{if(e.target===$('pop'))$('pop').hidden=true;});
 $('popPlay').onclick=()=>strumChord($('pop').dataset.name);
 
+/* Яндекс Музыка: ссылка на трек → встроенный плеер */
+function ymIds(u){const m=String(u||'').match(/music\.yandex\.[a-z]+\/album\/(\d+)\/track\/(\d+)/)||null;if(m)return {album:m[1],track:m[2]};
+  const t=String(u||'').match(/music\.yandex\.[a-z]+\/track\/(\d+)(?:\?.*album(?:Id)?=(\d+))?/);return t&&t[2]?{album:t[2],track:t[1]}:null;}
+function paintYm(){
+  const box=$('ymBox');if(!box)return;const ids=ymIds(SONG.yandex);
+  if(!SONG.yandex){box.hidden=true;return;}
+  box.innerHTML=`<button class="ymbtn" id="ymBtn" aria-expanded="false"><span class="ymlogo">♪</span>Слушать на Яндекс Музыке</button><div class="ymframe" id="ymFrame" hidden></div>`;
+  $('ymBtn').onclick=()=>{
+    if(!ids){window.open(SONG.yandex,'_blank','noopener');return;}
+    const f=$('ymFrame'),open=f.hidden;f.hidden=!open;$('ymBtn').setAttribute('aria-expanded',open);
+    $('ymBtn').lastChild.textContent=open?'Скрыть плеер':'Слушать на Яндекс Музыке';
+    if(open&&!f.firstChild)f.innerHTML=`<iframe src="https://music.yandex.ru/iframe/#track/${ids.track}/${ids.album}" title="Яндекс Музыка" allow="autoplay; clipboard-write" loading="lazy"></iframe><a class="ymext" href="${esc(SONG.yandex)}" target="_blank" rel="noopener">Открыть в Яндекс Музыке ↗</a>`;
+  };
+}
+
 /* ===== рейтинг и «Сохранить» ===== */
 let RTS=null;
 async function paintRate(){
@@ -342,7 +365,7 @@ async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
     <div class="panel">
       <div class="bar">
         <div class="legend" id="legend">${SC.map((c,i)=>`<span><i style="background:${c}"></i>${6-i}</span>`).join('')}</div>
@@ -417,7 +440,7 @@ async function renderTabPage(){
   document.title=`${SONG.title}${SONG.artist?' — '+SONG.artist:''} — ${SONG.tab?'таб':'аккорды'} от ditrihh`;
   const md=document.querySelector('meta[name="description"]');if(md)md.content=`${SONG.title}${SONG.artist?' ('+SONG.artist+')':''}: ${SONG.tab?'таб со звуком':'аккорды со схемами'} от ditrihh — проверено на гитаре.`;
   if(SONG.tab)renderTabPage();else renderChordsPage();
-  paintRate();
+  paintRate();paintYm();
 })();
 </script>
 </body>

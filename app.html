@@ -161,6 +161,10 @@
   .easynote{margin:8px 0 4px;padding:10px 14px;border-radius:12px;background:rgba(240,168,48,.14);color:var(--p-ink);font-weight:600;font-size:14px;line-height:1.4}
   .easynote b{color:var(--amber)}
   #songArtist{white-space:pre-line}
+  .songbtns{display:flex;flex-wrap:wrap;gap:8px}
+  .ymbtn{background:#FFCC00!important;color:#1b1b1b!important}
+  .ymframe{margin:6px 0 4px}
+  .ymframe iframe{display:block;width:100%;height:180px;border:none;border-radius:14px}
   .easybtn{border:none;background:var(--p-bg2);color:var(--p-ink);border-radius:999px;padding:9px 16px;font-weight:800;font-size:14px;margin:4px 0 6px;cursor:pointer}
   .easybtn.on{background:var(--amber);color:#1b1b1b}
   .seg button{flex:1;border:none;background:transparent;border-radius:9px;padding:10px 4px;font-weight:700;font-size:14px;color:var(--p-ink2)}
@@ -643,7 +647,8 @@
       </div>
       <h1 id="songTitle"></h1>
       <p class="lead" id="songArtist"></p>
-      <button class="easybtn" id="easyBtn" aria-pressed="false">🎸 Простые аккорды</button>
+      <div class="songbtns"><button class="easybtn" id="easyBtn" aria-pressed="false">🎸 Простые аккорды</button><button class="easybtn ymbtn" id="ymBtn" hidden>♪ Слушать</button></div>
+      <div class="ymframe" id="ymFrame" hidden></div>
       <p class="easynote" id="easyNote" hidden></p>
       <div class="songchords" id="songChords"></div>
       <div class="lyrics" id="songBody"></div>
@@ -1140,6 +1145,11 @@ $('songList').addEventListener('click',e=>{const b=e.target.closest('.song');if(
 function openSong(id){
   cur=SONGS.find(x=>x.id===id);if(!cur)return;
   if(cur.tab){openTab(cur);return;}
+  { const yb=$('ymBtn'),yf=$('ymFrame'),ids=ymIds(cur.yandex);
+    yb.hidden=!cur.yandex;yf.hidden=true;yf.innerHTML='';yb.textContent='♪ Слушать';
+    yb.onclick=()=>{ if(!ids){ if(inTg)tg.openLink(cur.yandex);else window.open(cur.yandex,'_blank'); return; }
+      const open=yf.hidden;yf.hidden=!open;yb.textContent=open?'Скрыть плеер':'♪ Слушать';
+      if(open&&!yf.firstChild)yf.innerHTML=`<iframe src="https://music.yandex.ru/iframe/#track/${ids.track}/${ids.album}" title="Яндекс Музыка" allow="autoplay; clipboard-write"></iframe>`; }; }
   song.tr=(data.songTr||{})[id]||0;song.easy=!!(data.songEasy||{})[id];song.fs=data.songFs||17;
   show('songView');back(true);renderSong();
 }
@@ -1715,6 +1725,9 @@ function easyCapo(list){
   });
   return best;
 }
+/* Яндекс Музыка: ссылка на трек → встроенный плеер */
+function ymIds(u){const m=String(u||'').match(/music\.yandex\.[a-z]+\/album\/(\d+)\/track\/(\d+)/)||null;if(m)return {album:m[1],track:m[2]};
+  const t=String(u||'').match(/music\.yandex\.[a-z]+\/track\/(\d+)(?:\?.*album(?:Id)?=(\d+))?/);return t&&t[2]?{album:t[2],track:t[1]}:null;}
 function transposeChord(name,st){
   if(!st)return name;
   const parts=name.split('/');
