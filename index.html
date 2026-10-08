@@ -263,6 +263,10 @@ function setLive(on){
 }
 const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
 const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});}catch(e){return '';}};
+// Twitch пускает плеер только на перечисленные домены и только по https (кроме localhost)
+const TW_HOSTS=[...new Set([location.hostname||'localhost','ditrihh.ru','www.ditrihh.ru','ditrihh87.github.io'])];
+const TW_PARENT=TW_HOSTS.map(h=>'parent='+encodeURIComponent(h)).join('&');
+const TW_OK=location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 $('lbLast').onclick=async()=>{
   const btn=$('lbLast');btn.disabled=true;btn.textContent='Загружаю…';
   let v=null;
@@ -270,7 +274,7 @@ $('lbLast').onclick=async()=>{
   btn.disabled=false;btn.textContent='▶ Запись последнего стрима';
   if(!v){window.open('https://www.twitch.tv/ditrihh/videos','_blank');return;}
   ytShown=true;
-  $('lbPlayer').innerHTML=`<iframe src="https://player.twitch.tv/?video=v${encodeURIComponent(v.id)}&parent=${location.hostname||'localhost'}&autoplay=true" allow="autoplay; fullscreen" allowfullscreen title="Запись стрима ditrihh"></iframe>`;
+  $('lbPlayer').innerHTML=`<iframe src="https://player.twitch.tv/?video=v${encodeURIComponent(v.id)}&${TW_PARENT}&autoplay=true" allow="autoplay; fullscreen" allowfullscreen title="Запись стрима ditrihh"></iframe>`;
   $('lbPlayer').hidden=false;$('lbOff').hidden=true;$('liveBox').classList.add('yt');
   $('lbBadge').querySelector('span').textContent='Запись стрима'+(v.created_at?' · '+fmtDate(v.created_at):'');
 };
@@ -280,7 +284,7 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
   sc.onload=()=>{
     try{
       const holder=document.createElement('div');holder.id='twHero';holder.style.cssText='position:absolute;inset:0';$('lbPlayer').appendChild(holder);
-      twPlayer=new Twitch.Player('twHero',{channel:'ditrihh',parent:[location.hostname||'localhost'],width:'100%',height:'100%',muted:true,autoplay:true});
+      twPlayer=new Twitch.Player('twHero',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',muted:true,autoplay:true});
       twPlayer.addEventListener(Twitch.Player.ONLINE,()=>{if(!ytShown)setLive(true);});
       twPlayer.addEventListener(Twitch.Player.OFFLINE,()=>{if(twLive!==false)setLive(false);});
     }catch(e){}
@@ -289,10 +293,9 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
 })();
 
 /* плеер: грузим iframe только по нажатию */
-const host=location.hostname||'localhost';
 const VK_CHANNEL='ditrihh'; // имя канала на VK Play Live (live.vkvideo.ru/ИМЯ)
 const P={
-  twitch:{video:`https://player.twitch.tv/?channel=ditrihh&parent=${host}&autoplay=true`,chat:`https://www.twitch.tv/embed/ditrihh/chat?parent=${host}&darkpopout`,text:'Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.'},
+  twitch:{video:`https://player.twitch.tv/?channel=ditrihh&${TW_PARENT}&autoplay=true`,chat:`https://www.twitch.tv/embed/ditrihh/chat?${TW_PARENT}&darkpopout`,text:'Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.'},
   youtube:{video:'https://www.youtube.com/embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1',chat:null,text:'Нажми, чтобы включить трансляцию на YouTube. Если эфира нет, YouTube так и скажет.',noChat:'Чат YouTube смотри на самом YouTube — встроить его можно только во время эфира.'},
   vk:{video:`https://live.vkvideo.ru/app/embed/${VK_CHANNEL}?autoplay=true`,chat:null,text:'Нажми, чтобы включить трансляцию на VK Play Live.',noChat:`Чат VK Play Live — на <a href="https://live.vkvideo.ru/${VK_CHANNEL}" target="_blank" rel="noopener">странице канала</a>.`}
 };
@@ -304,6 +307,11 @@ function poster(){
 }
 function start(){
   on=true;
+  if(cur==='twitch'&&!TW_OK){
+    $('screen').innerHTML=`<div class="poster"><p>Twitch показывает плеер только на защищённых сайтах (https). Смотри эфир прямо на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
+    $('chat').innerHTML=`<div class="poster"><p>Чат — на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
+    return;
+  }
   $('screen').innerHTML=`<iframe src="${P[cur].video}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Трансляция ditrihh"></iframe>`;
   if(P[cur].chat)$('chat').innerHTML=`<iframe src="${P[cur].chat}" title="Чат трансляции"></iframe>`;
 }
