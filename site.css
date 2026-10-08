@@ -102,8 +102,12 @@
   .poster p{color:var(--muted);font-weight:700;font-size:15px;max-width:420px}
   .chat{position:relative;background:#07061A;box-shadow:0 0 0 1px rgba(110,123,255,.25);border-radius:18px;overflow:hidden;min-height:300px}
   .chat .poster p{font-size:14px}
-  .ext{margin-top:14px;color:var(--muted);font-size:14px;font-weight:700}
-  .ext a{color:var(--paper);border-bottom:1px solid var(--line)}
+  .ext{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:16px;color:var(--muted);font-size:14px;font-weight:700}
+  .ext>span{margin-right:2px}
+  .ext a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(28,24,72,.7);box-shadow:inset 0 0 0 1px rgba(110,123,255,.22);color:var(--paper);text-decoration:none;transition:background .15s,box-shadow .15s,transform .15s}
+  .ext a:hover{background:rgba(37,31,94,.9);box-shadow:inset 0 0 0 1px rgba(110,123,255,.5);transform:translateY(-1px)}
+  .ext a i{width:9px;height:9px;border-radius:3px;flex:none}
+  .ext a small{color:var(--muted);font-size:12px}
 
   /* школа */
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
