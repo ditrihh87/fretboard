@@ -75,8 +75,12 @@
   /* текст песни — колонкой по центру, строки внутри ровно по левому краю */
   .lyrics{width:fit-content;max-width:100%;margin:0 auto;box-sizing:border-box}
   .chordrow{justify-content:center}
-  .lyrics .cm{display:block;color:var(--muted);font-weight:800;font-size:.8em;margin:18px 0 6px;letter-spacing:.3px}
-  .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;white-space:pre-wrap}
+  .lyrics .cm{display:block;color:#B3AEE8;font-weight:800;font-size:12px;margin:26px 0 10px;letter-spacing:2.2px;text-transform:uppercase}
+  .lyrics .cm:first-child{margin-top:4px}
+  .lyrics .gap{height:.4em}
+  .lyrics .gap+.cm{margin-top:18px}
+  .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:.85em;white-space:pre-wrap}
+  .lyrics .sg>.ch{margin-bottom:1px}
   .lyrics .sg{display:inline-flex;flex-direction:column}
   .lyrics .ch{border:none;background:none;padding:0 6px 0 0;font:800 .9em var(--body);color:var(--amber);text-align:left;cursor:pointer;min-height:1.2em}
   .lyrics span.ch{cursor:default}
@@ -352,7 +356,7 @@ function drawSong(){
       if(m){if(pend!==null)segs+=seg(pend,'');pend=transposeChord(m[1].trim(),tr);return;}
       if(p===''&&pend===null)return;segs+=seg(pend,p);pend=null;});
     if(pend!==null)segs+=seg(pend,'');
-    html+=`<div class="ln ${textOnly?'only':''}">${segs||'&nbsp;'}</div>`;
+    html+=segs?`<div class="ln ${textOnly?'only':''}">${segs}</div>`:'<div class="gap"></div>';
   });
   $('lyrics').innerHTML=html;
 }
