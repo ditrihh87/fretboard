@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Квинтаккорды C5, D5, E5… — схемы во всех тональностях | ditrihh</title>
+<meta name="description" content="Схемы всех квинтаккордов (пауэр-аккордов): C5, C#5, D5, Eb5, E5, F5, F#5, G5, G#5, A5, Bb5, B5 — от 6-й и 5-й струны, открытые и с октавой. Нажми на схему, чтобы послушать.">
+<meta property="og:title" content="Квинтаккорды во всех тональностях — ditrihh">
+<meta property="og:image" content="brand/ditrihh-logo-dark.png">
+<meta name="theme-color" content="#0C0A24">
+<link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .nav nav a.on{color:var(--paper)}
+  .back{display:inline-block;margin-top:34px;color:var(--muted);font-weight:700;text-decoration:none}
+  .back:hover{color:var(--paper)}
+  .shead{padding:18px 0 8px}
+  .shead h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,5vw,54px);line-height:1.05;text-shadow:0 0 30px rgba(110,123,255,.5)}
+  .shead h1 em{font-style:normal;background:linear-gradient(90deg,#6E7BFF,#A06BFF,#FF5FCF);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:26px 0 30px}
+  .tip{background:rgba(28,24,72,.7);box-shadow:inset 0 0 0 1px rgba(110,123,255,.2);border-radius:16px;padding:14px 16px;color:#CFCCF2;font-weight:600;font-size:14px;line-height:1.5}
+  .tip b{color:var(--paper)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-bottom:80px}
+  .key{padding:16px 16px 14px;border-radius:20px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.18)}
+  .key h2{font-family:var(--display);font-weight:400;font-size:26px;display:flex;align-items:baseline;gap:10px}
+  .key h2 small{font-family:var(--body);font-weight:700;font-size:13px;color:var(--muted)}
+  .shapes{display:flex;gap:8px;margin-top:10px}
+  .shape{flex:1;border:none;background:#F4F2FF;color:#17143A;border-radius:12px;padding:6px 4px 4px;cursor:pointer;transition:transform .12s}
+  .shape:hover{transform:translateY(-2px)}
+  .shape.play{box-shadow:0 0 0 3px var(--amber)}
+  .shape svg{display:block;width:100%;height:auto}
+  .shape span{display:block;font-weight:800;font-size:11px;color:#5A5590;margin-top:2px}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="ditrihh — на главную"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"></a>
+    <nav aria-label="Разделы">
+      <a href="index.html#school">Школа</a>
+      <a href="songs.html" class="on">Аккорды и табы</a>
+      <a href="index.html#stream">Стримы</a>
+      <a href="index.html#support">Донат</a>
+    </nav>
+    <a class="btn main" href="app.html">Открыть школу</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <a class="back" href="songs.html">← Все аккорды и табы</a>
+  <section class="shead">
+    <div class="kicker">Схемы аккордов</div>
+    <h1>Квинтаккорды <em>во всех тональностях</em></h1>
+    <p class="lead">Пауэр-аккорды, они же «квинты» или «пятые»: C5, D5, E5 и все остальные. Главный аккорд рока и панка — две-три ноты, одна форма, которая просто ездит по грифу. Нажми на схему, чтобы послушать.</p>
+  </section>
+
+  <div class="tips">
+    <div class="tip"><b>Что внутри.</b> Основной тон и квинта над ним (C5 = до + соль). Ни мажора, ни минора — поэтому квинта подходит и вместо Am, и вместо A.</div>
+    <div class="tip"><b>От 6-й струны.</b> Указательный — на основном тоне на 6-й струне, безымянный — на два лада выше на 5-й. Мизинец добавляет октаву на 4-й.</div>
+    <div class="tip"><b>От 5-й струны.</b> Та же форма, сдвинутая на одну струну вниз. Удобно, когда от 6-й струны слишком высоко или далеко.</div>
+    <div class="tip"><b>Глуши лишнее.</b> Играй только отмеченные струны, остальные приглушай ребром ладони и подушечкой указательного. ✕ — струна не звучит.</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b style="color:var(--paper)">ditrihh</b> · © <span id="yr">2026</span></div>
+    <div class="soc">
+      <a href="https://t.me/notanagrife_bot" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">Twitch</a>
+      <a href="https://www.youtube.com/@ditrihh" target="_blank" rel="noopener">YouTube</a>
+      <a href="https://www.tiktok.com/@ditrihh" target="_blank" rel="noopener">TikTok</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+$('yr').textContent=new Date().getFullYear();
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const NAMES=[['C'],['C#','Db'],['D'],['Eb','D#'],['E'],['F'],['F#','Gb'],['G'],['G#','Ab'],['A'],['Bb','A#'],['B','H']];
+const OPENM=[40,45,50,55,59,64]; // E2 A2 D3 G3 B3 E4
+
+/* схема: frets — 6 чисел от 6-й струны к 1-й, -1 не играть, 0 открытая */
+function diagram(f){
+  const pos=f.filter(x=>x>0),max=Math.max(0,...pos),min=pos.length?Math.min(...pos):1,base=max<=4?1:min;
+  const X=i=>9+i*9,Y=k=>14+k*10;let g='';
+  for(let k=0;k<=5;k++)g+=`<line x1="9" x2="54" y1="${Y(k)}" y2="${Y(k)}" stroke="currentColor" stroke-width="${k===0&&base===1?2.6:1}" opacity="${k===0&&base===1?1:.55}"/>`;
+  for(let i=0;i<6;i++)g+=`<line x1="${X(i)}" x2="${X(i)}" y1="14" y2="64" stroke="currentColor" stroke-width="1" opacity=".55"/>`;
+  f.forEach((v,i)=>{
+    if(v<0)g+=`<text x="${X(i)}" y="10" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor" opacity=".7">✕</text>`;
+    else if(v===0)g+=`<circle cx="${X(i)}" cy="7.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.2"/>`;
+    else g+=`<circle cx="${X(i)}" cy="${Y(v-base)+5}" r="3.6" fill="${v===Math.min(...pos)&&f.findIndex(x=>x>=0)===i?'#6E5BFF':'#F0A830'}"/>`;
+  });
+  if(base>1)g+=`<text x="58" y="${Y(0)+8}" font-size="7.5" font-weight="800" fill="currentColor">${base}</text>`;
+  return `<svg viewBox="0 0 66 68" aria-hidden="true">${g}</svg>`;
+}
+
+/* три формы для каждой ноты */
+function shapes(pc){
+  const out=[];
+  const f6=(pc-4+12)%12, f5=(pc-9+12)%12; // лад основного тона на 6-й и 5-й струне
+  // от 6-й струны (основной тон + квинта + октава)
+  if(f6===0)out.push({t:'Открытый',f:[0,2,2,-1,-1,-1]});
+  else out.push({t:'От 6-й струны',f:[f6,f6+2,f6+2,-1,-1,-1]});
+  // от 5-й струны
+  if(f5===0)out.push({t:'Открытый',f:[-1,0,2,2,-1,-1]});
+  else out.push({t:'От 5-й струны',f:[-1,f5,f5+2,f5+2,-1,-1]});
+  // третья: открытый D5 или две ноты — самый простой вариант
+  if(pc===2)out.push({t:'Открытый',f:[-1,-1,0,2,3,-1]});
+  else out.push({t:'Две ноты',f:f6<=f5?[f6,f6+2,-1,-1,-1,-1]:[-1,f5,f5+2,-1,-1,-1]});
+  return out;
+}
+
+/* звук: сэмплы гитары, если есть, иначе простой синтез */
+let AC=null;
+function ctx(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC;}
+function pluck(midi,when){
+  const a=ctx(),t=a.currentTime+when,fq=440*Math.pow(2,(midi-69)/12);
+  const o=a.createOscillator(),o2=a.createOscillator(),g=a.createGain(),lp=a.createBiquadFilter();
+  o.type='sawtooth';o2.type='square';o.frequency.value=fq;o2.frequency.value=fq*1.003;
+  lp.type='lowpass';lp.frequency.setValueAtTime(2400,t);lp.frequency.exponentialRampToValueAtTime(500,t+1.2);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.008);g.gain.exponentialRampToValueAtTime(.0008,t+1.8);
+  o.connect(lp);o2.connect(lp);lp.connect(g).connect(a.destination);
+  o.start(t);o2.start(t);o.stop(t+1.9);o2.stop(t+1.9);
+}
+function strum(f){f.forEach((fr,i)=>{if(fr>=0)pluck(OPENM[i]+fr,i*.03);});}
+
+$('grid').innerHTML=NAMES.map((n,pc)=>{
+  const nm=n[0]+'5',alt=n[1]?n[1]+'5':'';
+  return `<article class="key" id="${esc(n[0].replace('#','s'))}5"><h2>${esc(nm)}${alt?`<small>= ${esc(alt)}</small>`:''}</h2>
+    <div class="shapes">${shapes(pc).map(s=>`<button class="shape" data-f="${s.f.join(',')}" aria-label="${esc(nm)}, ${esc(s.t)} — послушать">${diagram(s.f)}<span>${esc(s.t)}</span></button>`).join('')}</div></article>`;
+}).join('');
+document.addEventListener('click',e=>{const b=e.target.closest('.shape');if(!b)return;
+  strum(b.dataset.f.split(',').map(Number));b.classList.add('play');setTimeout(()=>b.classList.remove('play'),500);});
+</script>
+</body>
+</html>
