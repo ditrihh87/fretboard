@@ -289,7 +289,7 @@ function buildBatch(){
   $('out').value=JSON.stringify([...others,...out],null,2)+'\n';
   const total=others.length+out.length,repl=EXIST.length-others.length;
   $('msg').className=bad?'msg bad':'msg';
-  $('msg').textContent=`${out.length} ${plural(out.length)} готово${bad?`, ${bad} с ошибкой (см. список)`:''}${repl?`, ${repl} заменено`:''}. Всего в песеннике будет ${total}.`;
+  $('msg').textContent=`Готово песен: ${out.length}${bad?`, ${bad} с ошибкой (см. список)`:''}${repl?`, ${repl} заменено`:''}. Всего в песеннике будет ${total}.`;
 }
 $('blist').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;const pv=b.nextElementSibling,sg=BATCH[+b.dataset.b];
   if(pv.hidden&&!pv.innerHTML)pv.innerHTML=sg&&sg.text?preview(sg.text):'';pv.hidden=!pv.hidden;});
