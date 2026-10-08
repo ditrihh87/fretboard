@@ -32,6 +32,7 @@
   html{scroll-behavior:smooth}
   body{background:radial-gradient(1200px 700px at 8% -10%,rgba(110,123,255,.28),transparent 60%),radial-gradient(900px 600px at 105% 15%,rgba(255,95,207,.16),transparent 60%),radial-gradient(1000px 800px at 50% 110%,rgba(94,60,255,.2),transparent 60%),var(--bg);background-attachment:fixed;color:var(--paper);font-family:var(--body);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
+  [hidden]{display:none!important}
   img,svg{display:block}
   .wrap{max-width:var(--wrap);margin:0 auto;padding:0 20px}
   h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,40px);line-height:1.1;letter-spacing:-.5px}
@@ -66,6 +67,29 @@
   .hero p{font-size:20px;color:#CFCCF2;margin-top:22px;max-width:520px}
   .hero .ctas{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
   .hero .note{margin-top:18px;color:var(--muted);font-size:14px}
+  /* окно стрима на первом экране */
+  .livebox{position:relative;aspect-ratio:16/10;border-radius:22px;overflow:hidden;background:radial-gradient(circle at 30% 20%,#2B237A,#0B0920 70%);box-shadow:0 30px 70px rgba(0,0,0,.45),0 0 60px rgba(110,123,255,.35),0 0 120px rgba(255,95,207,.15),inset 0 0 0 1px rgba(110,123,255,.35)}
+  .livebox.on{box-shadow:0 30px 70px rgba(0,0,0,.45),0 0 70px rgba(229,72,77,.35),0 0 140px rgba(255,95,207,.2),inset 0 0 0 2px rgba(229,72,77,.6)}
+  .lb-player,.lb-player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .lb-badge{position:absolute;top:14px;left:14px;z-index:3;display:flex;align-items:center;gap:7px;background:rgba(7,6,26,.75);backdrop-filter:blur(6px);padding:7px 12px;border-radius:999px;font-weight:800;font-size:13px;letter-spacing:.3px}
+  .lb-badge i{width:9px;height:9px;border-radius:50%;background:#7F7AAE}
+  .livebox.on .lb-badge{background:#E5484D;color:#fff}
+  .livebox.on .lb-badge i{background:#fff;animation:pulse 1.6s infinite}
+  .lb-off{position:relative;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:58px 24px 28px;gap:2px}
+  .livebox{display:flex;flex-direction:column}
+  .livebox:not(.on):not(.yt){aspect-ratio:auto;min-height:340px}
+  .livebox>.lb-off{flex:1}
+  .lb-off small{color:var(--muted);font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase}
+  .lb-off strong{font-family:var(--display);font-weight:400;font-size:clamp(28px,3.6vw,44px);line-height:1.1;text-shadow:0 0 24px rgba(110,123,255,.6)}
+  .lb-off span{color:#CFCCF2;font-weight:700}
+  .lb-off p{color:var(--muted);font-size:14px;max-width:360px;margin:10px 0 16px}
+  .lb-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .lb-btns .btn{padding:12px 18px;font-size:15px}
+  .lb-eq{display:flex;align-items:flex-end;gap:5px;height:34px;margin-bottom:14px}
+  .lb-eq b{width:6px;border-radius:3px;background:linear-gradient(180deg,#FF5FCF,#6E7BFF);animation:eq 1.2s ease-in-out infinite}
+  .lb-eq b:nth-child(1){animation-delay:-.2s}.lb-eq b:nth-child(2){animation-delay:-.7s}.lb-eq b:nth-child(3){animation-delay:-.4s}.lb-eq b:nth-child(4){animation-delay:-.9s}.lb-eq b:nth-child(5){animation-delay:-.1s}.lb-eq b:nth-child(6){animation-delay:-.6s}.lb-eq b:nth-child(7){animation-delay:-.3s}
+  @keyframes eq{0%,100%{height:20%}50%{height:100%}}
+  .lb-sound{position:absolute;right:14px;bottom:14px;z-index:3;border:none;border-radius:12px;background:var(--amber);color:#1b1b1b;font:800 14px var(--body);padding:10px 14px;cursor:pointer;box-shadow:0 4px 0 var(--amber-d)}
   .board{background:linear-gradient(180deg,#4A2C1D,#3A2215);border-radius:22px;padding:22px 0;box-shadow:0 30px 70px rgba(0,0,0,.45),0 0 60px rgba(110,123,255,.35),0 0 120px rgba(255,95,207,.15), inset 0 0 0 1px rgba(255,255,255,.05);position:relative;overflow:hidden}
   .board svg{width:100%;height:auto}
   .board .cap{position:absolute;left:18px;bottom:12px;font-size:12px;font-weight:800;color:rgba(238,230,211,.55);letter-spacing:1px;text-transform:uppercase}
@@ -199,9 +223,21 @@
         </div>
         <div class="note">Работает в браузере и в Telegram. Без установки.</div>
       </div>
-      <div class="board" aria-hidden="true">
-        <svg id="fret" viewBox="0 0 560 250"></svg>
-        <div class="cap">найди ноту на грифе</div>
+      <div class="livebox" id="liveBox">
+        <div class="lb-badge" id="lbBadge"><i></i><span>Офлайн</span></div>
+        <div class="lb-player" id="lbPlayer" hidden></div>
+        <div class="lb-off" id="lbOff">
+          <div class="lb-eq" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+          <small>Следующий стрим</small>
+          <strong id="lbWhen">сегодня в 00:00</strong>
+          <span id="lbIn">по Москве</span>
+          <p>Каверы, разборы, бас и ответы на вопросы из чата — каждый день около 5 часов.</p>
+          <div class="lb-btns">
+            <button class="btn main" id="lbLast">▶ Последнее видео</button>
+            <a class="btn ghost" href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">Twitch</a>
+          </div>
+        </div>
+        <button class="lb-sound" id="lbSound" hidden>🔊 Включить звук</button>
       </div>
     </div>
     <div class="wrap stwrap">
@@ -348,21 +384,9 @@
 <script>
 const $=id=>document.getElementById(id);
 $('yr').textContent=new Date().getFullYear();
+let ytShown=false;
+let twLive=null; // идёт ли эфир на Twitch (null — пока неизвестно)
 const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8']; // 6 → 1
-
-/* гриф на первом экране */
-(function(){
-  const s=$('fret'),W=560,H=250,top=22,gap=(H-44)/5,frets=[0,70,150,226,298,366,430,490,548];
-  let g='';
-  g+=`<rect x="0" y="0" width="${W}" height="${H}" fill="none"/>`;
-  [[188,0],[332,0],[460,0]].forEach(([x])=>{g+=`<circle cx="${x}" cy="${H/2}" r="9" fill="#EEE6D3" opacity=".22"/>`;});
-  frets.forEach((x,i)=>{g+=`<rect x="${x-(i?2:5)}" y="${top-6}" width="${i?4:10}" height="${H-top*2+12}" rx="2" fill="${i?'#C8C4BA':'#F3EDE0'}" opacity="${i?.75:1}"/>`;});
-  for(let i=0;i<6;i++){const y=top+i*gap,w=.9+i*.45;g+=`<rect x="0" y="${y-w/2}" width="${W}" height="${w}" fill="${SC[5-i]}" opacity=".9"/>`;}
-  const notes=[[1,1,'C'],[3,2,'E'],[5,3,'G'],[2,5,'C'],[4,7,'E'],[0,8,'C']]; // струна (0 = первая), лад, нота
-  notes.forEach(([str,fr,n],k)=>{const x=(frets[fr-1]+frets[fr])/2,y=top+str*gap;
-    g+=`<g class="dot" style="animation-delay:${.25+k*.18}s"><circle cx="${x}" cy="${y}" r="17" fill="${SC[5-str]}"/><text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Russo One,Arial" font-weight="400" font-size="15" fill="#1b1b1b">${n}</text></g>`;});
-  s.innerHTML=g;
-})();
 
 /* таб-превью */
 (function(){
@@ -394,10 +418,46 @@ function nextStream(){
 }
 function paintSched(){
   const n=nextStream();
+  if(twLive===true)n.live=true; else if(twLive===false&&n.live){n.live=false;n.soon=true;}
+  if(typeof $('lbWhen')!=='undefined'&&$('lbWhen')){
+    if(n.soon){$('lbWhen').textContent='Скоро начнём';$('lbIn').textContent='эфир обычно с 00:00 по Москве';}
+    else if(!n.live){const h=Math.floor(n.mins/60),m=n.mins%60;$('lbWhen').textContent='сегодня в 00:00';$('lbIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;}
+  }
+  if(n.soon){$('nextLive').textContent='скоро';$('nextIn').textContent='эфир обычно с 00:00 по Москве';$('navLiveText').textContent='Стрим скоро';$('navLive').style.background='';return;}
   if(n.live){$('nextLive').textContent='Сейчас идёт';$('nextIn').textContent='обычно с 00:00 до 05:00 по Москве';$('navLiveText').textContent='Сейчас в эфире';$('navLive').style.background='rgba(229,72,77,.18)';}
   else{const h=Math.floor(n.mins/60),m=n.mins%60;$('nextLive').textContent='сегодня в 00:00';$('nextIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;$('navLiveText').textContent=h?`Стрим через ${h} ч`:`Стрим через ${m} мин`;$('navLive').style.background='';}
 }
 paintSched();setInterval(paintSched,60e3);
+
+/* окно стрима на главной: Twitch-плеер без звука сообщает, идёт ли эфир */
+let twPlayer=null;
+function setLive(on){
+  twLive=on;
+  $('liveBox').classList.toggle('on',on);
+  $('lbBadge').querySelector('span').textContent=on?'В эфире':'Офлайн';
+  $('lbPlayer').hidden=!on&&!ytShown;$('lbOff').hidden=on||ytShown;$('lbSound').hidden=!on;
+  paintSched();
+}
+$('lbLast').onclick=()=>{
+  ytShown=true;
+  // последние загрузки канала (плейлист UU…)
+  $('lbPlayer').innerHTML='<iframe src="https://www.youtube.com/embed/videoseries?list=UUj3n2PaEJnJKxjEsVPcq4rw&autoplay=1" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Последнее видео ditrihh"></iframe>';
+  $('lbPlayer').hidden=false;$('lbOff').hidden=true;$('liveBox').classList.add('yt');
+  $('lbBadge').querySelector('span').textContent='Последнее видео';
+};
+$('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}catch(e){}$('lbSound').hidden=true;};
+(function(){
+  const sc=document.createElement('script');sc.src='https://player.twitch.tv/js/embed/v1.js';sc.async=true;
+  sc.onload=()=>{
+    try{
+      const holder=document.createElement('div');holder.id='twHero';holder.style.cssText='position:absolute;inset:0';$('lbPlayer').appendChild(holder);
+      twPlayer=new Twitch.Player('twHero',{channel:'ditrihh',parent:[location.hostname||'localhost'],width:'100%',height:'100%',muted:true,autoplay:true});
+      twPlayer.addEventListener(Twitch.Player.ONLINE,()=>{if(!ytShown)setLive(true);});
+      twPlayer.addEventListener(Twitch.Player.OFFLINE,()=>{if(twLive!==false)setLive(false);});
+    }catch(e){}
+  };
+  document.head.appendChild(sc);
+})();
 
 /* плеер: грузим iframe только по нажатию */
 const host=location.hostname||'localhost';
