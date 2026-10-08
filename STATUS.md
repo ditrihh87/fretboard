@@ -3,7 +3,7 @@
 Обновлено: 8 октября 2026.
 
 ## Что это
-- **Сайт ditrihh.ru** (GitHub Pages из этого репозитория, ветка `main`, корень) и **Telegram Mini App** бота @notanagrife_bot — один код.
+- **Сайт ditrihh.ru** (GitHub Pages из этого репозитория, ветка `main`, корень) и **Telegram Mini App** бота @ditrihh_bot — один код.
 - Бренд: **ditrihh**, логотип с грифом гитары на первой «i» (`brand/`, генератор `brand/make-logo.py`, шрифт Russo One). Цвета: неоновые сине-фиолетовые (как на стримах), акцент оранжевый `#F0A830`.
 
 ## Файлы

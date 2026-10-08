@@ -703,7 +703,7 @@
 
 <script>
 /* ===== настрой под себя ===== */
-const BOT_LINK='https://t.me/notanagrife_bot?startapp'; // ссылка на Mini App
+const BOT_LINK='https://t.me/ditrihh_bot?startapp'; // ссылка на Mini App
 /* вход на сайт: ID приложений VK ID (id.vk.com) и Яндекс ID (oauth.yandex.ru). Пусто — кнопка не показывается */
 const VK_APP_ID='';
 const YA_CLIENT_ID='';
@@ -1238,12 +1238,12 @@ function paintLink(){
     const tgu=prov==='tg'?u:link.tg;
     box.innerHTML=`<b>✓ Вход через ${PROV[prov]}</b><p>${nm}. Прогресс, XP и лига сохраняются на сервере.</p>`+
       (prov==='tg'?'':tgu?`<p>✓ Telegram привязан: ${esc([tgu.first_name,tgu.last_name].filter(Boolean).join(' '))}${tgu.username?' · @'+esc(tgu.username):''} — в боте тот же прогресс.</p>`
-        :`<p>Играешь в боте @notanagrife_bot? Привяжи Telegram — прогресс станет общим.</p>`)+
+        :`<p>Играешь в боте @ditrihh_bot? Привяжи Telegram — прогресс станет общим.</p>`)+
       `<div class="row2">${prov!=='tg'&&!tgu?'<button class="btn" id="lkOn">Привязать Telegram</button>':''}<button class="btn ghost" id="lkOff">Выйти</button></div>`;
     const on=$('lkOn');if(on)on.onclick=startLink;$('lkOff').onclick=logout;return;
   }
   const lb=loginBtns();
-  box.innerHTML=`<b>Войди, чтобы прогресс не потерялся</b><p>Прогресс, XP, звание и лига сохранятся на сервере и будут на любом устройстве.</p>${lb?`<div class="row2">${lb}</div>`:''}<p style="margin-top:12px">Играешь в боте @notanagrife_bot? Можно ${lb?'и ':''}просто привязать Telegram.</p><div class="row2"><button class="btn ${lb?'ghost':''}" id="lkOn">Привязать Telegram</button></div>`;
+  box.innerHTML=`<b>Войди, чтобы прогресс не потерялся</b><p>Прогресс, XP, звание и лига сохранятся на сервере и будут на любом устройстве.</p>${lb?`<div class="row2">${lb}</div>`:''}<p style="margin-top:12px">Играешь в боте @ditrihh_bot? Можно ${lb?'и ':''}просто привязать Telegram.</p><div class="row2"><button class="btn ${lb?'ghost':''}" id="lkOn">Привязать Telegram</button></div>`;
   wireLogin();$('lkOn').onclick=startLink;
 }
 /* ===== вход через VK ID и Яндекс ID ===== */
@@ -1291,7 +1291,7 @@ async function logout(){
 function startLink(){
   const a=new Uint8Array(18);crypto.getRandomValues(a);
   const nonce=btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  const url=`https://t.me/notanagrife_bot?startapp=link_${nonce}`;
+  const url=`https://t.me/ditrihh_bot?startapp=link_${nonce}`;
   linkState={nonce,url,since:Date.now()};
   window.open(url,'_blank');
   if($('profileView').hidden)openProfile();else paintLink();
