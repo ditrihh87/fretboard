@@ -10,13 +10,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --stage:#1E2B3C; --stage-2:#26374C; --paper:#EEE6D3; --paper-2:#ded4bd;
+    --stage:#141137; --stage-2:#241E5E; --paper:#EFECFB; --paper-2:#D6D1F2;
     --wood:#4A2C1D; --wood-2:#3A2215; --nickel:#C8C4BA; --pearl:#F3EDE0;
-    --amber:#F0A830; --ok:#6FBF73; --bad:#E5484D; --muted:#93A1B3; --ink:#22201c;
+    --amber:#F0A830; --ok:#6FBF73; --bad:#E5484D; --muted:#A4A1D8; --ink:#22201c;
     /* цвета экранов меню: светлая тема */
-    --p-bg:#EEE6D3; --p-bg2:#ded4bd; --p-card:#fff8ea; --p-ink:#22201c; --p-ink2:#4a443a;
-    --p-muted:#6b6457; --p-faint:#cfc4ab; --p-line:#e6dcc5; --p-accent:#4A2C1D; --p-strong:#1E2B3C;
-    --p-sel-bg:#1E2B3C; --p-sel-fg:#EEE6D3; --p-lock:#ddd3bc; --p-lock-fg:#ab9f87; --p-lock-sh:#c4b99f;
+    /* светлая тема — лавандовая, в тон неоновому сайту */
+    --p-bg:#EEECFB; --p-bg2:#DEDAF5; --p-card:#FFFFFF; --p-ink:#1A1640; --p-ink2:#3C3770;
+    --p-muted:#68649A; --p-faint:#CAC5EA; --p-line:#E3DFF7; --p-accent:#4B3FD0; --p-strong:#141137;
+    --p-sel-bg:#141137; --p-sel-fg:#EFECFB; --p-lock:#DCD8F2; --p-lock-fg:#9E99C8; --p-lock-sh:#C4BEE6;
     --display:'Russo One','Arial Black',sans-serif;
     --body:'Manrope',system-ui,sans-serif;
   }
@@ -279,7 +280,7 @@
   .avatar span,.bigava{display:grid;place-items:center;width:100%;height:100%;font-family:var(--display);font-weight:800;color:#1b1b1b;background-size:cover;background-position:center}
   .avatar span{font-size:18px}
   .phero{background:linear-gradient(135deg,#F7DFAE,#F0A830);border-radius:20px;height:150px;display:grid;place-items:center;margin-bottom:14px}
-  html.dark .phero{background:linear-gradient(135deg,#3A2E1C,#7A5418)}
+  html.dark .phero{background:linear-gradient(135deg,#2B237A,#6A3BB0 60%,#C04FA8)}
   .bigava{width:104px;height:104px;border-radius:50%;font-size:40px;background-color:var(--paper);box-shadow:0 0 0 5px rgba(255,255,255,.55)}
   .pmeta{color:var(--p-muted);font-size:14px;font-weight:700;margin:4px 0 14px;line-height:1.5}
   .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -305,8 +306,8 @@
   .tp em{display:block;height:100%;background:var(--ok);border-radius:4px}
   /* ===== таб-плеер ===== */
   #tabPlayer{position:fixed;inset:0;z-index:25;display:flex;flex-direction:column;background:var(--tp-bg);color:var(--tp-ink);
-    --tp-bg:#16202C;--tp-ink:#EEE6D3;--tp-card:#1E2B3C;--tp-muted:#93A1B3;--tp-line:#2A394B}
-  html:not(.dark) #tabPlayer{--tp-bg:#F6F0E2;--tp-ink:#22201c;--tp-card:#fffaf0;--tp-muted:#7a7264;--tp-line:#e3d8c0}
+    --tp-bg:#0C0A24;--tp-ink:#EFECFB;--tp-card:#1C1848;--tp-muted:#A4A1D8;--tp-line:#2B2668}
+  html:not(.dark) #tabPlayer{--tp-bg:#F6F4FE;--tp-ink:#1A1640;--tp-card:#FFFFFF;--tp-muted:#68649A;--tp-line:#E3DFF7}
   .tp-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:calc(10px + var(--sa-t)) max(12px,var(--sa-r)) 6px max(12px,var(--sa-l))}
   .tp-ico{border:none;background:var(--tp-card);color:var(--tp-ink);width:42px;height:42px;border-radius:12px;font-size:26px;font-weight:800;line-height:1}
   .tp-title{flex:1;min-width:0}
@@ -408,20 +409,23 @@
   #rTitle.rec,#rXP.rec{animation:pop .4s cubic-bezier(.3,1.5,.5,1)}
 
   html.dark{
-    --p-bg:#131B26; --p-bg2:#22303F; --p-card:#1C2836; --p-ink:#EEE6D3; --p-ink2:#C9C2B2;
-    --p-muted:#93A1B3; --p-faint:#46566A; --p-line:#2A394B; --p-accent:#F0A830; --p-strong:#26374C;
-    --p-sel-bg:#F0A830; --p-sel-fg:#1b1b1b; --p-lock:#26354A; --p-lock-fg:#5D6E83; --p-lock-sh:#1A2533;
+    /* тёмная тема — неоновая, как на сайте и стримах */
+    --p-bg:#0C0A24; --p-bg2:#221D58; --p-card:#17143F; --p-ink:#EFECFB; --p-ink2:#CFCCF2;
+    --p-muted:#A4A1D8; --p-faint:#3A3480; --p-line:#2B2668; --p-accent:#F0A830; --p-strong:#251F5E;
+    --p-sel-bg:#F0A830; --p-sel-fg:#1b1b1b; --p-lock:#1E1A4D; --p-lock-fg:#5E58A0; --p-lock-sh:#0E0B2C;
   }
   html.dark .ico-cap{background:rgba(240,168,48,.18);color:#F3C06A}
   html.dark .ico-podium{background:rgba(120,160,210,.18);color:#A9C4E6}
   html.dark .ico-ear{background:rgba(111,191,115,.18);color:#8FD493}
-  html.dark .ico-gear{background:rgba(238,230,211,.12);color:#C9C2B2}
+  html.dark .ico-gear{background:rgba(239,236,251,.1);color:#CFCCF2}
+  html.dark .panel{background:radial-gradient(700px 420px at 0% -5%,rgba(110,123,255,.22),transparent 60%),radial-gradient(600px 400px at 110% 20%,rgba(255,95,207,.12),transparent 60%),var(--p-bg)}
+  html.dark .lvlcard:not(.dark),html.dark .today,html.dark .lvl,html.dark .stat2,html.dark .song,html.dark .lb li,html.dark .week,html.dark .tp{box-shadow:inset 0 0 0 1px rgba(110,123,255,.16)}
   html.dark .lgresult.up{background:rgba(111,191,115,.18);color:#8FD493}
   html.dark .lgresult.down{background:rgba(229,72,77,.18);color:#F08A8D}
   html.dark .legend .up{color:#8FD493}
   html.dark .bubble{background:#F0A830;color:#1b1b1b}
   html.dark .bubble.r::after{border-right-color:#F0A830}html.dark .bubble.l::after{border-left-color:#F0A830}
-  html.dark .flame:not(.on) b{color:#46566A}
+  html.dark .flame:not(.on) b{color:#3A3480}
   @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -654,7 +658,7 @@ const colOf=n=>6-n;
 const tg=window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData!==undefined?window.Telegram.WebApp:null;
 const inTg=!!(tg&&tg.initData);
 if(tg){
-  try{tg.ready();tg.expand();tg.setHeaderColor('#1E2B3C');tg.setBackgroundColor('#1E2B3C');tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}
+  try{tg.ready();tg.expand();tg.setHeaderColor('#141137');tg.setBackgroundColor('#141137');tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}
   try{tg.BackButton.onClick(()=>{if(!$('tabPlayer').hidden)closeTab();else openMenu();});}catch(e){}
 }
 // Полный экран: поворот разрешён только в нём; в обычном режиме ориентация закреплена
@@ -1166,8 +1170,8 @@ function loadAlphaTab(){
 }
 function tabResources(){
   const d=isDark();
-  return d?{staffLineColor:'#4A5A6E',barSeparatorColor:'#5D6E83',mainGlyphColor:'#EEE6D3',secondaryGlyphColor:'#93A1B3',barNumberColor:'#93A1B3'}
-          :{staffLineColor:'#BFB29A',barSeparatorColor:'#A99C84',mainGlyphColor:'#22201c',secondaryGlyphColor:'#7a7264',barNumberColor:'#9b917f'};
+  return d?{staffLineColor:'#433D8C',barSeparatorColor:'#5E58A0',mainGlyphColor:'#EFECFB',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8'}
+          :{staffLineColor:'#C6C0E8',barSeparatorColor:'#A9A3D6',mainGlyphColor:'#1A1640',secondaryGlyphColor:'#68649A',barNumberColor:'#8F8ABF'};
 }
 const tabColored=()=>data.tabColor!==false;
 function paintLegend(){
