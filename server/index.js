@@ -388,11 +388,18 @@ function daStats(list) {
     for (const d of items) { const k = d.n.toLowerCase(); const e = m.get(k) || { name: d.n, rub: 0, count: 0 }; e.rub += toRub(d.a, d.c); e.count++; m.set(k, e); }
     return [...m.values()].filter(e => e.name !== 'Аноним').sort((a, b) => b.rub - a.rub).slice(0, 5);
   };
-  const now = Date.now(), month = list.filter(d => now - ts(d) < 30 * 864e5);
+  // календарные периоды по Москве: сегодня с 00:00, неделя с понедельника, месяц с 1-го числа
+  const now = Date.now(), MSK = 3 * 3600e3, m = new Date(now + MSK);
+  const dayStart = Date.UTC(m.getUTCFullYear(), m.getUTCMonth(), m.getUTCDate()) - MSK;
+  const weekStart = dayStart - ((m.getUTCDay() + 6) % 7) * 864e5;
+  const monthStart = Date.UTC(m.getUTCFullYear(), m.getUTCMonth(), 1) - MSK;
+  const since = t0 => list.filter(d => ts(d) >= t0);
+  const sum = l => l.reduce((s, d) => s + toRub(d.a, d.c), 0);
+  const day = since(dayStart), week = since(weekStart), month = since(monthStart);
   const out = {
     last: list.slice(0, 5).map(d => ({ name: d.n, amount: d.a, currency: d.c, t: d.t })),
-    topMonth: top(month), topAll: top(list),
-    monthRub: month.reduce((s, d) => s + toRub(d.a, d.c), 0), count: list.length, updated: now,
+    topDay: top(day), topWeek: top(week), topMonth: top(month), topAll: top(list),
+    dayRub: sum(day), weekRub: sum(week), monthRub: sum(month), count: list.length, updated: now,
   };
   const g = String(process.env.DA_GOAL || '').split('|');
   if (g[0] && Number(g[1]) > 0) {

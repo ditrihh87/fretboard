@@ -190,8 +190,9 @@
       <div class="da" id="daBox" hidden>
         <div class="da-goal" id="daGoal" hidden></div>
         <div class="da-cols">
+          <div class="da-card"><div class="da-h">Топ за сегодня</div><ol id="daTopD"></ol></div>
+          <div class="da-card"><div class="da-h">Топ за неделю</div><ol id="daTopW"></ol></div>
           <div class="da-card"><div class="da-h">Топ за месяц</div><ol id="daTopM"></ol></div>
-          <div class="da-card"><div class="da-h">Топ за всё время</div><ol id="daTopA"></ol></div>
           <div class="da-card"><div class="da-h">Последние донаты</div><ul id="daLast"></ul></div>
         </div>
         <p class="da-note">Спасибо всем, кто поддерживает! Суммы в рейтинге — примерно в рублях.</p>
@@ -230,7 +231,7 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8']; // 6 →
   const top=(el,l)=>{$(el).innerHTML=l&&l.length?l.map((e,i)=>`<li><span class="p">${i+1}</span><span class="n">${esc(e.name)}</span><span class="s">${fmt(e.rub)} ₽</span></li>`).join(''):'<li class="empty">Пока никого — будь первым!</li>';};
   fetch('https://functions.yandexcloud.net/d4epurfr35kcn0fl97up',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'donations'})}).then(r=>r.json()).then(d=>{
     if(!d||!d.connected)return;
-    top('daTopM',d.topMonth);top('daTopA',d.topAll);
+    top('daTopD',d.topDay);top('daTopW',d.topWeek);top('daTopM',d.topMonth);
     $('daLast').innerHTML=d.last&&d.last.length?d.last.map(e=>`<li><span class="n">${esc(e.name)}</span><span class="s">${money(e.amount,e.currency)}</span><small>${ago(e.t)}</small></li>`).join(''):'<li class="empty">Пока пусто</li>';
     if(d.goal){const p=Math.min(100,d.goal.raised/d.goal.target*100);
       $('daGoal').innerHTML=`<div class="t"><span>🎯 ${esc(d.goal.title)}</span><small>${fmt(d.goal.raised)} из ${fmt(d.goal.target)} ₽ · ${Math.floor(p)}%</small></div><div class="bar"><i style="width:${p.toFixed(1)}%"></i></div>`;$('daGoal').hidden=false;}
