@@ -360,25 +360,45 @@ async function handleDaConnect(body, token) {
   try { const u = await (await fetch(DA + '/api/v1/user/oauth', { headers: { Authorization: 'Bearer ' + j.access_token } })).json(); user = u.data && u.data.name || ''; } catch {}
   return reply(200, { ok: true, user });
 }
-// все донаты храним у себя (без сообщений) и дочитываем только новые
-async function daSync(token) {
+// все донаты храним у себя (без сообщений): сначала новые, потом понемногу дочитываем историю.
+// За один вызов работаем не дольше DA_BUDGET_MS, чтобы функция не упёрлась в таймаут.
+const DA_BUDGET_MS = 2500;
+async function daSync(token, report) {
+  const t0 = Date.now(), rep = report || {};
   const at = await daToken(token);
+  rep.token = !!at;
   if (!at) return null;
-  const store = await loadJSON('da/all.json', token, { list: [] });
+  const store = await loadJSON('da/all.json', token, { list: [], back: 1 });
+  if (store.back === undefined) store.back = 0;
   const known = new Set(store.list.map(d => d.id));
-  const fresh = [];
-  for (let page = 1; page <= DA_MAX_PAGES; page++) {
+  const pick = d => ({ id: d.id, n: daName(d.username), a: Number(d.amount) || 0, c: String(d.currency || 'RUB').toUpperCase(), t: String(d.created_at || '') });
+  const getPage = async page => {
     const r = await fetch(`${DA}/api/v1/alerts/donations?page=${page}`, { headers: { Authorization: 'Bearer ' + at } });
-    if (!r.ok) { console.error('da donations', r.status); break; }
-    const j = await r.json();
-    let hitKnown = false;
-    for (const d of j.data || []) {
-      if (known.has(d.id)) { hitKnown = true; break; }
-      fresh.push({ id: d.id, n: daName(d.username), a: Number(d.amount) || 0, c: String(d.currency || 'RUB').toUpperCase(), t: String(d.created_at || '') });
-    }
-    if (hitKnown || !j.links || !j.links.next) break;
+    rep.httpStatus = r.status;
+    if (!r.ok) { rep.error = 'DonationAlerts ответил ' + r.status; return null; }
+    rep.pages = (rep.pages || 0) + 1;
+    const j = await r.json(); rep.lastPage = j.meta && j.meta.last_page; rep.total = j.meta && j.meta.total;
+    return j;
+  };
+  let changed = false;
+  // 1) новые донаты — со страницы 1, пока не встретим уже известный
+  const fresh = [];
+  for (let page = 1; page <= DA_MAX_PAGES && Date.now() - t0 < DA_BUDGET_MS; page++) {
+    const j = await getPage(page); if (!j) break;
+    let hit = false;
+    for (const d of j.data || []) { if (known.has(d.id)) { hit = true; break; } fresh.push(pick(d)); known.add(d.id); }
+    if (hit || !j.links || !j.links.next) { if (!store.list.length && j.links && j.links.next) store.back = page + 1; break; }
+    if (!store.list.length) store.back = page + 1;
   }
-  if (fresh.length) { store.list = fresh.concat(store.list); await saveList('da/all.json', store, token); }
+  if (fresh.length) { store.list = fresh.concat(store.list); changed = true; }
+  // 2) история — продолжаем с сохранённой страницы, сколько успеем
+  while (store.back && Date.now() - t0 < DA_BUDGET_MS) {
+    const j = await getPage(store.back); if (!j) break;
+    for (const d of j.data || []) if (!known.has(d.id)) { store.list.push(pick(d)); known.add(d.id); }
+    store.back = j.links && j.links.next ? store.back + 1 : 0; changed = true;
+  }
+  rep.count = store.list.length; rep.historyDone = !store.back; rep.ms = Date.now() - t0;
+  if (changed) await saveList('da/all.json', store, token);
   return store.list;
 }
 function daStats(list) {
@@ -412,9 +432,11 @@ async function handleDonations(token) {
   const c = await loadJSON('cache/da_stats.json', token, null);
   if (c && Date.now() - c.updated < DA_CACHE_MS) return reply(200, c);
   try {
-    const list = await daSync(token);
+    const rep = {};
+    const list = await daSync(token, rep);
     if (!list) return reply(200, { connected: false });
-    const st = Object.assign(daStats(list), { connected: true });
+    const st = Object.assign(daStats(list), { connected: true, loading: !rep.historyDone });
+    if (!rep.historyDone) st.updated = Date.now() - DA_CACHE_MS + 5000; // пока грузится история — обновляем чаще
     await saveList('cache/da_stats.json', st, token);
     return reply(200, st);
   } catch (e) { console.error(e); return c ? reply(200, c) : reply(502, { error: 'da' }); }
@@ -431,6 +453,16 @@ async function handleDaGet(q, token) {
     if (!okAdmin(q.key)) return page('Неверный ключ', 'Открой ссылку с правильным ключом владельца.', false);
     if (!process.env.DA_CLIENT_ID) return page('Не настроено', 'Добавь в переменные функции DA_CLIENT_ID и DA_CLIENT_SECRET.', false);
     return { statusCode: 302, headers: { Location: DA + '/oauth/authorize?' + new URLSearchParams({ client_id: process.env.DA_CLIENT_ID, redirect_uri: FN_URL, response_type: 'code', scope: 'oauth-user-show oauth-donation-index', state: q.key }) }, body: '' };
+  }
+  if (q.da === 'status') {
+    if (!okAdmin(q.key)) return page('Неверный ключ', 'Открой ссылку с правильным ключом владельца.', false);
+    const rep = {}; let err = '';
+    try { await daSync(token, rep); } catch (e) { err = String(e && e.message || e); }
+    await deleteObj('cache/da_stats.json', token).catch(() => {});
+    const rows = [['Токен DonationAlerts', rep.token ? 'есть' : 'нет — подключи заново'], ['Ответ DonationAlerts', rep.httpStatus || '—'],
+      ['Страниц прочитано сейчас', rep.pages || 0], ['Всего донатов в DonationAlerts', rep.total ?? '—'], ['Сохранено у нас', rep.count ?? 0],
+      ['История загружена', rep.historyDone ? 'да' : 'ещё нет — обнови страницу ещё раз'], ['Время', (rep.ms || 0) + ' мс'], ['Ошибка', rep.error || err || 'нет']];
+    return page('Диагностика DonationAlerts', rows.map(r => `${r[0]}: <b style="color:#EFECFB">${r[1]}</b>`).join('<br>'), !(rep.error || err) && rep.token);
   }
   if (q.code) {
     const r = await handleDaConnect({ key: q.state, code: q.code, redirect_uri: FN_URL }, token);
