@@ -105,17 +105,18 @@
   <div class="wrap">
     <a class="logo" href="index.html" aria-label="ditrihh — на главную"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"></a>
     <nav aria-label="Разделы">
-      <a href="index.html#school">Школа</a>
-      <a href="songs.html" class="on">Аккорды и табы</a>
-      <a href="index.html#stream">Стримы</a>
-      <a href="index.html#support">Донат</a>
+      <a href="songs.html?type=chords" data-nav="chords">Аккорды</a>
+      <a href="songs.html?type=tab" data-nav="tab">Табы</a>
+      <a href="index.html#stream" data-nav="stream">Стримы</a>
+      <a href="index.html#school" data-nav="school">Школа</a>
+      <a href="index.html#support" data-nav="support">Донат</a>
     </nav>
     <a class="btn main" href="app.html">Открыть школу</a>
   </div>
 </header>
 
 <main class="wrap" id="main">
-  <div class="crumbs"><a href="songs.html">← Все аккорды и табы</a></div>
+  <div class="crumbs"><a href="songs.html" id="crumb">← Все аккорды и табы</a></div>
   <div id="content"><p class="notfound" style="color:var(--muted)">Загружаю…</p></div>
 </main>
 
@@ -436,9 +437,12 @@ async function renderTabPage(){
   const id=new URLSearchParams(location.search).get('id');
   let list=[];try{list=await (await fetch('songs.json',{cache:'no-cache'})).json();}catch(e){}
   SONG=list.find(s=>s.id===id);
-  if(!SONG){$('content').innerHTML='<div class="notfound"><h1>Песня не найдена</h1><p class="lead" style="margin:0 auto 24px">Возможно, ссылка устарела.</p><a class="btn main" href="songs.html">Все аккорды и табы</a></div>';return;}
+  if(!SONG){$('content').innerHTML='<div class="notfound"><h1>Песня не найдена</h1><p class="lead" style="margin:0 auto 24px">Возможно, ссылка устарела.</p><a class="btn main" href="songs.html?type=chords">Все аккорды</a> <a class="btn ghost" href="songs.html?type=tab">Все табы</a></div>';return;}
   document.title=`${SONG.title}${SONG.artist?' — '+SONG.artist:''} — ${SONG.tab?'таб':'аккорды'} от ditrihh`;
   const md=document.querySelector('meta[name="description"]');if(md)md.content=`${SONG.title}${SONG.artist?' ('+SONG.artist+')':''}: ${SONG.tab?'таб со звуком':'аккорды со схемами'} от ditrihh — проверено на гитаре.`;
+  { const t=SONG.tab?'tab':'chords',c=$('crumb'); // «назад» и меню — в свой раздел
+    if(c){c.href='songs.html?type='+t;c.textContent=SONG.tab?'← Все табы':'← Все аккорды';}
+    document.querySelectorAll(`[data-nav="${t}"]`).forEach(a=>a.classList.add('on')); }
   if(SONG.tab)renderTabPage();else renderChordsPage();
   paintRate();paintYm();
 })();

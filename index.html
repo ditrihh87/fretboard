@@ -26,10 +26,11 @@
   <div class="wrap">
     <a class="logo" href="#top" aria-label="ditrihh — на главную"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"></a>
     <nav aria-label="Разделы">
-      <a href="#school">Школа</a>
-      <a href="songs.html">Аккорды и табы</a>
-      <a href="#stream">Стримы</a>
-      <a href="#support">Донат</a>
+      <a href="songs.html?type=chords" data-nav="chords">Аккорды</a>
+      <a href="songs.html?type=tab" data-nav="tab">Табы</a>
+      <a href="#stream" data-nav="stream">Стримы</a>
+      <a href="#school" data-nav="school">Школа</a>
+      <a href="#support" data-nav="support">Донат</a>
     </nav>
     <a class="live-dot" href="#stream" id="navLive"><i></i><span id="navLiveText">Стрим в 00:00</span></a>
     <a class="btn main" href="app.html">Открыть школу</a>
@@ -43,10 +44,11 @@
         <h1><img src="brand/ditrihh-logo.svg" alt="ditrihh"><span class="vh">ditrihh — уроки гитары, табы и стримы</span></h1>
         <p>Эксклюзивные табы и правильные аккорды — подбираю сам и проверяю на гитаре. Каждый вечер живой стрим, а если хочешь с нуля — школа гитары как в игре.</p>
         <div class="ctas">
-          <a class="btn main" href="app.html">Начать учиться — бесплатно</a>
-          <a class="btn ghost" href="https://t.me/ditrihh_bot?startapp" target="_blank" rel="noopener">Открыть в Telegram</a>
+          <a class="btn main" href="songs.html?type=chords">Аккорды</a>
+          <a class="btn main" href="songs.html?type=tab">★ Табы</a>
+          <a class="btn ghost" href="app.html">Школа с нуля</a>
         </div>
-        <div class="note">Работает в браузере и в Telegram. Без установки.</div>
+        <div class="note">Школа работает в браузере и в <a href="https://t.me/ditrihh_bot?startapp" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Telegram</a>. Без установки.</div>
       </div>
       <div class="livebox" id="liveBox">
         <div class="lb-badge" id="lbBadge"><i></i><span>Офлайн</span></div>
@@ -168,7 +170,7 @@
           <li>Замедление до 50%, повтор участка, метроном и отсчёт</li>
           <li>Новые аранжировки — регулярно, по заявкам со стримов</li>
         </ul>
-        <div style="margin-top:30px"><a class="btn main" href="songs.html">Все аккорды и табы</a></div>
+        <div style="margin-top:30px;display:flex;flex-wrap:wrap;gap:10px"><a class="btn main" href="songs.html?type=tab">★ Все табы</a><a class="btn ghost" href="songs.html?type=chords">Все аккорды</a></div>
       </div>
       <div class="tabview" aria-hidden="true">
         <div class="legend"><span><i style="background:#D33A3F"></i>6</span><span><i style="background:#C97A0E"></i>5</span><span><i style="background:#9A8300"></i>4</span><span><i style="background:#3E9A45"></i>3</span><span><i style="background:#2E7FC0"></i>2</span><span><i style="background:#8456C2"></i>1</span></div>

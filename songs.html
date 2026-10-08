@@ -20,6 +20,8 @@
   .pclink{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-top:18px;padding:12px 16px;border-radius:14px;background:linear-gradient(90deg,rgba(110,123,255,.18),rgba(255,95,207,.1));text-decoration:none;color:var(--paper)}
   .pclink span{color:#CFCCF2;font-weight:700;font-size:14px}
   .pclink:hover{box-shadow:inset 0 0 0 1px rgba(110,123,255,.5)}
+  .cross{display:block;width:fit-content;margin-top:14px;color:#CFCCF2;font-weight:700;font-size:14px;text-decoration:none}
+  .cross:hover{color:var(--paper)}
   .tools{display:flex;margin:18px 0}
   .search{flex:1 1 320px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239C97D6' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") no-repeat 16px 50% / 20px,rgba(28,24,72,.7);padding-left:48px!important;border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:14px;padding:15px 18px;color:var(--paper);font:600 16px var(--body)}
   .search::placeholder{color:var(--muted)}
@@ -60,10 +62,11 @@
   <div class="wrap">
     <a class="logo" href="index.html" aria-label="ditrihh — на главную"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"></a>
     <nav aria-label="Разделы">
-      <a href="index.html#school">Школа</a>
-      <a href="songs.html" class="on" aria-current="page">Аккорды и табы</a>
-      <a href="index.html#stream">Стримы</a>
-      <a href="index.html#support">Донат</a>
+      <a href="songs.html?type=chords" data-nav="chords">Аккорды</a>
+      <a href="songs.html?type=tab" data-nav="tab">Табы</a>
+      <a href="index.html#stream" data-nav="stream">Стримы</a>
+      <a href="index.html#school" data-nav="school">Школа</a>
+      <a href="index.html#support" data-nav="support">Донат</a>
     </nav>
     <a class="btn main" href="app.html">Открыть школу</a>
   </div>
@@ -71,16 +74,11 @@
 
 <main class="wrap">
   <section class="shead" style="padding-bottom:0">
-    <div class="kicker">Аккорды и табы</div>
-    <h1>Эксклюзивные табы<br>и аккорды <em>от ditrihh</em></h1>
-    <p class="lead">Мои аранжировки — таких табов больше нет нигде. Аккорды к песням подбираю сам и проверяю на гитаре. Табы можно слушать, замедлять и играть вместе с ними.</p>
-    <div class="filters" role="group" aria-label="Тип">
-      <button data-f="all" aria-pressed="true">Все</button>
-      <button data-f="chords" aria-pressed="false">Аккорды</button>
-      <button data-f="tab" aria-pressed="false">Табы</button>
-      <button data-f="ex" aria-pressed="false">★ Эксклюзив</button>
-      <button data-f="saved" aria-pressed="false">♥ Сохранённые</button>
-    </div>
+    <div class="kicker" id="kicker">Аккорды и табы</div>
+    <h1 id="ttl">Эксклюзивные табы<br>и аккорды <em>от ditrihh</em></h1>
+    <p class="lead" id="lead">Мои аранжировки — таких табов больше нет нигде. Аккорды к песням подбираю сам и проверяю на гитаре. Табы можно слушать, замедлять и играть вместе с ними.</p>
+    <div class="filters" role="group" aria-label="Показать" id="filters"></div>
+    <a class="cross" id="cross" hidden></a>
   </section>
 
   <div class="tools">
@@ -112,14 +110,33 @@ const $=id=>document.getElementById(id);
 $('yr').textContent=new Date().getFullYear();
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const chordsIn=t=>[...new Set([...(t||'').matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(Boolean))];
+/* раздел: ?type=chords — аккорды, ?type=tab — табы, без параметра — всё вместе */
+const TYPE=(()=>{const t=new URLSearchParams(location.search).get('type');return t==='tab'||t==='chords'?t:'all';})();
+const SECT={
+  chords:{kicker:'Аккорды',h1:'Правильные аккорды<br><em>к песням</em>',lead:'Подбираю сам и проверяю на гитаре — без ошибок, которыми полны сайты с аккордами. Схемы, звук, смена тональности и «Простые аккорды» для начинающих.',
+    title:'Правильные аккорды к песням — ditrihh',desc:'Правильные аккорды к песням от ditrihh: подобраны и проверены на гитаре. Схемы со звуком, смена тональности, простые аккорды с каподастром.',
+    filters:[['all','Все песни'],['saved','♥ Сохранённые']],cross:['Нужна точная партия? Эксклюзивные табы →','songs.html?type=tab'],empty:'Аккорды к песням скоро появятся здесь — следи за стримами.'},
+  tab:{kicker:'Табы',h1:'Эксклюзивные табы<br><em>от ditrihh</em>',lead:'Мои аранжировки — таких табов больше нет нигде. Табы со звуком: слушай, замедляй и играй вместе с ними.',
+    title:'Эксклюзивные табы и аранжировки — ditrihh',desc:'Эксклюзивные табы и аранжировки от ditrihh — таких нет нигде. Табы со звуком, замедлением и повтором участка, цветные струны.',
+    filters:[['all','Все табы'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],cross:['Хочешь просто подобрать под голос? Аккорды →','songs.html?type=chords'],empty:'Первые табы скоро появятся здесь — следи за стримами.'},
+  all:{filters:[['all','Все'],['chords','Аккорды'],['tab','Табы'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],empty:'Песни скоро появятся здесь — следи за стримами.'}
+}[TYPE];
+if(TYPE!=='all'){
+  $('kicker').textContent=SECT.kicker;$('ttl').innerHTML=SECT.h1;$('lead').textContent=SECT.lead;document.title=SECT.title;
+  const md=document.querySelector('meta[name="description"]');if(md)md.content=SECT.desc;
+  const og=document.querySelector('meta[property="og:title"]');if(og)og.content=SECT.title;
+  $('cross').textContent=SECT.cross[0];$('cross').href=SECT.cross[1];$('cross').hidden=false;
+  document.querySelectorAll(`[data-nav="${TYPE}"]`).forEach(a=>{a.classList.add('on');a.setAttribute('aria-current','page');});
+}
+$('filters').innerHTML=SECT.filters.map(([f,t],i)=>`<button data-f="${f}" aria-pressed="${!i}">${t}</button>`).join('');
 let SONGS=[],filter='all',RT={};
 function render(){
   const q=$('q').value.toLowerCase().trim();
-  const items=SONGS.filter(s=>!q||(s.title+' '+(s.artist||'')).toLowerCase().includes(q))
+  const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||(s.title+' '+(s.artist||'')).toLowerCase().includes(q))
     .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
-  if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.length?'Песни скоро появятся здесь — следи за стримами.':filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
+  if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).length?SECT.empty:filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
   $('list').innerHTML=items.map(s=>{
     const r=RT[s.id],sv=DR.isSaved(s.id);
     return `<article class="item">
