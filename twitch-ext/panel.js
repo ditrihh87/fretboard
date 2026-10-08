@@ -21,10 +21,13 @@
       $('goal').innerHTML='<div class="t"><span>🎯 '+esc(g.title)+'</span><small>'+fmt(g.raised)+' / '+fmt(g.target)+' ₽</small></div><div class="bar"><i style="width:'+p.toFixed(1)+'%"></i></div>';
       $('goal').hidden=false;}else $('goal').hidden=true;
   }
+  function fail(msg){if(!DATA)$('list').innerHTML='<li class="empty">'+msg+'</li>';}
   function load(){
-    fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'donations'})})
-      .then(function(r){return r.json();}).then(function(d){DATA=d;paint();})
-      .catch(function(){if(!DATA)$('list').innerHTML='<li class="empty">Не удалось загрузить</li>';});
+    var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort();},12000);
+    fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'donations'}),signal:ctl?ctl.signal:undefined})
+      .then(function(r){clearTimeout(tm);return r.json();})
+      .then(function(d){DATA=d&&d.error?{connected:false}:d;paint();})
+      .catch(function(e){clearTimeout(tm);fail(e&&e.name==='AbortError'?'Сервер не отвечает, попробую ещё раз…':'Нет связи с сервером статистики');});
   }
   Array.prototype.forEach.call(document.querySelectorAll('#tabs button'),function(b){
     b.addEventListener('click',function(){tab=b.getAttribute('data-t');
