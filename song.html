@@ -301,7 +301,7 @@ function paintYm(){
     if(!ids){window.open(SONG.yandex,'_blank','noopener');return;}
     const f=$('ymFrame'),open=f.hidden;f.hidden=!open;$('ymBtn').setAttribute('aria-expanded',open);
     $('ymBtn').lastChild.textContent=open?'Скрыть плеер':'Слушать на Яндекс Музыке';
-    if(open&&!f.firstChild)f.innerHTML=`<iframe src="https://music.yandex.ru/iframe/#track/${ids.track}/${ids.album}" title="Яндекс Музыка" allow="autoplay; clipboard-write" loading="lazy"></iframe><a class="ymext" href="${esc(SONG.yandex)}" target="_blank" rel="noopener">Открыть в Яндекс Музыке ↗</a>`;
+    if(open&&!f.firstChild)f.innerHTML=`<iframe src="https://music.yandex.ru/iframe/#track/${ids.track}/${ids.album}" title="Яндекс Музыка" allow="autoplay; encrypted-media; clipboard-write; fullscreen" loading="lazy"></iframe><a class="ymext" href="${esc(SONG.yandex)}" target="_blank" rel="noopener">Открыть в Яндекс Музыке ↗</a>`;
   };
 }
 

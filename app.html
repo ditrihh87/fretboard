@@ -1149,7 +1149,7 @@ function openSong(id){
     yb.hidden=!cur.yandex;yf.hidden=true;yf.innerHTML='';yb.textContent='♪ Слушать';
     yb.onclick=()=>{ if(!ids){ if(inTg)tg.openLink(cur.yandex);else window.open(cur.yandex,'_blank'); return; }
       const open=yf.hidden;yf.hidden=!open;yb.textContent=open?'Скрыть плеер':'♪ Слушать';
-      if(open&&!yf.firstChild)yf.innerHTML=`<iframe src="https://music.yandex.ru/iframe/#track/${ids.track}/${ids.album}" title="Яндекс Музыка" allow="autoplay; clipboard-write"></iframe>`; }; }
+      if(open&&!yf.firstChild)yf.innerHTML=`<iframe src="https://music.yandex.ru/iframe/#track/${ids.track}/${ids.album}" title="Яндекс Музыка" allow="autoplay; encrypted-media; clipboard-write; fullscreen"></iframe>`; }; }
   song.tr=(data.songTr||{})[id]||0;song.easy=!!(data.songEasy||{})[id];song.fs=data.songFs||17;
   show('songView');back(true);renderSong();
 }
