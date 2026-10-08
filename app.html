@@ -1205,7 +1205,7 @@ function paintLink(){
     box.innerHTML=`<b>✓ Telegram привязан</b><p>${esc([u.first_name,u.last_name].filter(Boolean).join(' ')||'Аккаунт')}${u.username?' · @'+esc(u.username):''}. Прогресс, XP и лига общие на сайте и в боте.</p><div class="row2"><button class="btn ghost" id="lkOff">Отвязать</button></div>`;
     $('lkOff').onclick=unlinkTg;
   }else if(linkState){
-    box.innerHTML=`<div class="wait"><i></i>Ждём подтверждения в Telegram…</div><p>В Telegram откроется бот — нажми «Запустить» или «Открыть», и привязка завершится сама.</p><div class="row2"><a class="btn" href="${linkState.url}" target="_blank" rel="noopener">Открыть Telegram ещё раз</a><button class="btn ghost" id="lkCancel">Отмена</button></div>`;
+    box.innerHTML=`<div class="wait"><i></i>Ждём подтверждения в Telegram…</div><p>В Telegram откроется бот — нажми «Запустить» или «Открыть», и привязка завершится сама. Если ничего не открылось — нажми одну из кнопок ниже.</p><div class="row2"><a class="btn" href="${linkState.app}">Открыть приложение Telegram</a><a class="btn ghost" href="${linkState.url}" target="_blank" rel="noopener">Открыть через t.me</a><button class="btn ghost" id="lkCancel">Отмена</button></div>`;
     $('lkCancel').onclick=()=>stopLink('');
   }else{
     box.innerHTML=`<b>Привяжи Telegram</b><p>Если играешь в боте @notanagrife_bot, привяжи его — прогресс, XP, звание и лига станут общими здесь и в Telegram.</p><div class="row2"><button class="btn" id="lkOn">Привязать Telegram</button></div>${linkState===false?'':''}`;
@@ -1216,8 +1216,11 @@ function startLink(){
   const a=new Uint8Array(18);crypto.getRandomValues(a);
   const nonce=btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   const url=`https://t.me/notanagrife_bot?startapp=link_${nonce}`;
-  linkState={nonce,url,since:Date.now()};
-  window.open(url,'_blank');
+  const app=`tg://resolve?domain=notanagrife_bot&startapp=link_${nonce}`; // сразу в приложение Telegram, минуя t.me
+  linkState={nonce,url,app,since:Date.now()};
+  // новое окно может заблокировать браузер (особенно на iPhone) — тогда переходим в этой же вкладке
+  const w=window.open(url,'_blank');
+  if(!w)location.href=app;
   if($('profileView').hidden)openProfile();else paintLink();
   clearInterval(linkPoll);
   linkPoll=setInterval(async()=>{
@@ -2224,7 +2227,8 @@ $('shareBtn').addEventListener('click',()=>{
   const sp=(inTg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';
   if(sp.startsWith('link_')&&API_URL){
     (async()=>{
-      try{await pushNow();await api({action:'link',nonce:sp.slice(5)});
+      try{try{await pushNow();}catch(e){}
+        await api({action:'link',nonce:sp.slice(5)});
         tg.showAlert('Готово! Telegram привязан к сайту. Вернись в браузер — прогресс подтянется через пару секунд.');}
       catch(e){tg.showAlert('Не получилось привязать. Нажми «Привязать Telegram» на сайте ещё раз.');}
     })();
