@@ -72,18 +72,19 @@
     <div class="wrap">
       <div>
         <div class="kicker">Аккорды и табы</div>
-        <h2>Эксклюзивные табы от ditrihh</h2>
-        <p class="lead">Мои аранжировки — таких табов больше нет нигде. А аккорды к песням подбираю сам и проверяю на гитаре — без ошибок, которыми полны сайты с аккордами.</p>
+        <h2>Эксклюзивные табы и правильные аккорды</h2>
+        <p class="lead">Мои аранжировки — таких табов больше нет нигде. Аккорды подбираю сам и проверяю на гитаре: как в оригинале, а не как попало — без ошибок, которыми полны сайты с аккордами.</p>
         <ul class="ticks">
-          <li>Аккорды над словами — с транспонированием, схемами и автопрокруткой</li>
-          <li>Табы с цветными струнами и настоящим звуком гитары</li>
-          <li>Замедление до 50%, повтор участка, метроном и отсчёт</li>
-          <li>Новые аранжировки — регулярно, по заявкам со стримов</li>
+          <li><span><b>Правильные аккорды</b> — подобраны по оригиналу и проверены на гитаре</span></li>
+          <li><span><b>«Простые аккорды»</b> в один клик — Am, C, Em, G и подсказка, куда поставить каподастр</span></li>
+          <li><span>Схемы со звуком, смена тональности и автопрокрутка</span></li>
+          <li><span><b>Табы</b> с цветными струнами и настоящим звуком гитары — замедление, повтор участка, метроном</span></li>
+          <li><span>Новые аранжировки — регулярно, по заявкам со стримов</span></li>
         </ul>
         <div style="margin-top:30px;display:flex;flex-wrap:wrap;gap:10px"><a class="btn main" href="songs.html?type=tab">★ Все табы</a><a class="btn ghost" href="songs.html?type=chords">Все аккорды</a></div>
       </div>
       <div class="tabview" aria-hidden="true">
-        <div class="legend"><span><i style="background:#D33A3F"></i>6</span><span><i style="background:#C97A0E"></i>5</span><span><i style="background:#9A8300"></i>4</span><span><i style="background:#3E9A45"></i>3</span><span><i style="background:#2E7FC0"></i>2</span><span><i style="background:#8456C2"></i>1</span></div>
+        <div class="legend"><span><i style="background:#F26B6F"></i>6</span><span><i style="background:#F0A830"></i>5</span><span><i style="background:#E8D44D"></i>4</span><span><i style="background:#6FBF73"></i>3</span><span><i style="background:#5AB0E8"></i>2</span><span><i style="background:#B98AE8"></i>1</span></div>
         <svg id="tabsvg" viewBox="0 0 520 170"></svg>
       </div>
     </div>
@@ -209,21 +210,21 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8']; // 6 →
 
 /* таб-превью */
 (function(){
-  const s=$('tabsvg'),C=['#D33A3F','#C97A0E','#9A8300','#3E9A45','#2E7FC0','#8456C2'];
+  const s=$('tabsvg'),C=SC; // цвета струн как в таб-плеере (6 → 1)
   const top=22,gap=20,L=14,R=506;let g='';
-  for(let i=0;i<6;i++)g+=`<line x1="${L}" x2="${R}" y1="${top+i*gap}" y2="${top+i*gap}" stroke="#BFB29A" stroke-width="1.2"/>`;
-  [L,260,R].forEach(x=>g+=`<line x1="${x}" x2="${x}" y1="${top}" y2="${top+5*gap}" stroke="#A99C84" stroke-width="1.5"/>`);
-  g+=`<text x="${L+6}" y="${top+gap*1.2}" font-family="Arial" font-weight="700" font-size="17" fill="#22201c">T</text><text x="${L+6}" y="${top+gap*2.5}" font-family="Arial" font-weight="700" font-size="17" fill="#22201c">A</text><text x="${L+6}" y="${top+gap*3.8}" font-family="Arial" font-weight="700" font-size="17" fill="#22201c">B</text>`;
+  for(let i=0;i<6;i++)g+=`<line x1="${L}" x2="${R}" y1="${top+i*gap}" y2="${top+i*gap}" stroke="rgba(239,236,251,.18)" stroke-width="1.2"/>`;
+  [L,260,R].forEach(x=>g+=`<line x1="${x}" x2="${x}" y1="${top}" y2="${top+5*gap}" stroke="rgba(239,236,251,.3)" stroke-width="1.5"/>`);
+  g+=`<text x="${L+6}" y="${top+gap*1.2}" font-family="Arial" font-weight="700" font-size="17" fill="#CFCCF2">T</text><text x="${L+6}" y="${top+gap*2.5}" font-family="Arial" font-weight="700" font-size="17" fill="#CFCCF2">A</text><text x="${L+6}" y="${top+gap*3.8}" font-family="Arial" font-weight="700" font-size="17" fill="#CFCCF2">B</text>`;
   // перебор Am и Dm: [струна 1..6 сверху вниз (0=1-я), лад]
   const seq=[[4,0],[2,2],[1,1],[2,2],[0,0],[2,2],[1,1],[2,2], [3,0],[2,2],[1,3],[2,2],[0,1],[2,2],[1,3],[2,2]];
   const xs=i=>i<8?50+i*26:286+(i-8)*27;
   let cursor=xs(5);
   seq.forEach(([st,fr],i)=>{const x=xs(i),y=top+st*gap;
-    g+=`<rect x="${x-7}" y="${y-9}" width="14" height="18" fill="#F6F0E2"/><text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="${C[5-st]}">${fr}</text>`;
-    g+=`<line x1="${x}" x2="${x}" y1="${y+10}" y2="148" stroke="#22201c" stroke-width="1.3"/>`;});
-  for(let k=0;k<16;k+=2){g+=`<rect x="${xs(k)}" y="146" width="${xs(k+1)-xs(k)+1}" height="4" fill="#22201c"/>`;}
+    g+=`<rect x="${x-7}" y="${y-9}" width="14" height="18" fill="#15123A"/><text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="${C[5-st]}">${fr}</text>`;
+    g+=`<line x1="${x}" x2="${x}" y1="${y+10}" y2="148" stroke="rgba(239,236,251,.55)" stroke-width="1.3"/>`;});
+  for(let k=0;k<16;k+=2){g+=`<rect x="${xs(k)}" y="146" width="${xs(k+1)-xs(k)+1}" height="4" fill="rgba(239,236,251,.55)"/>`;}
   g+=`<rect x="${cursor-1.5}" y="${top-12}" width="3" height="${5*gap+24}" rx="1.5" fill="#F0A830"><animate attributeName="x" values="${xs(0)-1.5};${xs(15)-1.5}" dur="6s" repeatCount="indefinite"/></rect>`;
-  g+=`<text x="${L}" y="166" font-family="Manrope,Arial" font-weight="700" font-size="11" fill="#9b917f">Am            Dm</text>`;
+  g+=`<text x="${L}" y="166" font-family="Manrope,Arial" font-weight="700" font-size="11" fill="#9C97D6">Am            Dm</text>`;
   s.innerHTML=g;
 })();
 
