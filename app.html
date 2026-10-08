@@ -1188,7 +1188,6 @@ $('songsBack').addEventListener('click',openMenu);
 // схема аккорда по нажатию
 function showChord(name){
   $('cpSvg').innerHTML=chordSVG(name,false);$('cpName').textContent=name;$('chordPop').hidden=false;$('chordPop').dataset.name=name;
-  strumShape(chordShape(name));
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');if(b&&!$('songView').hidden)showChord(b.dataset.chord);});
 $('chordPop').addEventListener('click',e=>{if(e.target===$('chordPop'))$('chordPop').hidden=true;});
@@ -1730,7 +1729,7 @@ function chordSVG(name,label=true){
   if(min>0&&played.length>=4){
     const onMin=played.filter(([v])=>v===min).map(([,i])=>i);
     const first=played[0][1],last=played[played.length-1][1];
-    if(onMin.includes(first)&&onMin.includes(last)&&onMin.length>=2)barreFr=min,barreX=X(first),barreY=Y(min-base)+8,barreA=first,barreB=last,g+=`<rect x="${X(first)-3}" y="${Y(min-base)+2}" width="${X(last)-X(first)+6}" height="6" rx="1.5" fill="#F0A830"/>`;
+    if(onMin.includes(first)&&onMin.includes(last)&&onMin.length>=2)barreFr=min,barreY=Y(min-base)+5,barreA=first,barreB=last,g+=`<rect x="${X(first)-3}" y="${Y(min-base)+2}" width="${X(last)-X(first)+6}" height="6" rx="1.5" fill="#F0A830"/>`;
   }
   f.forEach((v,i)=>{
     if(v<0)g+=`<text x="${X(i)}" y="10" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor" opacity=".75">✕</text>`;
@@ -1738,15 +1737,15 @@ function chordSVG(name,label=true){
     else if(!(barreFr&&v===barreFr&&i>=barreA&&i<=barreB))g+=`<circle cx="${X(i)}" cy="${Y(v-base)+5}" r="3.6" fill="#F0A830"/>`;
   });
   if(base>1&&!barreFr)g+=`<text x="58" y="${Y(0)+8}" font-size="7.5" font-weight="800" fill="currentColor">${base}</text>`;
-  // баррэ: номер лада прямо под полоской, у первой струны баррэ (там нет других точек)
+  // баррэ: номер лада справа от полоски, на её уровне
   const bh=0;
-  if(barreFr)g+=`<rect x="${barreX-4.2}" y="${barreY+.6}" width="8.4" height="8.6" rx="2" style="fill:var(--svbg,#F4F2FD)"/><text x="${barreX}" y="${barreY+7.6}" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor">${barreFr}</text>`;
+  if(barreFr)g+=`<text x="${X(5)+5}" y="${barreY+3}" font-size="8.5" font-weight="800" fill="currentColor">${barreFr}</text>`;
   if(label)g+=`<text x="31" y="${74+bh}" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">${esc(name)}</text>`;
   return `<svg viewBox="0 0 66 ${(label?78:68)+bh}">${g}</svg>`;
 }
 function strumShape(f){
   if(!f)return;
-  f.forEach((fr,c)=>{if(fr>=0)setTimeout(()=>pluck(freqAt(c,fr)),c*35);});
+  f.forEach((fr,c)=>{if(fr>=0)setTimeout(()=>pluck(freqAt(c,fr)),c*110);}); // медленный перебор, чтобы слышно каждую струну
 }
 function strum(name,down=true){
   const f=CHORDS[name].f;
