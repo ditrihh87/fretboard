@@ -85,7 +85,7 @@
       </div>
       <div class="tabview" aria-hidden="true">
         <div class="legend"><span><i style="background:#F26B6F"></i>6</span><span><i style="background:#F0A830"></i>5</span><span><i style="background:#E8D44D"></i>4</span><span><i style="background:#6FBF73"></i>3</span><span><i style="background:#5AB0E8"></i>2</span><span><i style="background:#B98AE8"></i>1</span></div>
-        <svg id="tabsvg" viewBox="0 0 520 170"></svg>
+        <svg id="tabsvg" viewBox="0 0 520 156"></svg>
       </div>
     </div>
   </section>
@@ -224,7 +224,6 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8']; // 6 →
     g+=`<line x1="${x}" x2="${x}" y1="${y+10}" y2="148" stroke="rgba(239,236,251,.55)" stroke-width="1.3"/>`;});
   for(let k=0;k<16;k+=2){g+=`<rect x="${xs(k)}" y="146" width="${xs(k+1)-xs(k)+1}" height="4" fill="rgba(239,236,251,.55)"/>`;}
   g+=`<rect x="${cursor-1.5}" y="${top-12}" width="3" height="${5*gap+24}" rx="1.5" fill="#F0A830"><animate attributeName="x" values="${xs(0)-1.5};${xs(15)-1.5}" dur="6s" repeatCount="indefinite"/></rect>`;
-  g+=`<text x="${L}" y="166" font-family="Manrope,Arial" font-weight="700" font-size="11" fill="#9C97D6">Am            Dm</text>`;
   s.innerHTML=g;
 })();
 
