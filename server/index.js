@@ -3,6 +3,8 @@
 // Переменные окружения: BOT_TOKEN — токен бота, BUCKET — приватный бакет для данных,
 // VK_CLIENT_ID — ID приложения VK ID, YA_CLIENT_ID — ClientID приложения Яндекс ID,
 // BOT_TOKEN_NEW — токен второго бота (@ditrihh_bot): приложение работает из обоих ботов.
+// DonationAlerts: DA_CLIENT_ID, DA_CLIENT_SECRET (приложение на donationalerts.com/application/clients),
+// ADMIN_KEY — секретный ключ владельца (для подключения DonationAlerts), DA_GOAL — цель «Название|сумма|с какой даты», напр. «Новая гитара|50000|2026-10-01».
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
 const crypto = require('node:crypto');
@@ -319,6 +321,98 @@ async function handleRate(body, token) {
   return reply(200, { avg, n, mine: stars });
 }
 
+/* ===== DonationAlerts: статистика донатов для сайта и панели Twitch ===== */
+const DA = 'https://www.donationalerts.com';
+const DA_CACHE_MS = 60 * 1000;           // статистику пересчитываем не чаще раза в минуту
+const DA_MAX_PAGES = 40;                 // за один раз дочитываем не больше 40 страниц (1200 донатов)
+// примерный пересчёт в рубли для рейтинга (точные суммы показываем в исходной валюте)
+const RUB = { RUB: 1, USD: 90, EUR: 100, KZT: 0.18, BYN: 28, UAH: 2.2, BRL: 16, TRY: 2.6, PLN: 23 };
+const toRub = (a, c) => Math.round(Number(a || 0) * (RUB[String(c || 'RUB').toUpperCase()] ?? 0));
+const daName = n => String(n || '').trim().slice(0, 32) || 'Аноним';
+const okAdmin = k => !!process.env.ADMIN_KEY && typeof k === 'string' && k.length < 100 &&
+  crypto.timingSafeEqual(Buffer.from(sha(k)), Buffer.from(sha(process.env.ADMIN_KEY)));
+
+async function daToken(token) {
+  const t = await loadJSON('da/token.json', token, null);
+  if (!t) return null;
+  if (t.exp && Date.now() < t.exp - 3600e3) return t.access_token;
+  // обновляем токен
+  const r = await fetch(DA + '/oauth/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: t.refresh_token, client_id: process.env.DA_CLIENT_ID, client_secret: process.env.DA_CLIENT_SECRET, scope: 'oauth-user-show oauth-donation-index' }) });
+  if (!r.ok) { console.error('da refresh', r.status); return t.access_token; }
+  const j = await r.json();
+  const nt = { access_token: j.access_token, refresh_token: j.refresh_token || t.refresh_token, exp: Date.now() + (j.expires_in || 0) * 1000 };
+  await saveList('da/token.json', nt, token);
+  return nt.access_token;
+}
+// владелец подключает DonationAlerts: код из da-connect.html → токен
+async function handleDaConnect(body, token) {
+  if (!okAdmin(body.key)) return reply(403, { error: 'bad key' });
+  if (!process.env.DA_CLIENT_ID || !process.env.DA_CLIENT_SECRET) return reply(503, { error: 'DA not configured' });
+  if (typeof body.code !== 'string' || typeof body.redirect_uri !== 'string') return reply(400, { error: 'bad params' });
+  const r = await fetch(DA + '/oauth/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'authorization_code', client_id: process.env.DA_CLIENT_ID, client_secret: process.env.DA_CLIENT_SECRET, redirect_uri: body.redirect_uri, code: body.code }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) { console.error('da connect', r.status, j); return reply(401, { error: 'DA rejected' }); }
+  await saveList('da/token.json', { access_token: j.access_token, refresh_token: j.refresh_token, exp: Date.now() + (j.expires_in || 0) * 1000 }, token);
+  await deleteObj('da/all.json', token); await deleteObj('cache/da_stats.json', token);
+  let user = '';
+  try { const u = await (await fetch(DA + '/api/v1/user/oauth', { headers: { Authorization: 'Bearer ' + j.access_token } })).json(); user = u.data && u.data.name || ''; } catch {}
+  return reply(200, { ok: true, user });
+}
+// все донаты храним у себя (без сообщений) и дочитываем только новые
+async function daSync(token) {
+  const at = await daToken(token);
+  if (!at) return null;
+  const store = await loadJSON('da/all.json', token, { list: [] });
+  const known = new Set(store.list.map(d => d.id));
+  const fresh = [];
+  for (let page = 1; page <= DA_MAX_PAGES; page++) {
+    const r = await fetch(`${DA}/api/v1/alerts/donations?page=${page}`, { headers: { Authorization: 'Bearer ' + at } });
+    if (!r.ok) { console.error('da donations', r.status); break; }
+    const j = await r.json();
+    let hitKnown = false;
+    for (const d of j.data || []) {
+      if (known.has(d.id)) { hitKnown = true; break; }
+      fresh.push({ id: d.id, n: daName(d.username), a: Number(d.amount) || 0, c: String(d.currency || 'RUB').toUpperCase(), t: String(d.created_at || '') });
+    }
+    if (hitKnown || !j.links || !j.links.next) break;
+  }
+  if (fresh.length) { store.list = fresh.concat(store.list); await saveList('da/all.json', store, token); }
+  return store.list;
+}
+function daStats(list) {
+  const ts = d => Date.parse(d.t.replace(' ', 'T') + 'Z') || 0;
+  const top = items => {
+    const m = new Map();
+    for (const d of items) { const k = d.n.toLowerCase(); const e = m.get(k) || { name: d.n, rub: 0, count: 0 }; e.rub += toRub(d.a, d.c); e.count++; m.set(k, e); }
+    return [...m.values()].filter(e => e.name !== 'Аноним').sort((a, b) => b.rub - a.rub).slice(0, 5);
+  };
+  const now = Date.now(), month = list.filter(d => now - ts(d) < 30 * 864e5);
+  const out = {
+    last: list.slice(0, 5).map(d => ({ name: d.n, amount: d.a, currency: d.c, t: d.t })),
+    topMonth: top(month), topAll: top(list),
+    monthRub: month.reduce((s, d) => s + toRub(d.a, d.c), 0), count: list.length, updated: now,
+  };
+  const g = String(process.env.DA_GOAL || '').split('|');
+  if (g[0] && Number(g[1]) > 0) {
+    const since = Date.parse(g[2] || '') || 0;
+    out.goal = { title: g[0].slice(0, 60), target: Number(g[1]), raised: list.filter(d => ts(d) >= since).reduce((s, d) => s + toRub(d.a, d.c), 0) };
+  }
+  return out;
+}
+async function handleDonations(token) {
+  const c = await loadJSON('cache/da_stats.json', token, null);
+  if (c && Date.now() - c.updated < DA_CACHE_MS) return reply(200, c);
+  try {
+    const list = await daSync(token);
+    if (!list) return reply(200, { connected: false });
+    const st = Object.assign(daStats(list), { connected: true });
+    await saveList('cache/da_stats.json', st, token);
+    return reply(200, st);
+  } catch (e) { console.error(e); return c ? reply(200, c) : reply(502, { error: 'da' }); }
+}
+
 module.exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HEADERS, body: '' };
   if (event.httpMethod && event.httpMethod !== 'POST') return reply(405, { error: 'POST only' });
@@ -335,6 +429,12 @@ module.exports.handler = async (event, context) => {
   if (body.action === 'twitch') {
     try { return await handleTwitch(token); }
     catch (e) { console.error(e); return reply(502, { error: 'twitch' }); }
+  }
+
+  if (body.action === 'da_client') return reply(200, { client_id: process.env.DA_CLIENT_ID || null });
+  if (body.action === 'donations' || body.action === 'da_connect') {
+    try { return body.action === 'donations' ? await handleDonations(token) : await handleDaConnect(body, token); }
+    catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
   if (body.action === 'ratings' || body.action === 'rate') {

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Донаты ditrihh</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header><img src="logo.svg" alt="ditrihh"><span>донаты</span></header>
+  <div class="goal" id="goal" hidden></div>
+  <nav id="tabs">
+    <button data-t="m" class="on">Месяц</button><button data-t="a">Всё время</button><button data-t="l">Последние</button>
+  </nav>
+  <ol class="list" id="list"><li class="empty">Загружаю…</li></ol>
+  <p class="foot" id="foot">Спасибо всем, кто поддерживает! 💜</p>
+  <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

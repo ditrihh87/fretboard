@@ -1,0 +1,24 @@
+@font-face{font-family:'Russo One';src:url(RussoOne.ttf) format('truetype');font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0C0A24;color:#EFECFB;font:600 13px/1.4 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+body{padding:14px 14px 12px;min-height:100vh;background:radial-gradient(260px 200px at 0% 0%,rgba(110,123,255,.28),transparent 70%),radial-gradient(240px 220px at 100% 100%,rgba(255,95,207,.18),transparent 70%),#0C0A24}
+header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+header img{height:24px}
+header span{font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#B3AEE8;padding-left:10px;border-left:1px solid rgba(239,236,251,.18)}
+.goal{padding:10px 12px;border-radius:12px;background:rgba(37,31,94,.75);box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);margin-bottom:12px}
+.goal .t{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+.goal .t small{color:#A4A1D8;font-weight:700;white-space:nowrap}
+.goal .bar{height:9px;border-radius:99px;background:rgba(239,236,251,.08);margin-top:8px;overflow:hidden}
+.goal .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6E7BFF,#A06BFF,#FF5FCF);box-shadow:0 0 10px rgba(160,107,255,.6)}
+nav{display:flex;gap:3px;background:rgba(28,24,72,.8);border-radius:10px;padding:3px;margin-bottom:10px}
+nav button{flex:1;border:none;background:transparent;color:#A4A1D8;font:800 12px system-ui,sans-serif;padding:7px 4px;border-radius:8px;cursor:pointer}
+nav button.on{background:#F0A830;color:#1b1b1b}
+.list{list-style:none;display:grid;gap:6px}
+.list li{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:rgba(28,24,72,.65)}
+.list .p{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:800;background:rgba(239,236,251,.08);color:#CFCCF2;flex:none}
+.list li:nth-child(1) .p{background:#F0A830;color:#1b1b1b}.list li:nth-child(2) .p{background:#CFCCF2;color:#1b1b1b}.list li:nth-child(3) .p{background:#C98A5A;color:#1b1b1b}
+.list .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.list .s{color:#F0A830;font-weight:800;white-space:nowrap}
+.list small{color:#A4A1D8;font-size:11px;white-space:nowrap}
+.list .empty{justify-content:center;color:#A4A1D8;background:transparent}
+.foot{margin-top:10px;color:#A4A1D8;font-size:11px;text-align:center}

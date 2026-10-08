@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подключить DonationAlerts — ditrihh</title>
+<link rel="stylesheet" href="site.css">
+<style>
+  main{max-width:560px;margin:0 auto;padding:60px 20px;text-align:center}
+  h1{font-family:var(--display);font-weight:400;font-size:30px;margin-bottom:12px}
+  p{color:#CFCCF2;font-weight:600;line-height:1.5}
+  .st{margin-top:22px;font-weight:800}.ok{color:#8FD493}.bad{color:#F26B6F}
+</style>
+</head>
+<body>
+<main>
+  <h1>DonationAlerts → ditrihh</h1>
+  <p>Служебная страница: даёт сайту и панели Twitch право читать список твоих донатов (только чтение).</p>
+  <div style="margin-top:22px"><button class="btn main" id="go">Подключить DonationAlerts</button></div>
+  <p class="st" id="st"></p>
+</main>
+<script>
+const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const $=id=>document.getElementById(id);
+const REDIR=location.origin+location.pathname;
+const post=b=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)}).then(r=>r.json());
+const q=new URLSearchParams(location.search);
+// ключ владельца приходит в адресе (?key=…) и живёт только в этой вкладке
+if(q.get('key'))sessionStorage.setItem('da_key',q.get('key'));
+const key=sessionStorage.getItem('da_key')||'';
+function st(t,cls){$('st').textContent=t;$('st').className='st '+(cls||'');}
+$('go').onclick=async()=>{
+  if(!key){st('Открой эту страницу по ссылке с ключом: da-connect.html?key=…','bad');return;}
+  const c=await post({action:'da_client'}).catch(()=>({}));
+  if(!c.client_id){st('На сервере не указан DA_CLIENT_ID — добавь его в переменные функции.','bad');return;}
+  location.href='https://www.donationalerts.com/oauth/authorize?'+new URLSearchParams({client_id:c.client_id,redirect_uri:REDIR,response_type:'code',scope:'oauth-user-show oauth-donation-index'});
+};
+(async()=>{
+  const code=q.get('code');if(!code)return;
+  history.replaceState(null,'',REDIR);st('Подключаю…');
+  try{const r=await post({action:'da_connect',key,code,redirect_uri:REDIR});
+    if(r.ok){st('Готово! DonationAlerts подключён'+(r.user?' ('+r.user+')':'')+'. Статистика появится на сайте и в панели Twitch.','ok');sessionStorage.removeItem('da_key');}
+    else st(r.error==='bad key'?'Неверный ключ — открой страницу по ссылке с правильным ключом.':'Не получилось: '+(r.error||'ошибка'),'bad');
+  }catch(e){st('Сервер не ответил. Проверь, что функция обновлена.','bad');}
+})();
+</script>
+</body>
+</html>
