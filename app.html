@@ -160,6 +160,7 @@
   .seg{display:flex;background:var(--p-bg2);border-radius:12px;padding:3px}
   .easynote{margin:8px 0 4px;padding:10px 14px;border-radius:12px;background:rgba(240,168,48,.14);color:var(--p-ink);font-weight:600;font-size:14px;line-height:1.4}
   .easynote b{color:var(--amber)}
+  #songArtist{white-space:pre-line}
   .easybtn{border:none;background:var(--p-bg2);color:var(--p-ink);border-radius:999px;padding:9px 16px;font-weight:800;font-size:14px;margin:4px 0 6px;cursor:pointer}
   .easybtn.on{background:var(--amber);color:#1b1b1b}
   .seg button{flex:1;border:none;background:transparent;border-radius:9px;padding:10px 4px;font-weight:700;font-size:14px;color:var(--p-ink2)}
@@ -1144,7 +1145,7 @@ function openSong(id){
 }
 function renderSong(){
   const t=cur.text;let tr=song.tr;
-  $('songTitle').textContent=cur.title;$('songArtist').textContent=cur.artist||'';
+  $('songTitle').textContent=cur.title;$('songArtist').textContent=(cur.artist||'')+((c=>c?'\n'+c:'')([cur.words&&cur.words===cur.music?'Слова и музыка: '+cur.words:'',cur.words&&cur.words!==cur.music?'Слова: '+cur.words:'',cur.music&&cur.words!==cur.music?'Музыка: '+cur.music:'',cur.chordsBy?'Аккорды: '+cur.chordsBy:''].filter(Boolean).join(' · ')));
   const ez=song.easy?easyCapo(chordsIn(t)):null;
   if(ez)tr=-ez.k;
   $('easyBtn').setAttribute('aria-pressed',!!ez);$('easyBtn').classList.toggle('on',!!ez);

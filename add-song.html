@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Добавить песню — ditrihh</title>
+<meta name="theme-color" content="#0C0A24">
+<link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  main{padding:40px 0 80px}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,4.5vw,44px);margin-bottom:6px}
+  .lead{color:var(--muted);font-weight:600;margin-bottom:24px;max-width:760px;line-height:1.5}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{background:rgba(28,24,72,.7);box-shadow:inset 0 0 0 1px rgba(110,123,255,.2);border-radius:18px;padding:18px}
+  .card h2{font-family:var(--display);font-weight:400;font-size:20px;margin-bottom:12px}
+  label{display:block;font-weight:800;font-size:13px;color:#CFCCF2;margin:10px 0 5px}
+  input[type=text],textarea{width:100%;box-sizing:border-box;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:11px 13px;color:var(--paper);font:600 15px var(--body)}
+  textarea{font:500 14px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
+  #src{min-height:420px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;color:#CFCCF2}
+  .out{min-height:200px}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .msg{margin-top:10px;font-weight:700;font-size:14px;color:#8FD493;min-height:1.2em}
+  .msg.bad{color:#F26B6F}
+  .steps{color:#CFCCF2;font-weight:600;line-height:1.6;padding-left:20px}
+  .steps a{color:var(--amber)}
+  .prev{font-size:15px;line-height:1.3}
+  .prev .cm{display:block;color:var(--muted);font-weight:800;margin:14px 0 4px}
+  .prev .ln{display:flex;flex-wrap:wrap;margin:2px 0 6px}
+  .prev .sg{display:inline-flex;flex-direction:column;white-space:pre}
+  .prev .ch{color:var(--amber);font-weight:800;min-height:1.2em;padding-right:6px}
+  .prev .only .ch{margin-right:10px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Добавить песню</h1>
+  <p class="lead">Служебная страница. Вставь песню как обычно пишешь — аккорды над строками, «Куплет 1:», «Припев:», «Вступление: Dm Gm A }x4». Страница расставит аккорды по слогам и соберёт готовый файл песенника.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. Песня</h2>
+      <div class="row">
+        <div><label for="title">Название</label><input type="text" id="title"></div>
+        <div><label for="artist">Исполнитель</label><input type="text" id="artist"></div>
+      </div>
+      <div class="row">
+        <div><label for="words">Слова</label><input type="text" id="words"></div>
+        <div><label for="music">Музыка</label><input type="text" id="music"></div>
+      </div>
+      <label for="chordsBy">Аккорды подобрал</label><input type="text" id="chordsBy" value="ditrihh">
+      <label class="chk"><input type="checkbox" id="exclusive"> Моя аранжировка (★ Эксклюзив)</label>
+      <label for="src">Текст с аккордами</label>
+      <textarea id="src" spellcheck="false" placeholder="Вступление: Am F C G }x2&#10;&#10;Куплет 1:&#10;Am          F&#10;Первая строка куплета&#10;C           G&#10;Вторая строка куплета&#10;&#10;Припев:&#10;F     G     Am&#10;Строка припева"></textarea>
+    </section>
+
+    <section class="card">
+      <h2>2. Как получилось</h2>
+      <div class="prev" id="prev"><p class="lead">Здесь появится песня, как она будет выглядеть на сайте.</p></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2>3. Залить на сайт</h2>
+    <ol class="steps">
+      <li>Нажми «Скопировать файл» — в буфере окажется весь песенник вместе с новой песней.</li>
+      <li>Открой <a href="https://github.com/ditrihh87/fretboard/edit/main/songs.json" target="_blank" rel="noopener">songs.json на GitHub</a>, выдели всё (Ctrl+A) и вставь (Ctrl+V).</li>
+      <li>Нажми «Commit changes». Через минуту-две песня появится на сайте и в приложении.</li>
+    </ol>
+    <div class="btns"><button class="btn main" id="copyAll">Скопировать файл</button><button class="btn ghost" id="copyOne">Скопировать только эту песню</button></div>
+    <div class="msg" id="msg"></div>
+    <label for="out">Готовый файл songs.json</label>
+    <textarea id="out" class="out" readonly spellcheck="false"></textarea>
+  </section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let EXIST=[];
+fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=Array.isArray(j)?j:[];build();}).catch(()=>build());
+
+/* ---------- распознавание ---------- */
+const CHORD=/^[A-H][#b]?(m|maj|min|dim|aug|sus|add|M)?\d*(sus\d*|add\d*|maj\d*|b\d+|#\d+)*(\/[A-H][#b]?)?$/;
+const isChord=t=>CHORD.test(t);
+const REPEAT=/^\}?\s*[xх×]\s*(\d+)$/i;           // }x4, x2, ×3
+const isNoise=t=>/^(\||-|–|—|\(|\)|\.\.\.|…)$/.test(t);
+function chordTokens(line){
+  const toks=line.trim().split(/\s+/).filter(Boolean);
+  if(!toks.length)return null;
+  let rep=0,n=0;
+  for(const raw of toks){
+    const t=raw.replace(/^[(]|[)]$/g,'');
+    const r=t.match(REPEAT)||(t==='}'?['',0]:null);
+    if(r){if(r[1])rep=+r[1];continue;}
+    if(isNoise(t))continue;
+    if(!isChord(t))return null;n++;
+  }
+  return n?{rep}:null;
+}
+// аккорды строки вместе с позициями
+function chordsWithPos(line){const out=[];line.replace(/\S+/g,(m,i)=>{const t=m.replace(/^[(]|[)]$/g,'');if(isChord(t))out.push({c:t,i});return m;});return out;}
+const repLabel=r=>r>1?' ×'+r:'';
+const headName=s=>s.replace(/[:：]\s*$/,'').trim();
+const H_RE=/^\s*([А-ЯЁA-Z][^:：]{0,40})[:：]\s*(.*)$/;   // «Куплет 1:», «Вступление: Dm Gm A }x4»
+
+function convert(src,meta){
+  const L=src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
+  const out=[];
+  for(let i=0;i<L.length;i++){
+    const line=L[i].replace(/\s+$/,'');
+    if(!line.trim()){if(out.length&&out[out.length-1]!==''&&!/^\{comment:/.test(out[out.length-1]))out.push('');continue;}
+    // «Автор текста:» / «Слова:» / «Музыка:» — в поля, не в текст
+    const au=line.match(/^\s*(автор\s+текста|слова|автор\s+музыки|музыка|автор)\s*[:：]\s*(.*)$/i);
+    if(au){let v=au[2].trim();if(!v){while(i+1<L.length&&!L[i+1].trim())i++;if(i+1<L.length)v=L[++i].trim();}
+      if(v){if(/музык/i.test(au[1]))meta.music=meta.music||v;else meta.words=meta.words||v;}continue;}
+    // заголовок части
+    const h=line.match(H_RE);
+    if(h&&!chordTokens(line)){
+      const rest=h[2].trim(),ct=rest?chordTokens(rest):null;
+      if(!rest||ct){
+        out.push(`{comment: ${headName(h[1])}${ct?repLabel(ct.rep):''}}`);
+        if(ct)out.push(chordsWithPos(rest).map(x=>`[${x.c}]`).join(' '));
+        continue;
+      }
+    }
+    const ct=chordTokens(line);
+    if(ct){
+      const next=L[i+1]!==undefined?L[i+1].replace(/\s+$/,''):'';
+      const nextIsText=next.trim()&&!chordTokens(next)&&!(H_RE.test(next)&&(()=>{const m=next.match(H_RE);return !m[2].trim()||chordTokens(m[2]);})());
+      const cs=chordsWithPos(line);
+      if(nextIsText){
+        // ставим аккорды над слогами по позиции символа
+        let txt=next,res='',pos=0;
+        const maxI=Math.max(...cs.map(x=>x.i));
+        if(txt.length<maxI)txt=txt.padEnd(maxI,' ');
+        cs.forEach(x=>{res+=txt.slice(pos,x.i)+`[${x.c}]`;pos=x.i;});
+        res+=txt.slice(pos);
+        out.push(res.replace(/\s+$/,'').replace(/^\s+(?=\[)/,''));
+        i++;
+      }else{
+        if(ct.rep>1&&out.length&&/^\{comment:/.test(out[out.length-1])&&!/×\d+\}$/.test(out[out.length-1]))out[out.length-1]=out[out.length-1].replace(/\}$/,repLabel(ct.rep)+'}');
+        out.push(cs.map(x=>`[${x.c}]`).join(' '));
+      }
+      continue;
+    }
+    out.push(line.trim()); // строка без аккордов
+  }
+  while(out.length&&out[out.length-1]==='')out.pop();
+  while(out.length&&out[0]==='')out.shift();
+  return out.join('\n');
+}
+
+/* ---------- id латиницей ---------- */
+const TR={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+const slug=s=>s.toLowerCase().split('').map(c=>TR[c]!==undefined?TR[c]:c).join('').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)||'song';
+
+/* ---------- предпросмотр ---------- */
+function preview(t){
+  let html='';
+  t.split('\n').forEach(line=>{
+    const cm=line.match(/^\s*\{comment:\s*(.*)\}\s*$/i);
+    if(cm){html+=`<span class="cm">${esc(cm[1])}</span>`;return;}
+    if(!line.trim()){html+='<div class="ln">&nbsp;</div>';return;}
+    const parts=line.split(/(\[[^\]]+\])/),only=parts.filter(p=>!/^\[/.test(p)).join('').trim()==='';
+    let segs='',pend=null;
+    const seg=(ch,tx)=>only?(ch?`<span class="ch">${esc(ch)}</span>`:''):`<span class="sg"><span class="ch">${ch?esc(ch):'&nbsp;'}</span><span>${esc(tx)||' '}</span></span>`;
+    parts.forEach(p=>{const m=p.match(/^\[([^\]]+)\]$/);if(m){if(pend!==null)segs+=seg(pend,'');pend=m[1];return;}if(p===''&&pend===null)return;segs+=seg(pend,p);pend=null;});
+    if(pend!==null)segs+=seg(pend,'');
+    html+=`<div class="ln ${only?'only':''}">${segs}</div>`;
+  });
+  return html;
+}
+
+/* ---------- сборка ---------- */
+let ONE=null;
+function build(){
+  const meta={words:$('words').value.trim(),music:$('music').value.trim()};
+  const text=convert($('src').value,meta);
+  if(meta.words&&!$('words').value.trim())$('words').value=meta.words;
+  if(meta.music&&!$('music').value.trim())$('music').value=meta.music;
+  const title=$('title').value.trim(),artist=$('artist').value.trim();
+  $('prev').innerHTML=text?preview(text):'<p class="lead">Здесь появится песня, как она будет выглядеть на сайте.</p>';
+  if(!title||!text){ONE=null;$('out').value='';$('msg').className='msg bad';$('msg').textContent=!text?'Вставь текст с аккордами.':'Впиши название песни.';return;}
+  let id=slug(title+(artist?' '+artist:''));
+  const others=EXIST.filter(s=>!(s.title===title&&(s.artist||'')===artist));
+  let k=2,base=id;while(others.some(s=>s.id===id))id=base+'-'+k++;
+  ONE={id,title};
+  if(artist)ONE.artist=artist;
+  if($('words').value.trim())ONE.words=$('words').value.trim();
+  if($('music').value.trim())ONE.music=$('music').value.trim();
+  if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
+  if($('exclusive').checked)ONE.exclusive=true;
+  ONE.text=text;
+  const replaced=others.length<EXIST.length;
+  $('out').value=JSON.stringify([...others,ONE],null,2)+'\n';
+  $('msg').className='msg';
+  $('msg').textContent=`Готово: в песеннике будет ${others.length+1} ${plural(others.length+1)}${replaced?' (песня с таким названием заменена)':''}.`;
+}
+const plural=n=>n%10===1&&n%100!==11?'песня':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'песни':'песен';
+['title','artist','words','music','chordsBy','src'].forEach(id=>$(id).addEventListener('input',build));
+$('exclusive').addEventListener('change',build);
+async function copy(t,what){
+  if(!t){$('msg').className='msg bad';$('msg').textContent='Сначала заполни название и текст.';return;}
+  try{await navigator.clipboard.writeText(t);}catch(e){$('out').select();document.execCommand('copy');}
+  $('msg').className='msg';$('msg').textContent=what+' скопирован'+(what==='Файл'?' — вставь его в songs.json на GitHub.':'.');
+}
+$('copyAll').onclick=()=>copy($('out').value,'Файл');
+$('copyOne').onclick=()=>copy(ONE?JSON.stringify(ONE,null,2)+',':'','Блок песни');
+</script>
+</body>
+</html>
