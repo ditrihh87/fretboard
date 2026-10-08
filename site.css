@@ -184,23 +184,3 @@
 
 .btn.off{opacity:.55;cursor:default;pointer-events:none}
 
-/* статистика донатов */
-.da{margin-top:22px}
-.da-goal{padding:16px 18px;border-radius:18px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.22);margin-bottom:14px}
-.da-goal .t{display:flex;justify-content:space-between;gap:12px;font-weight:800;flex-wrap:wrap}
-.da-goal .t small{color:var(--muted);font-weight:700}
-.da-goal .bar{height:12px;border-radius:999px;background:rgba(239,236,251,.08);margin-top:10px;overflow:hidden}
-.da-goal .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#6E7BFF,#A06BFF,#FF5FCF);box-shadow:0 0 14px rgba(160,107,255,.6)}
-.da-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
-.da-card{min-width:0}
-.da-card{padding:16px 18px;border-radius:18px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.18)}
-.da-h{text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:800;color:#B3AEE8;margin-bottom:10px}
-.da-card ol,.da-card ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
-.da-card li{display:flex;align-items:center;gap:10px;font-weight:700}
-.da-card li .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.da-card li .s{color:var(--amber);font-weight:800;white-space:nowrap}
-.da-card li .p{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:800;background:rgba(239,236,251,.08);color:#CFCCF2;flex:none}
-.da-card li:nth-child(1) .p{background:#F0A830;color:#1b1b1b}.da-card li:nth-child(2) .p{background:#CFCCF2;color:#1b1b1b}.da-card li:nth-child(3) .p{background:#C98A5A;color:#1b1b1b}
-.da-card li small{color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
-.da-card .empty{color:var(--muted);font-weight:600}
-.da-note{color:var(--muted);font-size:13px;font-weight:600;margin-top:10px}
