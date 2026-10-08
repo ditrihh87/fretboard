@@ -1735,9 +1735,8 @@ function chordShape(name){
   const base=name.split('/')[0],c=parseChord(base);if(!c)return null;
   const q=normQ(c.q),key=SHARP[c.pc]+q;
   if(OPEN[key])return OPEN[key];
-  if(q==='5'){ // квинтаккорд: открытый или от 6-й/5-й струны — где ниже
-    if(c.pc===2)return [-1,-1,0,2,3,-1];
-    const f6=(c.pc-4+12)%12,f5=(c.pc-9+12)%12;
+  if(q==='5'){ // квинтаккорд: только от 6-й или 5-й струны; открытая — только толстая ми (E5)
+    const f6=(c.pc-4+12)%12,f5=(c.pc-9+12)%12||12;
     return f6<=f5?[f6,f6+2,f6+2,-1,-1,-1]:[-1,f5,f5+2,f5+2,-1,-1];
   }
   if(!(q in BARRE.E))return null;
