@@ -31,6 +31,18 @@
   .steps{color:#CFCCF2;font-weight:600;line-height:1.6;padding-left:20px}
   .steps a{color:var(--amber)}
   .prev{font-size:15px;line-height:1.3}
+  .modes{display:inline-flex;gap:4px;background:rgba(28,24,72,.7);border-radius:14px;padding:4px;margin:0 0 18px}
+  .mode{border:none;background:transparent;color:var(--muted);font:800 14px var(--body);padding:10px 16px;border-radius:10px;cursor:pointer}
+  .mode.on{background:var(--amber);color:#1b1b1b}
+  .hint{color:#CFCCF2;font-weight:600;font-size:14px;line-height:1.5;margin:0 0 6px}
+  .hint code{background:rgba(239,236,251,.1);padding:1px 6px;border-radius:6px;font-size:13px}
+  #bsrc{min-height:520px}
+  .bsong{border-radius:12px;background:rgba(12,10,36,.5);margin-bottom:8px}
+  .bsong>button{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;border:none;background:none;color:var(--paper);font:700 15px var(--body);padding:10px 12px;cursor:pointer}
+  .bsong>button i{font-style:normal;color:var(--muted);min-width:22px}
+  .bsong>button small{margin-left:auto;color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
+  .bsong .bad{color:#F26B6F}
+  .bsong .prev{padding:0 14px 12px}
   .prev .cm{display:block;color:var(--muted);font-weight:800;margin:14px 0 4px}
   .prev .ln{display:flex;flex-wrap:wrap;margin:2px 0 6px}
   .prev .sg{display:inline-flex;flex-direction:column;white-space:pre}
@@ -41,9 +53,10 @@
 <body>
 <main class="wrap">
   <h1>Добавить песню</h1>
+  <div class="modes" role="tablist"><button class="mode on" data-mode="one">Одна песня</button><button class="mode" data-mode="batch">Пакетом — много песен сразу</button></div>
   <p class="lead">Служебная страница. Вставь песню как обычно пишешь — аккорды над строками, «Куплет 1:», «Припев:», «Вступление: Dm Gm A }x4». Страница расставит аккорды по слогам и соберёт готовый файл песенника.</p>
 
-  <div class="grid">
+  <div class="grid" id="oneMode">
     <section class="card">
       <h2>1. Песня</h2>
       <div class="row">
@@ -67,6 +80,24 @@
     </section>
   </div>
 
+  <div class="grid" id="batchMode" hidden>
+    <section class="card">
+      <h2>1. Песни</h2>
+      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
+      <div class="row">
+        <div><label for="bArtist">Исполнитель по умолчанию</label><input type="text" id="bArtist" value="Король и Шут"></div>
+        <div><label for="bWords">Слова по умолчанию</label><input type="text" id="bWords" placeholder="например, Андрей Князев"></div>
+      </div>
+      <label for="bMusic">Музыка по умолчанию</label><input type="text" id="bMusic" value="Король и Шут">
+      <label for="bsrc">Все песни подряд</label>
+      <textarea id="bsrc" spellcheck="false" placeholder="=== Первая песня | Исполнитель&#10;Слова: Автор&#10;&#10;Куплет 1:&#10;Am          F&#10;Строка куплета&#10;&#10;=== Вторая песня&#10;https://music.yandex.ru/album/…/track/…&#10;&#10;Припев:&#10;C       G&#10;Строка припева"></textarea>
+    </section>
+    <section class="card">
+      <h2>2. Что получилось</h2>
+      <div id="blist"><p class="lead">Здесь появится список песен. Нажми на песню, чтобы посмотреть, как она будет выглядеть.</p></div>
+    </section>
+  </div>
+
   <section class="card" style="margin-top:18px">
     <h2>3. Залить на сайт</h2>
     <ol class="steps">
@@ -85,7 +116,7 @@
 const $=id=>document.getElementById(id);
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let EXIST=[];
-fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=Array.isArray(j)?j:[];build();}).catch(()=>build());
+fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=Array.isArray(j)?j:[];MODE==='batch'?buildBatch():build();}).catch(()=>MODE==='batch'?buildBatch():build());
 
 /* ---------- распознавание ---------- */
 const CHORD=/^[A-H][#b]?(m|maj|min|dim|aug|sus|add|M)?\d*(sus\d*|add\d*|maj\d*|b\d+|#\d+)*(\/[A-H][#b]?)?$/;
@@ -189,14 +220,16 @@ function build(){
   const title=$('title').value.trim(),artist=$('artist').value.trim();
   $('prev').innerHTML=text?preview(text):'<p class="lead">Здесь появится песня, как она будет выглядеть на сайте.</p>';
   if(!title||!text){ONE=null;$('out').value='';$('msg').className='msg bad';$('msg').textContent=!text?'Вставь текст с аккордами.':'Впиши название песни.';return;}
-  let id=slug(title+(artist?' '+artist:''));
+  const old=EXIST.find(s=>s.title===title&&(s.artist||'')===artist);
+  let id=old?old.id:slug(title+(artist?' '+artist:''));
   const others=EXIST.filter(s=>!(s.title===title&&(s.artist||'')===artist));
-  let k=2,base=id;while(others.some(s=>s.id===id))id=base+'-'+k++;
+  let k=2,base=id;if(!old)while(others.some(s=>s.id===id))id=base+'-'+k++;
   ONE={id,title};
   if(artist)ONE.artist=artist;
   if($('words').value.trim())ONE.words=$('words').value.trim();
   if($('music').value.trim())ONE.music=$('music').value.trim();
-  if($('yandex').value.trim())ONE.yandex=$('yandex').value.trim();
+  if($('yandex').value.trim())ONE.yandex=$('yandex').value.trim().split('?')[0];else if(old&&old.yandex)ONE.yandex=old.yandex;
+  if(old&&old.tab)ONE.tab=old.tab;
   if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
   if($('exclusive').checked)ONE.exclusive=true;
   ONE.text=text;
@@ -205,11 +238,76 @@ function build(){
   $('msg').className='msg';
   $('msg').textContent=`Готово: в песеннике будет ${others.length+1} ${plural(others.length+1)}${replaced?' (песня с таким названием заменена)':''}.`;
 }
+/* ---------- пакетный режим ---------- */
+let MODE='one',BATCH=[];
+const HEAD=/^\s*={3,}\s*(.*?)\s*$/;
+function parseBatch(){
+  const L=$('bsrc').value.replace(/\r/g,'').split('\n'),parts=[];let cur=null;
+  for(const line of L){const h=line.match(HEAD);if(h){cur={head:h[1],lines:[]};parts.push(cur);}else if(cur)cur.lines.push(line);}
+  const dA=$('bArtist').value.trim(),dW=$('bWords').value.trim(),dM=$('bMusic').value.trim();
+  return parts.map(p=>{
+    const [t,a]=p.head.split('|').map(x=>(x||'').trim());
+    const song={title:t,artist:a||dA},meta={words:'',music:''};let body=[...p.lines];
+    // служебные строки сразу под заголовком
+    while(body.length){const l=body[0].trim();
+      if(!l){body.shift();continue;}
+      if(/music\.yandex\./i.test(l)&&/^\S*https?:\/\//i.test(l.replace(/^(яндекс|yandex)\s*[:：]\s*/i,''))){song.yandex=l.replace(/^(яндекс|yandex)\s*[:：]\s*/i,'').split('?')[0];body.shift();continue;}
+      if(/^эксклюзив$/i.test(l)){song.exclusive=true;body.shift();continue;}
+      const au=l.match(/^(автор\s+текста|слова|автор\s+музыки|музыка)\s*[:：]\s*(.+)$/i);
+      if(au){if(/музык/i.test(au[1]))meta.music=au[2].trim();else meta.words=au[2].trim();body.shift();continue;}
+      break;}
+    song.text=convert(body.join('\n'),meta);
+    song.words=meta.words||dW;song.music=meta.music||dM;
+    return song;
+  });
+}
+function buildBatch(){
+  BATCH=parseBatch();
+  if(!BATCH.length){$('blist').innerHTML='<p class="lead">Начни первую песню строкой <code>=== Название | Исполнитель</code>.</p>';$('out').value='';$('msg').className='msg bad';$('msg').textContent='Пока ни одной песни.';return;}
+  let others=EXIST.slice(),ok=[],bad=0;
+  for(const sg of BATCH){
+    if(!sg.title||!sg.text){bad++;continue;}
+    others=others.filter(s=>!(s.title===sg.title&&(s.artist||'')===(sg.artist||'')));
+    ok=ok.filter(s=>!(s.title===sg.title&&(s.artist||'')===(sg.artist||'')));
+    ok.push(sg);
+  }
+  const used=new Set(others.map(s=>s.id)),out=[];
+  for(const sg of ok){
+    const old=EXIST.find(s=>s.title===sg.title&&(s.artist||'')===(sg.artist||''));
+    let id=old?old.id:slug(sg.title+(sg.artist?' '+sg.artist:'')),k=2,base=id;if(!old)while(used.has(id))id=base+'-'+k++;used.add(id);
+    if(old){sg.words=sg.words||old.words;sg.music=sg.music||old.music;sg.yandex=sg.yandex||old.yandex;sg.exclusive=sg.exclusive||old.exclusive;if(old.tab)sg.tab=old.tab;}
+    const o={id,title:sg.title};
+    if(sg.artist)o.artist=sg.artist;if(sg.words)o.words=sg.words;if(sg.music)o.music=sg.music;if(sg.yandex)o.yandex=sg.yandex;if(sg.exclusive)o.exclusive=true;
+    if(sg.tab)o.tab=sg.tab;
+    o.text=sg.text;out.push(o);
+  }
+  $('blist').innerHTML=BATCH.map((sg,i)=>{
+    const err=!sg.title?'нет названия':!sg.text?'нет текста':'';
+    const n=(sg.text.match(/\[[^\]]+\]/g)||[]).length,lines=sg.text?sg.text.split('\n').filter(l=>l.trim()&&!/^\{/.test(l)).length:0;
+    return `<div class="bsong"><button data-b="${i}"><i>${i+1}</i><span>${esc(sg.title||'—')}${sg.artist?' <span style="color:var(--muted)">· '+esc(sg.artist)+'</span>':''}${sg.exclusive?' ★':''}</span><small class="${err?'bad':''}">${err||`${lines} строк · ${n} акк.${sg.yandex?' · ♪':''}`}</small></button><div class="prev" hidden></div></div>`;
+  }).join('');
+  $('out').value=JSON.stringify([...others,...out],null,2)+'\n';
+  const total=others.length+out.length,repl=EXIST.length-others.length;
+  $('msg').className=bad?'msg bad':'msg';
+  $('msg').textContent=`${out.length} ${plural(out.length)} готово${bad?`, ${bad} с ошибкой (см. список)`:''}${repl?`, ${repl} заменено`:''}. Всего в песеннике будет ${total}.`;
+}
+$('blist').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;const pv=b.nextElementSibling,sg=BATCH[+b.dataset.b];
+  if(pv.hidden&&!pv.innerHTML)pv.innerHTML=sg&&sg.text?preview(sg.text):'';pv.hidden=!pv.hidden;});
+['bsrc','bArtist','bWords','bMusic'].forEach(id=>$(id).addEventListener('input',()=>{clearTimeout(window._bt);window._bt=setTimeout(buildBatch,250);}));
+document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{
+  MODE=b.dataset.mode;document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('on',x===b));
+  $('oneMode').hidden=MODE!=='one';$('batchMode').hidden=MODE!=='batch';$('copyOne').hidden=MODE!=='one';
+  try{localStorage.setItem('dgc_addmode',MODE);}catch(e){}
+  MODE==='one'?build():buildBatch();}));
+// поля по умолчанию запоминаются
+try{const d=JSON.parse(localStorage.getItem('dgc_bdef')||'null');if(d){['bArtist','bWords','bMusic'].forEach(k=>{if(k in d)$(k).value=d[k];});}}catch(e){}
+['bArtist','bWords','bMusic'].forEach(k=>$(k).addEventListener('input',()=>{try{localStorage.setItem('dgc_bdef',JSON.stringify({bArtist:$('bArtist').value,bWords:$('bWords').value,bMusic:$('bMusic').value}));}catch(e){}}));
+try{if(localStorage.getItem('dgc_addmode')==='batch')setTimeout(()=>document.querySelector('[data-mode=batch]').click(),0);}catch(e){}
 const plural=n=>n%10===1&&n%100!==11?'песня':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'песни':'песен';
 ['title','artist','words','music','chordsBy','yandex','src'].forEach(id=>$(id).addEventListener('input',build));
 $('exclusive').addEventListener('change',build);
 async function copy(t,what){
-  if(!t){$('msg').className='msg bad';$('msg').textContent='Сначала заполни название и текст.';return;}
+  if(!t){$('msg').className='msg bad';$('msg').textContent=MODE==='batch'?'Сначала вставь песни.':'Сначала заполни название и текст.';return;}
   try{await navigator.clipboard.writeText(t);}catch(e){$('out').select();document.execCommand('copy');}
   $('msg').className='msg';$('msg').textContent=what+' скопирован'+(what==='Файл'?' — вставь его в songs.json на GitHub.':'.');
 }
