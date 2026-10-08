@@ -420,8 +420,34 @@ async function handleDonations(token) {
   } catch (e) { console.error(e); return c ? reply(200, c) : reply(502, { error: 'da' }); }
 }
 
+// Подключение DonationAlerts без сайта: открыть в браузере адрес функции с ?da=connect&key=КЛЮЧ
+const FN_URL = 'https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const page = (title, text, ok) => ({ statusCode: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  body: `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>` +
+    `<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0C0A24;color:#EFECFB;font:600 17px system-ui,sans-serif;text-align:center;padding:24px">` +
+    `<div><div style="font-size:44px">${ok ? '✅' : '⚠️'}</div><h1 style="font-size:24px">${title}</h1><p style="color:#B9B4E6;max-width:460px">${text}</p></div>` });
+async function handleDaGet(q, token) {
+  if (q.da === 'connect') {
+    if (!okAdmin(q.key)) return page('Неверный ключ', 'Открой ссылку с правильным ключом владельца.', false);
+    if (!process.env.DA_CLIENT_ID) return page('Не настроено', 'Добавь в переменные функции DA_CLIENT_ID и DA_CLIENT_SECRET.', false);
+    return { statusCode: 302, headers: { Location: DA + '/oauth/authorize?' + new URLSearchParams({ client_id: process.env.DA_CLIENT_ID, redirect_uri: FN_URL, response_type: 'code', scope: 'oauth-user-show oauth-donation-index', state: q.key }) }, body: '' };
+  }
+  if (q.code) {
+    const r = await handleDaConnect({ key: q.state, code: q.code, redirect_uri: FN_URL }, token);
+    const j = JSON.parse(r.body);
+    return j.ok ? page('DonationAlerts подключён', `Аккаунт ${j.user || ''} подключён. Статистика появится в панели Twitch в течение пары минут. Эту вкладку можно закрыть.`, true)
+      : page('Не получилось', 'Ошибка: ' + (j.error || 'неизвестно') + '. Попробуй ещё раз по ссылке подключения.', false);
+  }
+  return page('ditrihh', 'Это сервер ditrihh.', true);
+}
+
 module.exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HEADERS, body: '' };
+  if (event.httpMethod === 'GET') {
+    const tk = context && context.token && context.token.access_token;
+    try { return await handleDaGet(event.queryStringParameters || {}, tk); }
+    catch (e) { console.error(e); return page('Ошибка сервера', 'Попробуй ещё раз через минуту.', false); }
+  }
   if (event.httpMethod && event.httpMethod !== 'POST') return reply(405, { error: 'POST only' });
 
   let body;
