@@ -143,7 +143,7 @@ function render(){
     const r=RT[s.id],sv=DR.isSaved(s.id);
     return `<article class="item">
       <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
-      <h3><a class="go" href="song.html?id=${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3><div class="by">${esc(s.artist||'')}</div>
+      <h3><a class="go" href="${s.tab?'taby':'akkordy'}/${encodeURIComponent(s.id)}.html">${esc(s.title)}</a></h3><div class="by">${esc(s.artist||'')}</div>
       <div class="meta">
         <span class="rt ${r?'':'none'}" title="${r?`Рейтинг ${r.avg} из 5`:'Пока без оценок'}">${r?`<b>★ ${r.avg.toFixed(1)}</b> <small>${r.n} ${DR.plural(r.n)}</small>`:'<small>Пока без оценок</small>'}</span>
         <button class="save ${sv?'on':''}" data-save="${esc(s.id)}" aria-pressed="${sv}" aria-label="${sv?'Убрать из сохранённых':'Сохранить'}">${sv?'♥ Сохранено':'♡ Сохранить'}</button>

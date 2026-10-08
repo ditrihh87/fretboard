@@ -33,3 +33,12 @@
 
 ## Как продолжить в новом чате
 Написать: «Продолжаем проект ditrihh: репозиторий ditrihh87/fretboard, прочитай STATUS.md».
+
+## Запуск сайта (сейчас закрыт заставкой)
+1. gate.js: `SITE_OPEN=true`.
+2. Убрать `<meta name="robots" content="noindex,nofollow">` из index.html, songs.html, song.html, power-chords.html (страницы песен пересоберутся сами).
+3. robots.txt: `User-agent: *` / `Allow: /` / `Sitemap: https://ditrihh.ru/sitemap.xml`.
+4. Добавить сайт в Яндекс Вебмастер и Google Search Console, указать sitemap.xml.
+
+## Страницы песен
+`scripts/build-songs.mjs` делает akkordy/<id>.html и taby/<id>.html + sitemap.xml. GitHub Actions (`.github/workflows/build-songs.yml`) запускает его при каждом изменении songs.json — руками ничего делать не нужно.
