@@ -305,7 +305,7 @@
   .sbgroup .sb{background:transparent}
   #scrollBtn.on{background:var(--amber);color:#1b1b1b}
   .songchords{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
-  .songchords button{border:none;background:var(--p-card);border-radius:12px;padding:6px 6px 2px;color:var(--p-ink)}
+  .songchords button{--svbg:var(--p-card);border:none;background:var(--p-card);border-radius:12px;padding:6px 6px 2px;color:var(--p-ink)}
   .songchords svg{display:block;width:62px;height:76px}
   .lyrics{--lf:17px;font-size:var(--lf);line-height:1.2;padding-bottom:40vh}
   .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin:0 0 .55em;min-height:1em}
@@ -315,7 +315,7 @@
   html.dark .lyrics .ch{color:#F3C06A}
   .lyrics .cm{display:block;font-size:.78em;font-weight:800;color:var(--p-muted);margin:1em 0 .4em;text-transform:none}
   .chordpop{position:fixed;inset:0;z-index:30;background:rgba(10,14,20,.45);display:flex;align-items:flex-end;justify-content:center}
-  .cpbox{background:var(--p-bg);color:var(--p-ink);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + var(--sa-b));text-align:center}
+  .cpbox{--svbg:var(--p-bg);background:var(--p-bg);color:var(--p-ink);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + var(--sa-b));text-align:center}
   .cpbox svg{width:150px;height:160px}
   .cpname{font-family:var(--display);font-weight:800;font-size:24px;margin:2px 0 10px}
   .cpbox .btn{width:100%}
@@ -1726,11 +1726,11 @@ function chordSVG(name,label=true){
   for(let k=0;k<=5;k++)g+=`<line x1="9" x2="54" y1="${Y(k)}" y2="${Y(k)}" stroke="currentColor" stroke-width="${k===0&&base===1?2.6:1}" opacity="${k===0&&base===1?1:.55}"/>`;
   for(let i=0;i<6;i++)g+=`<line x1="${X(i)}" x2="${X(i)}" y1="14" y2="64" stroke="currentColor" stroke-width="1" opacity=".55"/>`;
  // баррэ: самый нижний лад зажат на крайних играющих струнах
-  let barreFr=0,barreX=31,barreA=-1,barreB=-1;const played=f.map((v,i)=>[v,i]).filter(([v])=>v>=0);
+  let barreFr=0,barreX=31,barreY=0,barreA=-1,barreB=-1;const played=f.map((v,i)=>[v,i]).filter(([v])=>v>=0);
   if(min>0&&played.length>=4){
     const onMin=played.filter(([v])=>v===min).map(([,i])=>i);
     const first=played[0][1],last=played[played.length-1][1];
-    if(onMin.includes(first)&&onMin.includes(last)&&onMin.length>=2)barreFr=min,barreX=(X(first)+X(last))/2,barreA=first,barreB=last,g+=`<rect x="${X(first)-3}" y="${Y(min-base)+2}" width="${X(last)-X(first)+6}" height="6" rx="1.5" fill="#F0A830"/>`;
+    if(onMin.includes(first)&&onMin.includes(last)&&onMin.length>=2)barreFr=min,barreX=X(first),barreY=Y(min-base)+8,barreA=first,barreB=last,g+=`<rect x="${X(first)-3}" y="${Y(min-base)+2}" width="${X(last)-X(first)+6}" height="6" rx="1.5" fill="#F0A830"/>`;
   }
   f.forEach((v,i)=>{
     if(v<0)g+=`<text x="${X(i)}" y="10" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor" opacity=".75">✕</text>`;
@@ -1738,9 +1738,9 @@ function chordSVG(name,label=true){
     else if(!(barreFr&&v===barreFr&&i>=barreA&&i<=barreB))g+=`<circle cx="${X(i)}" cy="${Y(v-base)+5}" r="3.6" fill="#F0A830"/>`;
   });
   if(base>1&&!barreFr)g+=`<text x="58" y="${Y(0)+8}" font-size="7.5" font-weight="800" fill="currentColor">${base}</text>`;
-  // баррэ: под схемой — номер лада
-  const bh=barreFr?9:0;
-  if(barreFr)g+=`<text x="${barreX}" y="73" text-anchor="middle" font-size="8.5" font-weight="800" fill="currentColor">${barreFr}</text>`;
+  // баррэ: номер лада прямо под полоской, у первой струны баррэ (там нет других точек)
+  const bh=0;
+  if(barreFr)g+=`<rect x="${barreX-4.2}" y="${barreY+.6}" width="8.4" height="8.6" rx="2" style="fill:var(--svbg,#F4F2FD)"/><text x="${barreX}" y="${barreY+7.6}" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor">${barreFr}</text>`;
   if(label)g+=`<text x="31" y="${74+bh}" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">${esc(name)}</text>`;
   return `<svg viewBox="0 0 66 ${(label?78:68)+bh}">${g}</svg>`;
 }
