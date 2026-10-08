@@ -17,17 +17,18 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0C0A24">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     /* неоновые сине-фиолетовые тона — как на стримах */
     --bg:#0C0A24; --bg2:#141137; --card:#1C1848; --card2:#251F5E; --line:#2E2870;
     --paper:#EFECFB; --muted:#A4A1D8; --neon:#6E7BFF; --pink:#FF5FCF; --shadow:#06051A; --amber:#F0A830; --amber-d:#b77a17; --ok:#6FBF73;
     --s6:#F26B6F; --s5:#F0A830; --s4:#E8D44D; --s3:#6FBF73; --s2:#5AB0E8; --s1:#B98AE8;
-    --display:'Unbounded','Arial Black',sans-serif; --body:'Manrope',system-ui,sans-serif;
+    --display:'Russo One','Arial Black',sans-serif; --body:'Manrope',system-ui,sans-serif;
     --wrap:1120px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{font-synthesis:none}
   html{scroll-behavior:smooth}
   body{background:radial-gradient(1200px 700px at 8% -10%,rgba(110,123,255,.28),transparent 60%),radial-gradient(900px 600px at 105% 15%,rgba(255,95,207,.16),transparent 60%),radial-gradient(1000px 800px at 50% 110%,rgba(94,60,255,.2),transparent 60%),var(--bg);background-attachment:fixed;color:var(--paper);font-family:var(--body);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
@@ -359,7 +360,7 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8']; // 6 →
   for(let i=0;i<6;i++){const y=top+i*gap,w=.9+i*.45;g+=`<rect x="0" y="${y-w/2}" width="${W}" height="${w}" fill="${SC[5-i]}" opacity=".9"/>`;}
   const notes=[[1,1,'C'],[3,2,'E'],[5,3,'G'],[2,5,'C'],[4,7,'E'],[0,8,'C']]; // струна (0 = первая), лад, нота
   notes.forEach(([str,fr,n],k)=>{const x=(frets[fr-1]+frets[fr])/2,y=top+str*gap;
-    g+=`<g class="dot" style="animation-delay:${.25+k*.18}s"><circle cx="${x}" cy="${y}" r="17" fill="${SC[5-str]}"/><text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Unbounded,Arial" font-weight="800" font-size="15" fill="#1b1b1b">${n}</text></g>`;});
+    g+=`<g class="dot" style="animation-delay:${.25+k*.18}s"><circle cx="${x}" cy="${y}" r="17" fill="${SC[5-str]}"/><text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Russo One,Arial" font-weight="400" font-size="15" fill="#1b1b1b">${n}</text></g>`;});
   s.innerHTML=g;
 })();
 
