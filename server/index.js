@@ -123,6 +123,44 @@ async function handleUser(body, user, viaTg, token) {
   return null;
 }
 
+/* ===== Twitch: последняя запись стрима и статус эфира (для главной сайта) =====
+   Нужны переменные окружения TWITCH_CLIENT_ID и TWITCH_CLIENT_SECRET (приложение на dev.twitch.tv). */
+const TWITCH_LOGIN = 'ditrihh';
+const TWITCH_CACHE = 10 * 60 * 1000;
+async function twitchAppToken(token) {
+  const c = await loadJSON('cache/twitch_token.json', token, null);
+  if (c && c.exp > Date.now() + 60000) return c.access_token;
+  const q = new URLSearchParams({ client_id: process.env.TWITCH_CLIENT_ID, client_secret: process.env.TWITCH_CLIENT_SECRET, grant_type: 'client_credentials' });
+  const r = await fetch('https://id.twitch.tv/oauth2/token?' + q, { method: 'POST' });
+  if (!r.ok) throw new Error('twitch token ' + r.status);
+  const j = await r.json();
+  await saveList('cache/twitch_token.json', { access_token: j.access_token, exp: Date.now() + j.expires_in * 1000 }, token);
+  return j.access_token;
+}
+async function helix(path, tw) {
+  const r = await fetch('https://api.twitch.tv/helix/' + path, { headers: { 'Client-Id': process.env.TWITCH_CLIENT_ID, Authorization: 'Bearer ' + tw } });
+  if (!r.ok) throw new Error('helix ' + r.status);
+  return (await r.json()).data || [];
+}
+async function handleTwitch(token) {
+  if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) return reply(200, { error: 'not configured' });
+  const cached = await loadJSON('cache/twitch_latest.json', token, null);
+  if (cached && Date.now() - cached.t < TWITCH_CACHE) return reply(200, cached.v);
+  const tw = await twitchAppToken(token);
+  const [user] = await helix('users?login=' + TWITCH_LOGIN, tw);
+  if (!user) return reply(200, { error: 'no user' });
+  const [stream] = await helix('streams?user_id=' + user.id, tw);
+  let vids = await helix(`videos?user_id=${user.id}&type=archive&first=1`, tw);
+  if (!vids.length) vids = await helix(`videos?user_id=${user.id}&first=1`, tw);
+  const v = vids[0];
+  const out = {
+    live: !!stream,
+    video: v ? { id: v.id, title: v.title, created_at: v.created_at, duration: v.duration, thumb: (v.thumbnail_url || '').replace('%{width}', '640').replace('%{height}', '360') } : null,
+  };
+  await saveList('cache/twitch_latest.json', { t: Date.now(), v: out }, token);
+  return reply(200, out);
+}
+
 function view(list, myId) {
   list.sort((a, b) => b.score - a.score || a.t - b.t);
   const ranked = list.map((e, i) => ({ rank: i + 1, name: e.name, score: e.score, me: e.id === myId }));
@@ -202,6 +240,11 @@ module.exports.handler = async (event, context) => {
 
   const token = context && context.token && context.token.access_token;
   if (!token) return reply(500, { error: 'no service account' });
+
+  if (body.action === 'twitch') {
+    try { return await handleTwitch(token); }
+    catch (e) { console.error(e); return reply(502, { error: 'twitch' }); }
+  }
 
   if (body.action === 'claim') {
     try { return await handleClaim(body, token); }

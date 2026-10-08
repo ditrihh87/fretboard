@@ -233,7 +233,7 @@
           <span id="lbIn">по Москве</span>
           <p>Каверы, разборы, бас и ответы на вопросы из чата — каждый день около 5 часов.</p>
           <div class="lb-btns">
-            <button class="btn main" id="lbLast">▶ Последнее видео</button>
+            <button class="btn main" id="lbLast">▶ Запись последнего стрима</button>
             <a class="btn ghost" href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">Twitch</a>
           </div>
         </div>
@@ -438,12 +438,18 @@ function setLive(on){
   $('lbPlayer').hidden=!on&&!ytShown;$('lbOff').hidden=on||ytShown;$('lbSound').hidden=!on;
   paintSched();
 }
-$('lbLast').onclick=()=>{
+const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});}catch(e){return '';}};
+$('lbLast').onclick=async()=>{
+  const btn=$('lbLast');btn.disabled=true;btn.textContent='Загружаю…';
+  let v=null;
+  try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'twitch'})});const j=await r.json();v=j.video;}catch(e){}
+  btn.disabled=false;btn.textContent='▶ Запись последнего стрима';
+  if(!v){window.open('https://www.twitch.tv/ditrihh/videos','_blank');return;}
   ytShown=true;
-  // последние загрузки канала (плейлист UU…)
-  $('lbPlayer').innerHTML='<iframe src="https://www.youtube.com/embed/videoseries?list=UUj3n2PaEJnJKxjEsVPcq4rw&autoplay=1" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Последнее видео ditrihh"></iframe>';
+  $('lbPlayer').innerHTML=`<iframe src="https://player.twitch.tv/?video=v${encodeURIComponent(v.id)}&parent=${location.hostname||'localhost'}&autoplay=true" allow="autoplay; fullscreen" allowfullscreen title="Запись стрима ditrihh"></iframe>`;
   $('lbPlayer').hidden=false;$('lbOff').hidden=true;$('liveBox').classList.add('yt');
-  $('lbBadge').querySelector('span').textContent='Последнее видео';
+  $('lbBadge').querySelector('span').textContent='Запись стрима'+(v.created_at?' · '+fmtDate(v.created_at):'');
 };
 $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}catch(e){}$('lbSound').hidden=true;};
 (function(){
