@@ -72,6 +72,9 @@
   .chordrow button:hover{transform:translateY(-2px)}
   .chordrow svg{width:100%;height:auto;display:block}
   .lyrics{padding:14px 20px 40px;font-size:var(--lf,19px);line-height:1.25;color:var(--paper)}
+  /* текст песни — колонкой по центру, строки внутри ровно по левому краю */
+  .lyrics{width:fit-content;max-width:100%;margin:0 auto;box-sizing:border-box}
+  .chordrow{justify-content:center}
   .lyrics .cm{display:block;color:var(--muted);font-weight:800;font-size:.8em;margin:18px 0 6px;letter-spacing:.3px}
   .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;white-space:pre-wrap}
   .lyrics .sg{display:inline-flex;flex-direction:column}
