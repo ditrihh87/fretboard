@@ -173,3 +173,5 @@
     .chat{display:none}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.btn.off{opacity:.55;cursor:default;pointer-events:none}
