@@ -25,6 +25,34 @@ const credits = s => [
 
 const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].split('|')[0].trim()).filter(Boolean))];
 
+/* «Также ищут» сами: первая строчка первого куплета и первая строчка припева (если он есть) —
+   песню часто ищут не по названию, а по словам. Добавляются к aka из songs.json. */
+const cleanLine = l => l.replace(/\[[^\]]*\]/g, '').replace(/\(\(|\)\)/g, '').replace(/\s+/g, ' ').trim().replace(/[\s,.;:!?…—–-]+$/, '');
+function firstLines(text) {
+  const secs = []; let cur = { head: '', lines: [] };
+  for (const line of String(text || '').split('\n')) {
+    const cm = line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
+    if (cm) { secs.push(cur); cur = { head: cm[1], lines: [] }; continue; }
+    if (/^\s*\{.*\}\s*$/.test(line)) continue;
+    const t = cleanLine(line);
+    if (/[а-яёa-z]{2}/i.test(t)) cur.lines.push(t);
+  }
+  secs.push(cur);
+  const withText = secs.filter(x => x.lines.length);
+  const NOT_VERSE = /вступл|интро|проигр|соло|бридж|кода|финал|аутро|припев/i;
+  const verse = withText.find(x => /куплет/i.test(x.head) || !x.head.trim()) ||   // текст до первого заголовка — тоже первый куплет
+    withText.find(x => !NOT_VERSE.test(x.head));
+  const chorus = withText.find(x => /припев/i.test(x.head));
+  return [verse && verse.lines[0], chorus && chorus.lines[0]].filter(Boolean);
+}
+function akaOf(s) {
+  const seen = new Set([String(s.title || '').toLowerCase()]), out = [];
+  for (const a of [...(Array.isArray(s.aka) ? s.aka : []), ...(s.tab ? [] : firstLines(s.text))]) {
+    const k = String(a || '').trim(); if (!k || seen.has(k.toLowerCase())) continue; seen.add(k.toLowerCase()); out.push(k);
+  }
+  return out;
+}
+
 // текст песни в простом HTML: его сразу видит поисковик, а в браузере страницу перерисовывает скрипт
 function staticBody(s) {
   let body = '';
@@ -80,7 +108,7 @@ function page(s) {
         return `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. ` +
           (ez ? `Простые аккорды для начинающих: ${ez.chords.slice(0, 5).join(', ')}${ez.k ? ` (каподастр на ${ez.k} лад)` : ez.same ? ' — в той же тональности, на открытых струнах' : ''}. ` : s.shapes && Object.keys(s.shapes).length ? 'Простые аккорды для начинающих — на открытых струнах, без баре. ' : '') +
           'Подобраны и проверены на гитаре, схемы со звуком.'; })();
-  const aka = Array.isArray(s.aka) ? s.aka.filter(Boolean) : [];
+  const aka = akaOf(s);
   const descFull = aka.length ? `${desc} Также ищут: ${aka.join(', ')}.` : desc;
   const ld = {
     '@context': 'https://schema.org', '@type': 'MusicComposition', name: s.title,
@@ -99,7 +127,7 @@ ${s.tab ? '<p>Таб со звуком: слушай, замедляй и игр
   // все относительные адреса (стили, скрипты, songs.json, табы) — от корня сайта
   swap(/<head>/, `<head>\n<base href="../">`);
   swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${SITE}brand/ditrihh-logo-dark.png">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};</script>`);
-  swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(descFull)}">${aka.length ? `\n<meta name="keywords" content="${esc([s.title, s.artist, ...aka].filter(Boolean).join(', '))}">` : ''}\n<meta property="og:description" content="${esc(desc)}">`);
+  swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(descFull)}">${aka.length ? `\n<meta name="keywords" content="${esc([s.title, s.artist, ...aka].filter(Boolean).map(k => k.replace(/,/g, '')).join(', '))}">` : ''}\n<meta property="og:description" content="${esc(desc)}">`);
   swap(/<div id="content">[\s\S]*?<\/div>\n/, `<div id="content">${pre}</div>\n`);
   return { file: path.join(ROOT, DIRS[kind], s.id + '.html'), url, html };
 }

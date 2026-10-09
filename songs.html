@@ -145,9 +145,12 @@ const F0=(()=>{const f=new URLSearchParams(location.search).get('f');return SECT
 $('filters').innerHTML=SECT.filters.map(([f,t])=>`<button data-f="${f}" aria-pressed="${f===F0}">${t}</button>`).join('');
 let SONGS=[],filter=F0,RT={};
 if(F0==='fs'&&TYPE==='tab'){$('ttl').innerHTML='Фингерстайл<br><em>от ditrihh</em>';$('lead').textContent='Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.';document.title='Фингерстайл табы и аранжировки — ditrihh';}
+/* поиск: название, исполнитель, «также ищут» и слова песни (по любой строчке) */
+const HAY=new Map();
+const hay=s=>{if(!HAY.has(s.id))HAY.set(s.id,(s.title+' '+(s.artist||'')+' '+(s.aka||[]).join(' ')+' '+String(s.text||'').replace(/\{[^}]*\}|\[[^\]]*\]|\(\(|\)\)/g,'')).toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9#]+/g,' '));return HAY.get(s.id);};
 function render(){
-  const q=$('q').value.toLowerCase().trim();
-  const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||(s.title+' '+(s.artist||'')+' '+(s.aka||[]).join(' ')).toLowerCase().includes(q))
+  const q=$('q').value.toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9#]+/g,' ').trim();
+  const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||hay(s).includes(q))
     .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='fs'?!!s.fingerstyle:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
