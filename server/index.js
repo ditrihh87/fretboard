@@ -358,7 +358,8 @@ const ACH = [
   { id: 'd1', name: 'Первый донат', desc: 'Поддержал донатом', k: 'rub', n: 1, icon: '🎁' },
   { id: 'd1000', name: 'Меценат', desc: 'Донаты на 1 000 ₽', k: 'rub', n: 1000, icon: '💛' },
   { id: 'd10000', name: 'Спонсор', desc: 'Донаты на 10 000 ₽', k: 'rub', n: 10000, icon: '💎' },
-  { id: 'd50000', name: 'Продюсер', desc: 'Донаты на 50 000 ₽', k: 'rub', n: 50000, icon: '👑' },
+  { id: 'd100000', name: 'Продюсер', desc: 'Донаты на 100 000 ₽', k: 'rub', n: 100000, icon: '👑' },
+  { id: 'd1000000', name: 'Шейх', desc: 'Донаты на 1 000 000 ₽', k: 'rub', n: 1000000, icon: '🛢️' },
 ];
 const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без похожих O/0, I/1/L
 const CODE_RE = /\bDH-([A-Z2-9]{5})\b/gi;
@@ -430,7 +431,7 @@ async function handleStats(body, token) {
   if (body.action === 'grant_rub') {   // владелец вручную засчитывает донат автору комментария
     if (!adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
     const rub = Math.round(Number(body.rub));
-    if (!okSong(body.song) || typeof body.id !== 'string' || !(rub > 0 && rub <= 1e6)) return reply(400, { error: 'bad params' });
+    if (!okSong(body.song) || typeof body.id !== 'string' || !(rub > 0 && rub <= 1e7)) return reply(400, { error: 'bad params' });
     const c = (await loadJSON(`comments/${body.song}.json`, token, [])).find(x => x.id === body.id);
     if (!c) return reply(404, { error: 'no comment' });
     await bumpStats(c.acc, { rub, notify: true }, token);
