@@ -48,6 +48,12 @@
   .tinfo{display:inline-flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding:8px 12px;border-radius:12px;background:rgba(240,168,48,.12);box-shadow:inset 0 0 0 1px rgba(240,168,48,.35);color:#F3C06A;font-weight:800;font-size:14px}
   .tinfo[hidden]{display:none}
   .ym{margin-top:12px}
+  /* видео с игрой справа от названия */
+  .svid{flex:none;width:min(400px,100%);aspect-ratio:16/9;border-radius:18px;overflow:hidden;background:#000;border:1px solid rgba(110,123,255,.28);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+  .svid.v{width:180px;aspect-ratio:9/16}
+  .shead:has(.svid){align-items:center}
+  .svid iframe{width:100%;height:100%;border:0;display:block}
+  @media (max-width:760px){.svid{width:100%}.svid.v{width:min(280px,78vw);margin:0 auto}}
   .ymbtn{display:inline-flex;align-items:center;gap:8px;border:none;background:#FFCC00;color:#1b1b1b;font:800 14px var(--body);padding:9px 16px 9px 10px;border-radius:999px;cursor:pointer}
   .ymbtn:hover{filter:brightness(1.05)}
   .ymlogo{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#1b1b1b;color:#FFCC00;font-size:13px}
@@ -349,7 +355,7 @@ function renderChordsPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ch">Аккорды</span><span class="type ver">✓ проверено ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
         <div class="grp"><button class="ib" id="trDown" aria-label="Тон ниже">−</button><span id="trLabel">Тон</span><button class="ib" id="trUp" aria-label="Тон выше">+</button></div>
@@ -411,6 +417,22 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');i
   const n=b.dataset.chord;$('popSvg').innerHTML=chordSVG(n,false);$('popName').textContent=n;$('pop').dataset.name=n;$('pop').hidden=false;});
 $('pop').addEventListener('click',e=>{if(e.target===$('pop'))$('pop').hidden=true;});
 $('popPlay').onclick=()=>strumChord($('pop').dataset.name);
+
+/* Видео с игрой: поле "video" в songs.json — ссылка на YouTube (обычное видео или Shorts) или VK Видео / клип.
+   Вертикальное (Shorts, клип VK) показывается узкой карточкой 9:16; "videoV": true / false — задать формат вручную. */
+function vidEmbed(u){
+  u=String(u||'').trim();if(!u)return null;let m;
+  if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/))
+    return {src:`https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1`,v:/\/shorts\//.test(u)};
+  if(m=u.match(/(?:vk\.com|vk\.ru|vkvideo\.ru)\/.*?(video|clip)(-?\d+)_(\d+)/))
+    return {src:`https://vkvideo.ru/video_ext.php?oid=${m[2]}&id=${m[3]}&hd=2`,v:m[1]==='clip'};
+  return null;
+}
+function vidHTML(){
+  const e=vidEmbed(SONG&&SONG.video);if(!e)return '';
+  const v=typeof SONG.videoV==='boolean'?SONG.videoV:e.v;
+  return `<div class="svid${v?' v':''}"><iframe src="${esc(e.src)}" title="${esc(SONG.title)} — видео с игрой" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock" allowfullscreen></iframe></div>`;
+}
 
 /* Яндекс Музыка: ссылка на трек → встроенный плеер */
 function ymIds(u){const m=String(u||'').match(/music\.yandex\.[a-z]+\/album\/(\d+)\/track\/(\d+)/)||null;if(m)return {album:m[1],track:m[2]};
@@ -517,7 +539,7 @@ async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Фингерстайл</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
         <div class="legend" id="legend">${SC.map((c,i)=>`<span><i style="background:${c}"></i>${6-i}</span>`).join('')}</div>

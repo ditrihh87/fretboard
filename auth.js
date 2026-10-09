@@ -55,6 +55,7 @@
 #authBox .ab-vk{background:#0077FF;color:#fff}
 #authBox .ab-ghost{background:rgba(239,236,251,.08);color:#EFECFB}
 #authBox .ab-ghost:hover{background:rgba(239,236,251,.14)}
+@media (max-width:820px){#authBox{margin-left:auto}.live-dot~#authBox{margin-left:0}}
 @media (max-width:560px){#authBox .ab-btn{padding:0 12px}#authBox .ab-pop{position:fixed;left:12px;right:12px;top:72px;min-width:0}}`;
     document.head.appendChild(css);
     const box=document.createElement('div');box.id='authBox';

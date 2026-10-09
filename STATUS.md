@@ -42,3 +42,5 @@
 
 ## Страницы песен
 `scripts/build-songs.mjs` делает akkordy/<id>.html и taby/<id>.html + sitemap.xml. GitHub Actions (`.github/workflows/build-songs.yml`) запускает его при каждом изменении songs.json — руками ничего делать не нужно.
+
+**Видео с игрой на странице песни:** поле `"video"` в songs.json — ссылка YouTube (видео/Shorts) или VK Видео/клип; встаёт справа от названия (на телефоне — под ним). Shorts и клипы VK — вертикальной карточкой; `"videoV": true/false` — задать формат вручную. После правки songs.json страницы песен пересобираются сами (GitHub Actions).
