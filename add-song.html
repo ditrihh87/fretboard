@@ -141,6 +141,9 @@ function chordsWithPos(line){const out=[];line.replace(/\S+/g,(m,i)=>{const t=m.
 const repLabel=r=>r>1?' ×'+r:'';
 const headName=s=>s.replace(/[:：]\s*$/,'').trim();
 const H_RE=/^\s*([А-ЯЁA-Z][^:：]{0,40})[:：]\s*(.*)$/;   // «Куплет 1:», «Вступление: Dm Gm A }x4»
+// названия частей песни: только они становятся заголовком, если после двоеточия пусто
+const PART=/^(куплет|припев|пре-?припев|предприпев|вступление|интро|проигрыш|переход|бридж|соло|кода|концовка|финал|окончание|аутро|запев|речитатив|модуляция|рифф|verse|chorus|pre-?chorus|intro|outro|bridge|solo|interlude|coda|riff)(?![а-яёa-z])/i;
+const isHead=(name,rest)=>!rest?PART.test(name.trim()):!!chordTokens(rest);
 
 function convert(src,meta){
   const L=src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
@@ -156,16 +159,19 @@ function convert(src,meta){
     const h=line.match(H_RE);
     if(h&&!chordTokens(line)){
       const rest=h[2].trim(),ct=rest?chordTokens(rest):null;
-      if(!rest||ct){
+      if(isHead(h[1],rest)){
         out.push(`{comment: ${headName(h[1])}${ct?repLabel(ct.rep):''}}`);
         if(ct)out.push(chordsWithPos(rest).map(x=>`[${x.c}]`).join(' '));
         continue;
       }
     }
+    const rp=line.trim().match(REPEAT);
+    if(rp){let k=out.length-1;while(k>=0&&!/^\{comment:/.test(out[k]))k--;
+      if(k>=0&&!/×\d+\}$/.test(out[k])&&+rp[1]>1)out[k]=out[k].replace(/\}$/,repLabel(+rp[1])+'}');continue;}
     const ct=chordTokens(line);
     if(ct){
       const next=L[i+1]!==undefined?L[i+1].replace(/\s+$/,''):'';
-      const nextIsText=next.trim()&&!chordTokens(next)&&!(H_RE.test(next)&&(()=>{const m=next.match(H_RE);return !m[2].trim()||chordTokens(m[2]);})());
+      const nextIsText=next.trim()&&!chordTokens(next)&&!REPEAT.test(next.trim())&&!(H_RE.test(next)&&(()=>{const m=next.match(H_RE);return isHead(m[1],m[2].trim());})());
       const cs=chordsWithPos(line);
       if(nextIsText){
         // ставим аккорды над слогами по позиции символа
@@ -174,7 +180,7 @@ function convert(src,meta){
         if(txt.length<maxI)txt=txt.padEnd(maxI,' ');
         cs.forEach(x=>{res+=txt.slice(pos,x.i)+`[${x.c}]`;pos=x.i;});
         res+=txt.slice(pos);
-        out.push(res.replace(/\s+$/,'').replace(/^\s+(?=\[)/,''));
+        out.push(res.replace(/\s+$/,'').replace(/^\s+(?=\[)/,'').replace(/(\S)\s{2,}(?=\[[^\]]+\](\s*\[[^\]]+\])*$)/,'$1 ').replace(/\]\s{2,}(?=\[)/g,'] '));
         i++;
       }else{
         if(ct.rep>1&&out.length&&/^\{comment:/.test(out[out.length-1])&&!/×\d+\}$/.test(out[out.length-1]))out[out.length-1]=out[out.length-1].replace(/\}$/,repLabel(ct.rep)+'}');
