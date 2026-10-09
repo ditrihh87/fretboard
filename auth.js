@@ -1,9 +1,9 @@
-/* Общий вход на сайт ditrihh: Яндекс ID (и VK ID, когда VK примет домен).
+/* Общий вход на сайт ditrihh: Яндекс ID и VK ID.
    Подключается на всех страницах сайта и в школе. Сессия одна на весь сайт: localStorage 'dgc_link'.
    Возврат от Яндекса и VK — всегда на login.html (один Redirect URI для всего сайта). */
 (function(){
   const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
-  const VK=''; // 54812686 — включить, когда VK ID примет домен ditrihh.ru (сейчас считает его «вредоносным»)
+  const VK='54812686'; // VK ID приложения (домен ditrihh.ru одобрен VK 9 окт 2026)
   const YA='5bd936c6b76b4d91918fe1848e72189d';
   const KEY='dgc_link';
   const ROOT=new URL('.',document.currentScript.src).href;
