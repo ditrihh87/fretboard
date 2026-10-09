@@ -1280,7 +1280,7 @@ const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,
 const rnd=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return b64u(a);};
 const REDIR=()=>location.origin+location.pathname;
 // VK не принимает новый домен ditrihh.ru, поэтому VK возвращает на ditrihh87.github.io, а GitHub перекидывает на ditrihh.ru с тем же адресом
-const VK_REDIR=()=>/ditrihh\.ru$/.test(location.hostname)?'https://ditrihh87.github.io'+location.pathname:REDIR();
+const VK_REDIR=()=>/ditrihh\.ru$/.test(location.hostname)?'https://ditrihh87.github.io/fretboard'+location.pathname:REDIR();
 async function startOAuth(prov){
   const st={prov,state:rnd(24),t:Date.now()};
   if(prov==='vk'){
