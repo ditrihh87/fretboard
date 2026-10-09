@@ -28,11 +28,14 @@ const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m
 // текст песни в простом HTML: его сразу видит поисковик, а в браузере страницу перерисовывает скрипт
 function staticBody(s) {
   let body = '';
+  let it = false;
   for (const line of String(s.text || '').split('\n')) {
     const cm = line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
     if (cm) { body += `<h2>${esc(cm[1])}</h2>\n`; continue; }
     if (/^\s*\{.*\}\s*$/.test(line)) continue;
-    const html = esc(line).replace(/\[([^\]]+)\]/g, (_, c) => `<b>${c}</b>`);
+    // ((текст)) — курсив
+    const html = line.split(/(\(\(|\)\))/).map(p => p === '((' ? (it = true, '') : p === '))' ? (it = false, '') : p ? (it ? '<i>' + esc(p) + '</i>' : esc(p)) : '').join('')
+      .replace(/\[([^\]]+)\]/g, (_, c) => `<b>${c}</b>`);
     body += `<p>${html || '&nbsp;'}</p>\n`;
   }
   return body;

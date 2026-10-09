@@ -103,6 +103,7 @@
   .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:.85em;white-space:pre-wrap}
   .lyrics .sg>.ch{margin-bottom:1px}
   .lyrics .sg{display:inline-flex;flex-direction:column}
+  .lyrics i{font-style:italic;color:#CFCCF2}
   .lyrics .ch{border:none;background:none;padding:0 6px 0 0;font:800 .9em var(--body);color:var(--amber);text-align:left;cursor:pointer;min-height:1.2em}
   .lyrics span.ch{cursor:default}
   .lyrics .ln.only{gap:14px}
@@ -315,6 +316,8 @@ function renderChordsPage(){
   drawSong();
 }
 function setTr(d){if(st.easy){st.easy=false;(prefs.easy||{})[SONG.id]=false;}st.tr=Math.max(-11,Math.min(11,st.tr+d));prefs.tr=prefs.tr||{};prefs.tr[SONG.id]=st.tr;savePrefs();drawSong();}
+// ((текст)) — курсив (бэк-вокал, пометки); может тянуться через аккорды и строки
+const itx=(t,S)=>String(t).split(/(\(\(|\)\))/).map(p=>p==='(('?(S.it=true,''):p==='))'?(S.it=false,''):p?(S.it?'<i>'+esc(p)+'</i>':esc(p)):'').join('');
 function drawSong(){
   const t=SONG.text||'';let tr=st.tr;
   const ez=st.easy?easyCapo(chordsIn(t)):null;
@@ -325,14 +328,14 @@ function drawSong(){
   $('trLabel').textContent=ez?(ez.k?'Капо '+ez.k:'Тон'):tr?(tr>0?'+':'')+tr:'Тон';
   $('lyrics').style.setProperty('--lf',st.fs+'px');
   $('chordRow').innerHTML=chordsIn(t).map(c=>transposeChord(c,tr)).map(c=>`<button data-chord="${esc(c)}" aria-label="Аккорд ${esc(c)}">${chordSVG(c)}</button>`).join('');
-  let html='';
+  let html='';const S={it:false};
   t.split('\n').forEach(line=>{
     const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
     if(cm){html+=`<span class="cm">${esc(cm[1])}</span>`;return;}
     if(/^\s*\{.*\}\s*$/.test(line))return;
     const parts=line.split(/(\[[^\]]+\])/),textOnly=parts.filter(p=>!/^\[/.test(p)).join('').trim()==='';
     let segs='',pend=null;
-    const seg=(ch,txt)=>{const c=ch?`<button class="ch" data-chord="${esc(ch)}">${esc(ch)}</button>`:(textOnly?'':'<span class="ch">&nbsp;</span>');return textOnly?c:`<span class="sg">${c}<span>${esc(txt)||' '}</span></span>`;};
+    const seg=(ch,txt)=>{const c=ch?`<button class="ch" data-chord="${esc(ch)}">${esc(ch)}</button>`:(textOnly?'':'<span class="ch">&nbsp;</span>');return textOnly?c:`<span class="sg">${c}<span>${itx(txt,S)||' '}</span></span>`;};
     parts.forEach(p=>{const m=p.match(/^\[([^\]]+)\]$/);
       if(m){if(pend!==null)segs+=seg(pend,'');pend=transposeChord(m[1].trim(),tr);return;}
       if(p===''&&pend===null)return;segs+=seg(pend,p);pend=null;});
