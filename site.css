@@ -3,7 +3,7 @@
     /* неоновые сине-фиолетовые тона — как на стримах */
     --bg:#0C0A24; --bg2:#141137; --card:#1C1848; --card2:#251F5E; --line:#2E2870;
     --paper:#EFECFB; --muted:#A4A1D8; --neon:#6E7BFF; --pink:#FF5FCF; --shadow:#06051A; --amber:#F0A830; --amber-d:#b77a17; --ok:#6FBF73;
-    --s6:#F26B6F; --s5:#F0A830; --s4:#E8D44D; --s3:#6FBF73; --s2:#5AB0E8; --s1:#B98AE8;
+    --s6:#F26B6F; --s5:#F0A830; --s4:#E8D44D; --s3:#6FBF73; --s2:#7CC4F2; --s1:#CFA6F7;
     --display:'Russo One','Arial Black',sans-serif; --body:'Manrope',system-ui,sans-serif;
     --wrap:1120px;
   }
