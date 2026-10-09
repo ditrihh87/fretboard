@@ -149,6 +149,7 @@
   .sched{background:var(--card);border-radius:18px;padding:16px 20px;min-width:260px}
   .sched b{font-family:var(--display);font-size:22px;display:block;margin-top:2px}
   .sched small{color:var(--muted);font-weight:700;font-size:13px}
+  .sched .offbtn{display:block;width:100%;margin-top:12px;padding:9px 12px;font-size:13px}.sched .offbtn[hidden]{display:none}
   .tabs{display:flex;gap:8px;margin:34px 0 14px;flex-wrap:wrap}
   .tab{border:none;background:var(--card);color:var(--muted);font:800 15px var(--body);padding:11px 18px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
   .tab[aria-selected="true"]{background:var(--paper);color:#1b1b1b}

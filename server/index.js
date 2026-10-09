@@ -951,6 +951,27 @@ async function loadGoal(token) {
   const e = String(process.env.DA_GOAL || '').split('|');   // старый способ — переменная DA_GOAL «Название|сумма|дата»
   return e[0] && Number(e[1]) > 0 ? { on: true, title: e[0].slice(0, 60), target: Number(e[1]), since: Date.parse(e[2] || '') || 0, carry: 0 } : null;
 }
+/* ===== Расписание: «сегодня без стрима» =====
+   stream/off.json — { off: ['2026-10-10', …] } — даты (по МСК) ночей без эфира; эфир в ночь даты D начинается в 00:00 D.
+   Владелец переключает кнопкой на главной; сайт переносит отсчёт на следующие сутки. */
+const OFF_KEY = 'stream/off.json';
+const mskDay = t => new Date(t + 3 * 3600e3).toISOString().slice(0, 10);
+const freshOff = list => { const today = mskDay(Date.now() - 6 * 3600e3); return [...new Set(list || [])].filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= today).sort().slice(0, 60); };
+async function handleSched(token) {
+  const o = await loadJSON(OFF_KEY, token, { off: [] });
+  return reply(200, { off: freshOff(o.off) });
+}
+async function handleStreamOff(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  if (typeof body.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.date)) return reply(400, { error: 'bad date' });
+  const o = await loadJSON(OFF_KEY, token, { off: [] });
+  let off = freshOff(o.off).filter(d => d !== body.date);
+  if (body.on) off = freshOff(off.concat(body.date));
+  await saveList(OFF_KEY, { off }, token);
+  return reply(200, { off });
+}
+
 async function handleGoalSet(body, token) {
   const u = await commentUser(body, token);
   if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
@@ -1040,6 +1061,10 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'twitch' }); }
   }
 
+  if (body.action === 'sched' || body.action === 'stream_off') {
+    try { return body.action === 'sched' ? await handleSched(token) : await handleStreamOff(body, token); }
+    catch (e) { console.error(e); return reply(body.action === 'sched' ? 200 : 502, body.action === 'sched' ? { off: [] } : { error: 'storage' }); }
+  }
   if (body.action === 'goal_set') {
     try { return await handleGoalSet(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }

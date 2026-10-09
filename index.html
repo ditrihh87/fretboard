@@ -96,7 +96,7 @@
           <p class="lead" id="stAbout">Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.</p>
           <script>(function(){var a=window.ABOUT;if(!a)return;var j=Math.floor(Math.random()*(a.t.length-1));if(j>=a.i)j++;document.getElementById("stAbout").textContent=a.t[j];})();</script>
         </div>
-        <div class="sched"><small>Следующий эфир</small><b id="nextLive">сегодня в 00:00</b><small id="nextIn">по Москве</small></div>
+        <div class="sched"><small>Следующий эфир</small><b id="nextLive">сегодня в 00:00</b><small id="nextIn">по Москве</small><button class="btn ghost offbtn" id="offBtn" type="button" hidden></button></div>
       </div>
       <div class="tabs" role="tablist" aria-label="Площадка">
         <button class="tab" role="tab" aria-selected="true" data-p="twitch"><span class="pl" style="background:#9146FF"></span>Twitch</button>
@@ -212,25 +212,48 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7']; // 6 →
   $('rndMore').onclick=draw;
 })();
 
-/* расписание: эфир каждый день около 00:00 по Москве (UTC+3) */
+/* расписание: эфир каждый день около 00:00 по Москве (UTC+3).
+   OFF — даты ночей без эфира (владелец жмёт «Сегодня без стрима»): отсчёт переносится на следующие сутки. */
+let OFF=[];
+const dayStr=t=>new Date(t).toISOString().slice(0,10);
+const addDay=(d,k)=>dayStr(Date.parse(d+'T00:00:00Z')+k*864e5);
 function nextStream(){
   const now=Date.now(),msk=new Date(now+3*3600e3);
-  const h=msk.getUTCHours(),m=msk.getUTCMinutes();
-  // окно эфира примерно 00:00–05:00 МСК
-  if(h<5)return {live:true};
-  const mins=(24*60)-(h*60+m);return {live:false,mins};
+  const h=msk.getUTCHours(),m=msk.getUTCMinutes(),today=dayStr(msk.getTime());
+  // ближайшая ночь эфира: идёт окно 00:00–05:00 — сегодняшняя, иначе следующая полночь
+  const first=h<5?today:addDay(today,1);
+  if(h<5&&!OFF.includes(today))return {live:true,night:first};
+  let d=first;while(OFF.includes(d)||(h<5&&d===today))d=addDay(d,1);
+  const mins=Math.max(0,Math.round((Date.parse(d+'T00:00:00Z')-3*3600e3-now)/6e4));
+  const label=d===addDay(today,1)?'сегодня в 00:00':d===addDay(today,2)?'завтра в 00:00':new Date(d+'T12:00:00Z').toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+' в 00:00';
+  return {live:false,mins,label,night:first,moved:d!==first};
 }
+const inTxt=mins=>{const h=Math.floor(mins/60),m=mins%60;return h>=24?`${Math.floor(h/24)} д ${h%24} ч`:`${h?h+' ч ':''}${m} мин`;};
 function paintSched(){
   const n=nextStream();
   if(twLive===true)n.live=true; else if(twLive===false&&n.live){n.live=false;n.soon=true;}
   if(typeof $('lbWhen')!=='undefined'&&$('lbWhen')){
     if(n.soon){$('lbWhen').textContent='Скоро начнём';$('lbIn').textContent='эфир обычно с 00:00 по Москве';}
-    else if(!n.live){const h=Math.floor(n.mins/60),m=n.mins%60;$('lbWhen').textContent='сегодня в 00:00';$('lbIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;}
+    else if(!n.live){$('lbWhen').textContent=n.label;$('lbIn').textContent=`${n.moved?'сегодня без эфира · ':''}по Москве · через ${inTxt(n.mins)}`;}
   }
+  paintOffBtn(n);
   if(n.soon){$('nextLive').textContent='скоро';$('nextIn').textContent='эфир обычно с 00:00 по Москве';$('navLiveText').textContent='Стрим скоро';$('navLive').style.background='';return;}
   if(n.live){$('nextLive').textContent='Сейчас идёт';$('nextIn').textContent='обычно с 00:00 до 05:00 по Москве';$('navLiveText').textContent='Сейчас в эфире';$('navLive').style.background='rgba(229,72,77,.18)';$('navLive').classList.add('on');}
-  else{const h=Math.floor(n.mins/60),m=n.mins%60;$('nextLive').textContent='сегодня в 00:00';$('nextIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;$('navLiveText').textContent=h?`Стрим через ${h} ч`:`Стрим через ${m} мин`;$('navLive').style.background='';$('navLive').classList.remove('on');}
+  else{const h=Math.floor(n.mins/60),m=n.mins%60;$('nextLive').textContent=n.label;$('nextIn').textContent=`${n.moved?'сегодня без эфира · ':''}по Москве · через ${inTxt(n.mins)}`;$('navLiveText').textContent=n.moved&&h>=24?'Стрим завтра':h?`Стрим через ${h} ч`:`Стрим через ${m} мин`;$('navLive').style.background='';$('navLive').classList.remove('on');}
 }
+/* кнопка владельца: «Сегодня без стрима» / «Вернуть стрим» (видна только при входе владельца) */
+const ADM=(()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.prov==='admin'?l:null;}catch(e){return null;}})();
+function paintOffBtn(n){
+  const b=$('offBtn');if(!b||!ADM)return;b.hidden=false;
+  const off=OFF.includes(n.night);
+  b.textContent=off?'↩ Вернуть сегодняшний стрим':'🚫 Сегодня без стрима';b.dataset.on=off?'':'1';b.dataset.d=n.night;
+}
+async function setOff(date,on){
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'stream_off',date,on,token:ADM.token})});
+  if(!r.ok)throw r.status;OFF=(await r.json()).off||[];paintSched();
+}
+if(ADM)$('offBtn').onclick=async()=>{const b=$('offBtn');const on=!!b.dataset.on;b.disabled=true;
+  try{await setOff(b.dataset.d,on);}catch(e){alert('Не получилось сохранить. Проверь, что вошёл как владелец.');}b.disabled=false;};
 paintSched();setInterval(paintSched,60e3);
 
 /* окно стрима на главной: Twitch-плеер без звука сообщает, идёт ли эфир */
@@ -243,6 +266,12 @@ function setLive(on){
   paintSched();
 }
 const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+// дни без эфира — с сервера; ссылка ditrihh.ru/#nostream (владелец) сразу отменяет ближайший эфир
+fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'sched'})}).then(r=>r.json()).then(j=>{OFF=j.off||[];paintSched();
+  if(ADM&&location.hash==='#nostream'){const n=nextStream();history.replaceState(null,'',location.pathname+'#stream');
+    if(!OFF.includes(n.night))setOff(n.night,true).then(()=>alert('Готово: сегодня без стрима, отсчёт перенесён на следующие сутки.')).catch(()=>alert('Не получилось отменить стрим.'));
+    else alert('Сегодняшний стрим уже отменён.');}
+}).catch(()=>{});
 const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});}catch(e){return '';}};
 // Twitch пускает плеер только на перечисленные домены и только по https (кроме localhost)
 const TW_HOSTS=[...new Set([location.hostname||'localhost','ditrihh.ru','www.ditrihh.ru','ditrihh87.github.io'])];
