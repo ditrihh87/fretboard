@@ -89,7 +89,7 @@
     const l=rated();if(!l||!el)return;
     el.innerHTML='<p class="ab-st-muted">Загружаю рейтинг…</p>';
     let r;try{r=await post({action:'stats',token:l.token});}catch(e){el.innerHTML='';return;}
-    if(r.owner){el.innerHTML=`<div class="ab-rank"><b class="lvown">${esc(r.rank)}</b><span>Тот Самый · основатель</span></div>`;return;}
+    if(r.owner){el.innerHTML=`<div class="ab-rank"><b class="lvown">${esc(r.rank)}</b><span>Директор цирка</span></div>`;return;}
     const pct=r.next?Math.round((r.points-r.from)/(r.next.at-r.from)*100):100;
     el.innerHTML=`<div class="ab-rank"><b class="${l.prov==='admin'?'lvown':'lv'+r.level}">${esc(r.rank)}</b><span>уровень ${r.level}</span></div>
       <div class="ab-bar"><i style="width:${Math.max(3,Math.min(100,pct))}%"></i></div>
