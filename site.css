@@ -253,4 +253,6 @@
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .btn.off{opacity:.55;cursor:default;pointer-events:none}
+/* иконки в кнопках: табы (струны с цифрами) и аккорды (схема) */
+.btn .bi{display:inline-block;flex:none;width:22px;height:22px;margin:-2px 0;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
 

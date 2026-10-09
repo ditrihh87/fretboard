@@ -28,7 +28,7 @@
   document.addEventListener('DOMContentLoaded',function(){
     var site=document.baseURI;
     var d=document.createElement('div');d.id='soon';
-    d.innerHTML='<img src="brand/ditrihh-logo.svg" alt="ditrihh"><h1>Школа скоро откроется</h1><p>Сейчас перерабатываю её целиком, чтобы учиться было ещё удобнее. А пока — табы, правильные аккорды и стримы каждый вечер.</p><div class="b"><a href="'+site+'songs.html?type=tab" data-ext>★ Табы</a><a href="'+site+'songs.html?type=chords" data-ext>Аккорды</a><a class="g" href="'+site+'index.html#stream" data-ext>▶ Стримы</a></div>';
+    d.innerHTML='<img src="brand/ditrihh-logo.svg" alt="ditrihh"><h1>Школа скоро откроется</h1><p>Сейчас перерабатываю её целиком, чтобы учиться было ещё удобнее. А пока — табы, правильные аккорды и стримы каждый вечер.</p><div class="b"><a href="'+site+'songs.html?type=tab" data-ext>Табы</a><a href="'+site+'songs.html?type=chords" data-ext>Аккорды</a><a class="g" href="'+site+'index.html#stream" data-ext>▶ Стримы</a></div>';
     document.body.appendChild(d);
     // привязка Telegram к аккаунту сайта: сайт открыл бота по ссылке startapp=link_<код> — подтверждаем
     if(tg&&sp.indexOf('link_')===0&&tg.initData){
