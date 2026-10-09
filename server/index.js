@@ -344,7 +344,8 @@ const hasLink = t => LINK_RE.test(String(t).replace(/(https?:\/\/)?(www\.)?ditri
 const loadBans = token => loadJSON('comments/_bans.json', token, {});
 /* ===== Рейтинг: очки за время на сайте и комментарии → звания и ачивки =====
    stats/<acc>.json — { sec, comments, got: {achId: время}, last }; stats/_ranks.json — { acc: номер звания } для подписи под именем.
-   Очки: 1 за минуту на сайте + 10 за комментарий. Новые ачивки — просто добавить строку в ACH. */
+   Очки: 1 за минуту на сайте + 10 за комментарий + 1 за каждые 10 ₽ доната. Новые ачивки — просто добавить строку в ACH.
+   Донаты: у каждого личный код (DH-XXXXX, stats/_codes.json → acc); код в сообщении доната DonationAlerts засчитывает сумму этому аккаунту. */
 const RANKS = [[0, 'Новичок'], [60, 'Слушатель'], [300, 'Бренчащий'], [1000, 'Аккордист'], [3000, 'Гитарист'], [8000, 'Мастер баре'], [20000, 'Рок-звезда'], [50000, 'Легенда']];
 const ACH = [
   { id: 'c1', name: 'Первое слово', desc: 'Первый комментарий', k: 'comments', n: 1, icon: '💬' },
@@ -354,34 +355,65 @@ const ACH = [
   { id: 'h1', name: 'Первый час', desc: '1 час на сайте', k: 'sec', n: 3600, icon: '⏱️' },
   { id: 'h10', name: 'Завсегдатай', desc: '10 часов на сайте', k: 'sec', n: 36000, icon: '🎸' },
   { id: 'h100', name: 'Живёт здесь', desc: '100 часов на сайте', k: 'sec', n: 360000, icon: '🏠' },
+  { id: 'd1', name: 'Первый донат', desc: 'Поддержал донатом', k: 'rub', n: 1, icon: '🎁' },
+  { id: 'd1000', name: 'Меценат', desc: 'Донаты на 1 000 ₽', k: 'rub', n: 1000, icon: '💛' },
+  { id: 'd10000', name: 'Спонсор', desc: 'Донаты на 10 000 ₽', k: 'rub', n: 10000, icon: '💎' },
+  { id: 'd50000', name: 'Продюсер', desc: 'Донаты на 50 000 ₽', k: 'rub', n: 50000, icon: '👑' },
 ];
+const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без похожих O/0, I/1/L
+const CODE_RE = /\bDH-([A-Z2-9]{5})\b/gi;
 const PING_SEC = 60;                   // сайт присылает «я тут» раз в минуту, пока вкладка открыта и человек что-то делает
-const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10;
+const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10 + Math.floor((st.rub || 0) / 10);
 const rankIdx = p => { let i = 0; RANKS.forEach((r, j) => { if (p >= r[0]) i = j; }); return i; };
 const statKey = acc => `stats/${acc}.json`;
 async function bumpStats(acc, add, token) {
   const st = await loadJSON(statKey(acc), token, { sec: 0, comments: 0, got: {} });
-  if (add.ping) {   // «я тут» засчитываем не чаще раза в минуту
-    if (st.last && Date.now() - st.last < (PING_SEC - 8) * 1000) return { skip: true, fresh: [], up: null };
+  let inbox = [];
+  if (add.ping) {   // «я тут» засчитываем не чаще раза в минуту; заодно забираем отложенные новости (донат засчитан и т.п.)
+    inbox = st.inbox || []; delete st.inbox;
+    if (st.last && Date.now() - st.last < (PING_SEC - 8) * 1000) { if (inbox.length) await saveList(statKey(acc), st, token); return { skip: true, fresh: [], up: null, inbox }; }
     st.last = Date.now();
   }
   const before = rankIdx(statPoints(st));
   if (add.sec) st.sec = (st.sec || 0) + add.sec;
   if (add.comments) st.comments = Math.max(0, (st.comments || 0) + add.comments);
+  if (add.rub) st.rub = Math.max(0, (st.rub || 0) + add.rub);
   st.got = st.got || {};
   const fresh = [];
   for (const a of ACH) if (!st.got[a.id] && (st[a.k] || 0) >= a.n) { st.got[a.id] = Date.now(); fresh.push(a.id); }
-  await saveList(statKey(acc), st, token);
   const after = rankIdx(statPoints(st));
+  // начисление «за кадром» (донат) — человек узнает о нём при следующем заходе
+  if (add.notify) { st.inbox = (st.inbox || []).concat([{ rub: add.rub || 0, fresh, up: after > before ? RANKS[after][1] : null }]).slice(-10); }
+  await saveList(statKey(acc), st, token);
   if (after !== before || fresh.length) {
     const ranks = await loadJSON('stats/_ranks.json', token, {});
     if (ranks[acc] !== after) { ranks[acc] = after; await saveList('stats/_ranks.json', ranks, token); }
   }
-  return { st, fresh, up: after > before ? RANKS[after][1] : null };
+  return { st, fresh, up: after > before ? RANKS[after][1] : null, inbox };
+}
+// личный код для донатов
+async function ensureCode(acc, st, token) {
+  if (st.code) return st.code;
+  const codes = await loadJSON('stats/_codes.json', token, {});
+  let code;
+  do { code = 'DH-' + Array.from(crypto.randomBytes(5), b => CODE_ABC[b % CODE_ABC.length]).join(''); } while (codes[code]);
+  codes[code] = acc; await saveList('stats/_codes.json', codes, token);
+  st.code = code; await saveList(statKey(acc), st, token);
+  return code;
+}
+// новые донаты из DonationAlerts: ищем личный код в сообщении и засчитываем сумму
+async function creditDonations(raw, token) {
+  const hits = raw.map(d => ({ d, m: [...String(d.message || '').toUpperCase().matchAll(CODE_RE)].map(x => 'DH-' + x[1]) })).filter(x => x.m.length);
+  if (!hits.length) return;
+  const codes = await loadJSON('stats/_codes.json', token, {});
+  for (const { d, m } of hits) {
+    const acc = codes[m[0]]; const rub = toRub(d.amount, d.currency);
+    if (acc && rub > 0) await bumpStats(acc, { rub, notify: true }, token).catch(console.error);
+  }
 }
 function statView(st) {
   const p = statPoints(st), i = rankIdx(p), nx = RANKS[i + 1];
-  return { sec: st.sec || 0, comments: st.comments || 0, points: p, rank: RANKS[i][1], level: i + 1,
+  return { sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, rank: RANKS[i][1], level: i + 1,
     from: RANKS[i][0], next: nx ? { rank: nx[1], at: nx[0] } : null,
     ach: ACH.map(a => ({ id: a.id, name: a.name, desc: a.desc, icon: a.icon, got: (st.got || {})[a.id] || 0, have: Math.min(st[a.k] || 0, a.n), need: a.n, k: a.k })) };
 }
@@ -391,9 +423,21 @@ async function handleStats(body, token) {
   if (!u) return reply(401, { error: 'login' });
   if (body.action === 'ping') {
     const r = await bumpStats(u.acc, { sec: PING_SEC, ping: true }, token);
-    return reply(200, { ok: !r.skip, fresh: achNames(r.fresh), up: r.up });
+    let fresh = r.fresh.slice(), up = r.up, rub = 0;
+    for (const n of r.inbox || []) { fresh = fresh.concat(n.fresh || []); up = n.up || up; rub += n.rub || 0; }
+    return reply(200, { ok: !r.skip, fresh: achNames(fresh), up, rub });
+  }
+  if (body.action === 'grant_rub') {   // владелец вручную засчитывает донат автору комментария
+    if (!adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+    const rub = Math.round(Number(body.rub));
+    if (!okSong(body.song) || typeof body.id !== 'string' || !(rub > 0 && rub <= 1e6)) return reply(400, { error: 'bad params' });
+    const c = (await loadJSON(`comments/${body.song}.json`, token, [])).find(x => x.id === body.id);
+    if (!c) return reply(404, { error: 'no comment' });
+    await bumpStats(c.acc, { rub, notify: true }, token);
+    return reply(200, { ok: true });
   }
   const st = await loadJSON(statKey(u.acc), token, { sec: 0, comments: 0, got: {} });
+  await ensureCode(u.acc, st, token);
   return reply(200, statView(st));
 }
 
@@ -538,15 +582,17 @@ async function daSync(token, report) {
   };
   let changed = false;
   // 1) новые донаты — со страницы 1, пока не встретим уже известный
-  const fresh = [];
+  const fresh = [], freshRaw = [];
   for (let page = 1; page <= DA_MAX_PAGES && Date.now() - t0 < DA_BUDGET_MS; page++) {
     const j = await getPage(page); if (!j) break;
     let hit = false;
-    for (const d of j.data || []) { if (known.has(d.id)) { hit = true; break; } fresh.push(pick(d)); known.add(d.id); }
+    for (const d of j.data || []) { if (known.has(d.id)) { hit = true; break; } fresh.push(pick(d)); freshRaw.push(d); known.add(d.id); }
     if (hit || !j.links || !j.links.next) { if (!store.list.length && j.links && j.links.next) store.back = page + 1; break; }
     if (!store.list.length) store.back = page + 1;
   }
   if (fresh.length) { store.list = fresh.concat(store.list); changed = true; }
+  // первая загрузка (пустой список) — это история, её коды не ищем; дальше — только новые донаты
+  if (freshRaw.length && store.list.length > fresh.length) await creditDonations(freshRaw, token).catch(console.error);
   // 2) история — продолжаем с сохранённой страницы, сколько успеем
   const cutoff = Date.now() - DA_KEEP_MS;
   const oldest = () => store.list.length ? daTs(store.list[store.list.length - 1].t) : Infinity;
@@ -670,7 +716,7 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
-  if (body.action === 'ping' || body.action === 'stats') {
+  if (body.action === 'ping' || body.action === 'stats' || body.action === 'grant_rub') {
     try { return await handleStats(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
   if (body.action === 'comment_ok' || body.action === 'comment_ban') {

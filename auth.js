@@ -41,10 +41,11 @@
   ['mousemove','scroll','keydown','touchstart','click'].forEach(e=>addEventListener(e,()=>{lastAct=Date.now();},{passive:true}));
   setInterval(async()=>{
     const l=rated();if(!l||document.hidden||Date.now()-lastAct>120e3)return;
-    try{const r=await post({action:'ping',token:l.token});toast(r.fresh,r.up);}catch(e){}
+    try{const r=await post({action:'ping',token:l.token});toast(r.fresh,r.up,r.rub);}catch(e){}
   },60e3);
-  function toast(fresh,up){
+  function toast(fresh,up,rub){
     const items=(fresh||[]).map(a=>`<div class="at-i"><span>${a.icon||'🏆'}</span><div><b>Новая ачивка: ${esc(a.name)}</b><small>${esc(a.desc||'')}</small></div></div>`);
+    if(rub)items.unshift(`<div class="at-i"><span>💛</span><div><b>Донат засчитан: +${Math.round(rub)} ₽</b><small>Спасибо за поддержку! +${Math.floor(rub/10)} очков</small></div></div>`);
     if(up)items.unshift(`<div class="at-i"><span>⭐</span><div><b>Новое звание: ${esc(up)}</b><small>Так держать!</small></div></div>`);
     if(!items.length)return;
     let box=document.getElementById('achToast');
@@ -61,8 +62,10 @@
     el.innerHTML=`<div class="ab-rank"><b>${esc(r.rank)}</b><span>уровень ${r.level}</span></div>
       <div class="ab-bar"><i style="width:${Math.max(3,Math.min(100,pct))}%"></i></div>
       <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${r.points} очков — высшее звание`}</div>
-      <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span></div>
-      <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
+      <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span>${r.rub?`<span>💛 ${r.rub.toLocaleString('ru-RU')} ₽</span>`:''}</div>
+      ${r.code?`<div class="ab-code"><div>Код для донатов: <b>${esc(r.code)}</b><button type="button" data-copy="${esc(r.code)}">копировать</button></div><small>Добавь его в сообщение к <a href="https://dalink.to/ditrihh" target="_blank" rel="noopener">донату</a> — сумма попадёт в рейтинг и ачивки.</small></div>`:''}
+      <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.k==='rub'?a.have+' ₽ из '+a.need+' ₽':a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
+    const cp=el.querySelector('[data-copy]');if(cp)cp.onclick=e=>{e.stopPropagation();try{navigator.clipboard.writeText(cp.dataset.copy);}catch(err){}cp.textContent='скопировано';setTimeout(()=>cp.textContent='копировать',1500);};
   }
 
   window.DAuth={API,VK,YA,CB,start,logout,link:getLink,toast};
@@ -96,6 +99,11 @@
 #authBox .ab-next{color:#B9B4E6;font-size:12px;font-weight:600}
 #authBox .ab-nums{display:flex;gap:16px;margin:10px 0 8px;font-size:13px;font-weight:700}
 #authBox .ab-ach{display:flex;flex-wrap:wrap;gap:6px}
+#authBox .ab-code{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:rgba(239,236,251,.06);font-size:13px;font-weight:700}
+#authBox .ab-code b{color:#F0A830;letter-spacing:1px}
+#authBox .ab-code button{margin-left:8px;border:none;background:rgba(239,236,251,.1);color:#EFECFB;font:700 11px Manrope,system-ui,sans-serif;padding:3px 8px;border-radius:7px;cursor:pointer}
+#authBox .ab-code small{display:block;margin-top:5px;color:#B9B4E6;font-weight:600;font-size:12px;line-height:1.4}
+#authBox .ab-code a{color:#F0A830}
 #authBox .ab-ach span{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(239,236,251,.06);font-size:18px;filter:grayscale(1);opacity:.35;cursor:default}
 #authBox .ab-ach span.on{filter:none;opacity:1;background:rgba(240,168,48,.16);box-shadow:inset 0 0 0 1px rgba(240,168,48,.5)}
 @media (max-width:820px){#authBox{margin-left:auto}.live-dot~#authBox{margin-left:0}}
