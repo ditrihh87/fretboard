@@ -63,9 +63,10 @@
       <div class="ab-bar"><i style="width:${Math.max(3,Math.min(100,pct))}%"></i></div>
       <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${r.points} очков — высшее звание`}</div>
       <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span>${r.rub?`<span>💛 ${r.rub.toLocaleString('ru-RU')} ₽</span>`:''}</div>
-      ${r.code?`<div class="ab-code"><div>Код для донатов: <b>${esc(r.code)}</b><button type="button" data-copy="${esc(r.code)}">копировать</button></div><small>Добавь его в сообщение к <a href="https://dalink.to/ditrihh" target="_blank" rel="noopener">донату</a> — сумма попадёт в рейтинг и ачивки.</small></div>`:''}
+      ${r.code?`<div class="ab-code"><span>Код для доната</span><b>${esc(r.code)}</b><button type="button" data-copy="${esc(r.code)}" title="Скопировать">⧉</button><button type="button" data-help title="Что это?">?</button><small hidden>Добавь код в сообщение к <a href="https://dalink.to/ditrihh" target="_blank" rel="noopener">донату</a> — сумма попадёт в рейтинг и ачивки.</small></div>`:''}
       <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.k==='rub'?a.have+' ₽ из '+a.need+' ₽':a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
-    const cp=el.querySelector('[data-copy]');if(cp)cp.onclick=e=>{e.stopPropagation();try{navigator.clipboard.writeText(cp.dataset.copy);}catch(err){}cp.textContent='скопировано';setTimeout(()=>cp.textContent='копировать',1500);};
+    const cp=el.querySelector('[data-copy]');if(cp)cp.onclick=e=>{e.stopPropagation();try{navigator.clipboard.writeText(cp.dataset.copy);}catch(err){}cp.textContent='✓';setTimeout(()=>cp.textContent='⧉',1500);};
+    const hp=el.querySelector('[data-help]');if(hp)hp.onclick=e=>{e.stopPropagation();const sm=el.querySelector('.ab-code small');sm.hidden=!sm.hidden;};
   }
 
   window.DAuth={API,VK,YA,CB,start,logout,link:getLink,toast};
@@ -80,7 +81,7 @@
 #authBox .ab-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border:none;border-radius:12px;background:rgba(239,236,251,.1);color:#EFECFB;font:800 14px Manrope,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
 #authBox .ab-btn:hover{background:rgba(110,123,255,.24)}
 #authBox .ab-ava{width:38px;height:38px;padding:0;border-radius:50%;background:#F0A830 center/cover;color:#1b1b1b;overflow:hidden}
-#authBox .ab-pop{position:absolute;right:0;top:calc(100% + 10px);min-width:280px;padding:14px;border-radius:16px;background:#1C1848;border:1px solid rgba(110,123,255,.3);box-shadow:0 18px 40px rgba(0,0,0,.45);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;z-index:50}
+#authBox .ab-pop{position:absolute;right:0;top:calc(100% + 10px);width:310px;box-sizing:border-box;padding:14px;border-radius:16px;background:#1C1848;border:1px solid rgba(110,123,255,.3);box-shadow:0 18px 40px rgba(0,0,0,.45);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;z-index:50}
 #authBox .ab-pop[hidden]{display:none}
 #authBox .ab-pop h4{margin:0 0 4px;font-size:15px;font-weight:800}
 #authBox .ab-pop p{margin:0 0 12px;font-size:13px;line-height:1.45;color:#B9B4E6;font-weight:600}
@@ -98,16 +99,17 @@
 #authBox .ab-bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#6E7BFF,#F0A830)}
 #authBox .ab-next{color:#B9B4E6;font-size:12px;font-weight:600}
 #authBox .ab-nums{display:flex;gap:16px;margin:10px 0 8px;font-size:13px;font-weight:700}
-#authBox .ab-ach{display:flex;flex-wrap:wrap;gap:6px}
-#authBox .ab-code{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:rgba(239,236,251,.06);font-size:13px;font-weight:700}
-#authBox .ab-code b{color:#F0A830;letter-spacing:1px}
-#authBox .ab-code button{margin-left:8px;border:none;background:rgba(239,236,251,.1);color:#EFECFB;font:700 11px Manrope,system-ui,sans-serif;padding:3px 8px;border-radius:7px;cursor:pointer}
-#authBox .ab-code small{display:block;margin-top:5px;color:#B9B4E6;font-weight:600;font-size:12px;line-height:1.4}
+#authBox .ab-ach{display:flex;flex-wrap:wrap;gap:5px}
+#authBox .ab-code{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 10px;padding:7px 10px;border-radius:10px;background:rgba(239,236,251,.06);font-size:12px;font-weight:700;color:#B9B4E6}
+#authBox .ab-code b{color:#F0A830;letter-spacing:1px;font-size:13px;margin-left:auto}
+#authBox .ab-code button{border:none;background:rgba(239,236,251,.1);color:#EFECFB;font:800 12px Manrope,system-ui,sans-serif;width:24px;height:24px;border-radius:7px;cursor:pointer;padding:0}
+#authBox .ab-code small{flex-basis:100%;color:#B9B4E6;font-weight:600;font-size:12px;line-height:1.4}
+#authBox .ab-code small[hidden]{display:none}
 #authBox .ab-code a{color:#F0A830}
-#authBox .ab-ach span{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(239,236,251,.06);font-size:18px;filter:grayscale(1);opacity:.35;cursor:default}
+#authBox .ab-ach span{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(239,236,251,.06);font-size:16px;filter:grayscale(1);opacity:.35;cursor:default}
 #authBox .ab-ach span.on{filter:none;opacity:1;background:rgba(240,168,48,.16);box-shadow:inset 0 0 0 1px rgba(240,168,48,.5)}
 @media (max-width:820px){#authBox{margin-left:auto}.live-dot~#authBox{margin-left:0}}
-@media (max-width:560px){#authBox .ab-btn{padding:0 12px}#authBox .ab-pop{position:fixed;left:12px;right:12px;top:72px;min-width:0}}`;
+@media (max-width:560px){#authBox .ab-btn{padding:0 12px}#authBox .ab-pop{position:fixed;left:12px;right:12px;top:72px;min-width:0;width:auto}}`;
     document.head.appendChild(css);
     const box=document.createElement('div');box.id='authBox';
     const l=getLink();
@@ -132,6 +134,8 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     });
     document.addEventListener('click',()=>{pop.hidden=true;});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')pop.hidden=true;});
+    addEventListener('blur',()=>{setTimeout(()=>{if(document.activeElement&&document.activeElement.tagName==='IFRAME')pop.hidden=true;},0);});
+    addEventListener('scroll',()=>{if(!pop.hidden&&window.scrollY>200)pop.hidden=true;},{passive:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();
 })();
