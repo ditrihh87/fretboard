@@ -798,12 +798,12 @@ async function renderTabPage(){
   if(SONG.tab)renderTabPage();else renderChordsPage();
   paintRate();paintYm();paintTalk();paintEdit();
 })();
-/* владельцу — кнопка «Править» (открывает песню в конвертере) */
+/* владельцу — кнопка «Править» (песня — в конвертере, таб — в загрузчике табов) */
 function paintEdit(){
   let own=false;try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');own=!!(l&&l.prov==='admin');}catch(e){}
-  if(!own||SONG.tab)return;
+  if(!own)return;
   const b=document.querySelector('.shead .badges');if(!b)return;
-  const a=document.createElement('a');a.className='editbtn';a.href='/add-song.html?edit='+encodeURIComponent(SONG.id);a.textContent='✎ Править';b.appendChild(a);
+  const a=document.createElement('a');a.className='editbtn';a.href=(SONG.tab?'/add-tab.html?edit=':'/add-song.html?edit=')+encodeURIComponent(SONG.id);a.textContent='✎ Править';b.appendChild(a);
 }
 </script>
 </body>
