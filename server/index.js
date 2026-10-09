@@ -338,18 +338,25 @@ const ADMIN_NAME = 'Тот Самый';   // имя владельца в ком
 const adminAccs = () => [ADMIN_ID, ...String(process.env.ADMIN_ACC || '').split(',').map(s => s.trim()).filter(Boolean)];
 const siteUser = u => u && /^(ya|vk|admin)_/.test(String(u.id)) ? u : null;   // Telegram-вход для комментариев не принимаем
 const nameOf = (a, n) => a === ADMIN_ID ? ADMIN_NAME : n;
-const pubComment = (c, acc, admin) => ({ id: c.id, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
+// ссылки (кроме ditrihh.ru) — комментарий ждёт одобрения владельца
+const LINK_RE = /(https?:\/\/|www\.|t\.me\/|@[a-z0-9_]{5,}|\b[a-z0-9-]{2,}\.(ru|com|net|org|io|me|xyz|su|info|biz|cc|top|site|online|shop|store|pro|link|ly|gg|tv|app|club|space|website|ws|to|kz|by|ua)\b|[а-яё0-9-]{2,}\.рф)/i;
+const hasLink = t => LINK_RE.test(String(t).replace(/(https?:\/\/)?(www\.)?ditrihh\.ru\S*/gi, ''));
+const loadBans = token => loadJSON('comments/_bans.json', token, {});
+const pubComment = (c, acc, admin) => ({ pending: !!c.pending, id: c.id, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
-  const [list, u] = await Promise.all([loadJSON(`comments/${body.song}.json`, token, []), commentUser(body, token).catch(() => null)]);
+  const [list, u, bans] = await Promise.all([loadJSON(`comments/${body.song}.json`, token, []), commentUser(body, token).catch(() => null), loadBans(token)]);
   const acc = u && u.acc, admin = !!acc && adminAccs().includes(acc);
-  return reply(200, { comments: list.map(c => pubComment(c, acc, admin)), me: acc || null, admin });
+  // на проверке — видят только автор и владелец; забаненных не видит никто, кроме владельца
+  const vis = list.filter(c => (admin || !bans[c.acc]) && (!c.pending || admin || c.acc === acc));
+  return reply(200, { comments: vis.map(c => pubComment(c, acc, admin)), me: acc || null, admin, banned: !!(acc && bans[acc]) });
 }
 async function handleComment(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
   const u = await commentUser(body, token);
   if (!u) return reply(401, { error: 'login' });
+  if ((await loadBans(token))[u.acc]) return reply(403, { error: 'banned' });
   const text = String(body.text || '').replace(/\r/g, '').replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/\n{3,}/g, '\n\n').trim();
   if (!text || text.length > COMMENT_LEN) return reply(400, { error: 'bad text' });
   const key = `comments/${body.song}.json`;
@@ -363,9 +370,36 @@ async function handleComment(body, token) {
     if (!p) return reply(400, { error: 'no parent' });
     c.re = p.re || p.id; if (p.acc !== u.acc) { c.to = nameOf(p.acc, p.name); c.toAcc = p.acc; }   // себе отвечаем без обращения
   }
+  if (!admin && hasLink(text)) c.pending = true;
   list.push(c); list = list.slice(-MAX_COMMENTS);
   await saveList(key, list, token);
   return reply(200, { comment: pubComment(c, u.acc, admin) });
+}
+// владелец: одобрить комментарий со ссылкой / забанить автора (его комментарии под этой песней удаляются, остальные скрываются)
+async function handleCommentMod(body, token) {
+  if (!okSong(body.song) || typeof body.id !== 'string') return reply(400, { error: 'bad params' });
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  const key = `comments/${body.song}.json`;
+  let list = await loadJSON(key, token, []);
+  const c = list.find(x => x.id === body.id);
+  if (!c) return reply(404, { error: 'no comment' });
+  if (body.action === 'comment_ok') { delete c.pending; await saveList(key, list, token); return reply(200, { ok: true }); }
+  if (adminAccs().includes(c.acc)) return reply(400, { error: 'cannot ban admin' });
+  const bans = await loadBans(token);
+  bans[c.acc] = { name: c.name, t: Date.now(), song: body.song };
+  await saveList('comments/_bans.json', bans, token);
+  const gone = list.filter(x => x.acc === c.acc).map(x => x.id);
+  list = list.filter(x => x.acc !== c.acc);
+  await saveList(key, list, token);
+  return reply(200, { ok: true, removed: gone });
+}
+async function handleBans(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  const bans = await loadBans(token);
+  if (body.action === 'unban' && typeof body.acc === 'string') { delete bans[body.acc]; await saveList('comments/_bans.json', bans, token); }
+  return reply(200, { bans: Object.entries(bans).map(([acc, b]) => ({ acc, name: b.name, t: b.t, song: b.song })) });
 }
 async function handleCommentDel(body, token) {
   if (!okSong(body.song) || typeof body.id !== 'string') return reply(400, { error: 'bad params' });
@@ -575,6 +609,12 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
+  if (body.action === 'comment_ok' || body.action === 'comment_ban') {
+    try { return await handleCommentMod(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
+  if (body.action === 'bans' || body.action === 'unban') {
+    try { return await handleBans(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
   if (body.action === 'comments' || body.action === 'comment' || body.action === 'comment_del') {
     try { return body.action === 'comments' ? await handleComments(body, token) : body.action === 'comment' ? await handleComment(body, token) : await handleCommentDel(body, token); }
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }

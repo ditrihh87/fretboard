@@ -179,7 +179,13 @@
   .cmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:14px}
   .cmeta span{color:var(--muted);font-weight:600;font-size:13px}
   .cmeta .cbadge{background:var(--amber);color:#1b1b1b;font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
-  .cdel{border:none;background:none;color:var(--muted);font:700 12px var(--body);cursor:pointer;padding:0;margin-left:auto}
+  .cacts{margin-left:auto;display:inline-flex;gap:12px}
+  .cdel,.cok{border:none;background:none;color:var(--muted);font:700 12px var(--body);cursor:pointer;padding:0}
+  .cok{color:#8FD493}
+  .cmeta .cpend{background:rgba(240,168,48,.15);color:var(--amber);font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
+  .cbans{margin-top:18px;color:var(--muted);font-weight:700;font-size:14px}
+  .cbans summary{cursor:pointer}
+  .cbrow{display:flex;gap:12px;align-items:baseline;margin-top:8px}.cbrow b{color:var(--paper)}
   .cdel:hover{color:#F26B6F}
   .ctext{margin-top:3px;white-space:pre-wrap;word-wrap:break-word;line-height:1.5}
   .cmuted{color:var(--muted);font-weight:600;margin:0}
@@ -347,7 +353,7 @@ const ses=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');
 const cWhen=t=>{const d=(Date.now()-t)/1000;if(d<60)return 'только что';if(d<3600)return Math.floor(d/60)+' мин назад';if(d<86400)return Math.floor(d/3600)+' ч назад';
   const x=new Date(t);return x.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:x.getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
 const cPl=n=>n%10===1&&n%100!==11?'комментарий':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'комментария':'комментариев';
-let COMM=[];
+let COMM=[],CADMIN=false,CBANNED=false;
 function paintTalk(){
   const sec=document.createElement('section');sec.className='talk';sec.id='comments';
   sec.innerHTML=`<div class="talkhead"><div><h2>Комментарии <span id="cCount"></span></h2><p>Вопросы по песне, свой вариант боя, просьбы разобрать — пиши.</p></div><a class="btn ghost" href="${TG_CHAT}" target="_blank" rel="noopener">💬 Чат гитаристов</a></div>
@@ -373,20 +379,23 @@ function paintForm(){
 async function sendComment(ta,re,msg,btn){
   const l=ses(),t=ta.value.trim();if(!t||!l)return false;
   btn.disabled=true;msg.textContent='Отправляю…';
-  try{const r=await cpost({action:'comment',song:SONG.id,text:t,token:l.token,re:re||undefined});COMM.push(r.comment);ta.value='';msg.textContent='Готово!';OPEN_RE=null;drawComments();return true;}
-  catch(err){msg.textContent=err.code===429?'Чуть помедленнее — подожди несколько секунд.':err.code===401?'Вход устарел — выйди и войди снова.':'Не получилось отправить, попробуй ещё раз.';}
+  try{const r=await cpost({action:'comment',song:SONG.id,text:t,token:l.token,re:re||undefined});COMM.push(r.comment);ta.value='';btn.disabled=false;OPEN_RE=null;drawComments();
+    const m=$('cMsg');if(m)m.textContent=r.comment.pending?'Комментарий со ссылкой появится после проверки.':'Готово!';return true;}
+  catch(err){msg.textContent=err.code===403?'Оставлять комментарии тебе больше нельзя.':err.code===429?'Чуть помедленнее — подожди несколько секунд.':err.code===401?'Вход устарел — выйди и войди снова.':'Не получилось отправить, попробуй ещё раз.';}
   btn.disabled=false;return false;
 }
 async function loadComments(){
   const l=ses();
-  try{const r=await cpost({action:'comments',song:SONG.id,token:l?l.token:undefined});COMM=r.comments||[];drawComments();}
+  try{const r=await cpost({action:'comments',song:SONG.id,token:l?l.token:undefined});COMM=r.comments||[];CADMIN=!!r.admin;CBANNED=!!r.banned;if(CADMIN)paintBans();
+    if(CBANNED)$('cForm').innerHTML='<p class="cmuted" style="margin-top:16px">Оставлять комментарии тебе больше нельзя.</p>';
+    drawComments();}
   catch(e){$('cList').innerHTML='<p class="cmuted">Комментарии сейчас не загрузились.</p>';}
 }
 let OPEN_RE=null; // на какой комментарий сейчас открыт ответ
 const cAva=(photo,name)=>`<div class="cava" ${photo?`style="background-image:url(&quot;${esc(String(photo).replace(/"/g,''))}&quot;)"`:''}>${photo?'':esc((name||'?')[0])}</div>`;
 function cItem(c){
   return `<div class="cm1" id="c-${esc(c.id)}">${cAva(c.photo,c.name)}
-    <div class="cbody"><div class="cmeta"><b>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</div>
+    <div class="cbody"><div class="cmeta"><b>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.pending?'<span class="cpend">на проверке</span>':''}<span class="cacts">${CADMIN&&c.pending?`<button class="cok" data-ok="${esc(c.id)}">одобрить</button>`:''}${CADMIN&&!c.admin?`<button class="cdel" data-ban="${esc(c.id)}">бан</button>`:''}${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</span></div>
     <div class="ctext">${c.to&&c.re?`<span class="cto">${esc(c.to)},</span> `:''}${esc(c.text)}</div>
     <button class="crep" data-re="${esc(c.id)}">Ответить</button>
     ${OPEN_RE===c.id?replyBox(c):''}</div></div>`;
@@ -394,6 +403,14 @@ function cItem(c){
 function replyBox(c){
   return `<form class="crform" data-for="${esc(c.id)}"><textarea maxlength="1000" rows="2" placeholder="Твой ответ…"></textarea>
     <div class="crow"><small>Отвечаешь: ${esc(c.name)}</small><span><button type="button" class="btn ghost" data-cancel>Отмена</button> <button class="btn main" type="submit">Ответить</button></span></div></form>`;
+}
+async function paintBans(){
+  let box=$('cBans');if(!CADMIN){if(box)box.remove();return;}
+  if(!box){box=document.createElement('details');box.id='cBans';box.className='cbans';$('comments').appendChild(box);}
+  const l=ses();let r;try{r=await cpost({action:'bans',token:l&&l.token});}catch(e){return;}
+  const b=r.bans||[];box.hidden=!b.length;
+  box.innerHTML=`<summary>Заблокированные · ${b.length}</summary>${b.map(x=>`<div class="cbrow"><b>${esc(x.name)}</b><span>${new Date(x.t).toLocaleDateString('ru-RU')}</span><button class="cdel" data-unban="${esc(x.acc)}">разбанить</button></div>`).join('')}`;
+  box.querySelectorAll('[data-unban]').forEach(u=>u.onclick=async()=>{try{await cpost({action:'unban',acc:u.dataset.unban,token:l&&l.token});paintBans();}catch(e){}});
 }
 function drawComments(){
   $('cCount').textContent=COMM.length?`· ${COMM.length}`:'';
@@ -409,6 +426,11 @@ function drawComments(){
     if(!confirm('Удалить комментарий?'))return;const l=ses();
     try{await cpost({action:'comment_del',song:SONG.id,id:b.dataset.del,token:l&&l.token});COMM=COMM.filter(c=>c.id!==b.dataset.del);drawComments();}catch(e){alert('Не получилось удалить.');}
   });
+  L.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{const l=ses();
+    try{await cpost({action:'comment_ok',song:SONG.id,id:b.dataset.ok,token:l&&l.token});const c=COMM.find(x=>x.id===b.dataset.ok);if(c)c.pending=false;drawComments();}catch(e){alert('Не получилось одобрить.');}});
+  L.querySelectorAll('[data-ban]').forEach(b=>b.onclick=async()=>{
+    const c=COMM.find(x=>x.id===b.dataset.ban);if(!c||!confirm(`Забанить ${c.name}? Его комментарии под этой песней удалятся, под другими — скроются, писать он больше не сможет.`))return;const l=ses();
+    try{const r=await cpost({action:'comment_ban',song:SONG.id,id:c.id,token:l&&l.token});const gone=new Set(r.removed||[c.id]);COMM=COMM.filter(x=>!gone.has(x.id));drawComments();paintBans();}catch(e){alert('Не получилось забанить.');}});
   L.querySelectorAll('[data-re]').forEach(b=>b.onclick=()=>{
     if(!ses()){$('cForm').scrollIntoView({behavior:'smooth',block:'center'});const x=$('cForm').querySelector('.clogin');if(x){x.classList.add('flash');setTimeout(()=>x.classList.remove('flash'),1200);}return;}
     OPEN_RE=OPEN_RE===b.dataset.re?null:b.dataset.re;drawComments();
