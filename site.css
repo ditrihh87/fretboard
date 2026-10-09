@@ -19,6 +19,8 @@
   .kicker{font-weight:800;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#9AA4FF;text-shadow:0 0 12px rgba(110,123,255,.8);margin-bottom:12px}
   .lead{color:var(--muted);font-size:18px;max-width:640px;margin-top:14px}
   section{padding:84px 0}
+  /* переход по якорю (#stream и т.п.): заголовок раздела сразу под шапкой, без пустого отступа сверху */
+  section[id]{scroll-margin-top:-20px}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:none;border-radius:16px;padding:16px 24px;font:800 16px var(--body);cursor:pointer;transition:transform .12s,box-shadow .12s}
   .btn.main{background:var(--amber);color:#1b1b1b;box-shadow:0 6px 0 var(--amber-d)}
   .btn.main:hover{transform:translateY(-1px);box-shadow:0 7px 0 var(--amber-d)}
@@ -235,6 +237,7 @@
     .stats{grid-template-columns:1fr 1fr}
     #support .row{grid-template-columns:1fr}
     section{padding:64px 0}
+    section[id]{scroll-margin-top:0}
   }
   @media (max-width:560px){
     body{font-size:16px}
