@@ -6,6 +6,7 @@
 // DonationAlerts: DA_CLIENT_ID, DA_CLIENT_SECRET (приложение на donationalerts.com/application/clients),
 // Аккаунт владельца «ditrihh» (admin_ditrihh): вход на login.html?admin по ключу ADMIN_KEY; значок автора и все права.
 // ADMIN_ACC — дополнительные аккаунты с правами владельца (напр. ya_123456; через запятую).
+// GH_TOKEN — токен GitHub (fine-grained, только репозиторий ditrihh87/fretboard, Contents: Read and write) — публикация песен из конвертера одной кнопкой.
 // ADMIN_KEY — секретный ключ владельца (для подключения DonationAlerts), DA_GOAL — цель «Название|сумма|с какой даты», напр. «Новая гитара|50000|2026-10-01».
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
@@ -579,6 +580,50 @@ async function handleCommentDel(body, token) {
   return reply(200, { ok: true });
 }
 
+/* ===== Публикация песен из конвертера (add-song.html) одной кнопкой — только владелец =====
+   Сервер сам правит songs.json в репозитории через GitHub API; дальше GitHub Actions собирает страницы песен. */
+const GH_REPO = 'ditrihh87/fretboard', GH_FILE = 'songs.json';
+const SONG_KEYS = ['id', 'title', 'artist', 'words', 'music', 'yandex', 'exclusive', 'fingerstyle', 'aka', 'shapes', 'easyFrom', 'easy', 'video', 'videoV', 'tab', 'chordsBy', 'text'];
+const KEEP_KEYS = ['tab', 'fingerstyle', 'video', 'videoV', 'chordsBy'];   // конвертер про них не знает — сохраняем от старой версии песни
+function cleanSong(x) {
+  if (!x || typeof x !== 'object' || !okSong(x.id) || typeof x.title !== 'string' || !x.title.trim() || x.title.length > 200) return null;
+  if (x.text != null && (typeof x.text !== 'string' || x.text.length > 60000)) return null;
+  const o = {}; for (const k of SONG_KEYS) if (x[k] !== undefined && x[k] !== null && x[k] !== '') o[k] = x[k];
+  return JSON.stringify(o).length < 80000 ? o : null;
+}
+async function gh(path, opt = {}) {
+  const r = await fetch('https://api.github.com/' + path, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + process.env.GH_TOKEN, Accept: 'application/vnd.github+json', 'User-Agent': 'ditrihh-site', 'X-GitHub-Api-Version': '2022-11-28' }, opt.headers || {}) }));
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error('github ' + r.status + ' ' + (j.message || '')); e.status = r.status; throw e; }
+  return j;
+}
+async function handlePublish(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  if (!process.env.GH_TOKEN) return reply(503, { error: 'GH_TOKEN не задан' });
+  const incoming = (Array.isArray(body.songs) ? body.songs : [body.song]).map(cleanSong);
+  if (!incoming.length || incoming.some(x => !x) || incoming.length > 200) return reply(400, { error: 'bad song' });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const f = await gh(`repos/${GH_REPO}/contents/${GH_FILE}?ref=main`);
+    let list; try { list = JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); } catch { return reply(500, { error: 'songs.json не читается' }); }
+    if (!Array.isArray(list)) return reply(500, { error: 'songs.json не список' });
+    const done = [];
+    for (const sg of incoming) {
+      const i = list.findIndex(x => x.id === sg.id);
+      if (i >= 0) { const old = list[i]; for (const k of KEEP_KEYS) if (sg[k] === undefined && old[k] !== undefined) sg[k] = old[k];
+        const ord = {}; for (const k of SONG_KEYS) if (sg[k] !== undefined) ord[k] = sg[k]; list[i] = ord; done.push({ id: sg.id, title: sg.title, upd: true }); }
+      else { const ord = {}; for (const k of SONG_KEYS) if (sg[k] !== undefined) ord[k] = sg[k]; list.push(ord); done.push({ id: sg.id, title: sg.title, upd: false }); }
+    }
+    const msg = done.length === 1 ? `Песня: ${done[0].title}${done[0].upd ? ' (правка)' : ''}` : `Песни: ${done.length} шт.`;
+    try {
+      const r = await gh(`repos/${GH_REPO}/contents/${GH_FILE}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, content: Buffer.from(JSON.stringify(list, null, 2) + '\n', 'utf8').toString('base64'), sha: f.sha, branch: 'main' }) });
+      return reply(200, { ok: true, songs: done, commit: r.commit && r.commit.html_url });
+    } catch (e) { if (e.status === 409 || e.status === 422) continue; throw e; }   // файл успели поменять — перечитываем и пробуем ещё раз
+  }
+  return reply(409, { error: 'songs.json меняется, попробуй ещё раз' });
+}
+
 /* ===== DonationAlerts: статистика донатов для сайта и панели Twitch ===== */
 const DA = 'https://www.donationalerts.com';
 const DA_CACHE_MS = 60 * 1000;           // статистику пересчитываем не чаще раза в минуту
@@ -776,6 +821,9 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
+  if (body.action === 'publish_song') {
+    try { return await handlePublish(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
+  }
   if (['ping', 'stats', 'grant_rub', 'tw_client', 'tw_link', 'tg_check'].includes(body.action)) {
     try { return await handleStats(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }

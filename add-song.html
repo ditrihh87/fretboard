@@ -44,6 +44,10 @@
   .cheat td:first-child{width:48%;color:var(--paper)}
   .cheat code{background:rgba(239,236,251,.1);padding:1px 6px;border-radius:6px;font-size:12.5px;white-space:nowrap}
   .cheat .mut{color:var(--muted);font-size:12px}
+  .pub{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:6px 0 16px}
+  .btn.big{font-size:17px;padding:15px 26px}
+  .pubhint{margin:0;color:var(--muted);font-weight:600;font-size:14px}.pubhint a{color:var(--amber)}
+  .manual summary{cursor:pointer;color:var(--muted);font-weight:700;font-size:14px;margin-bottom:8px}
   .openrow{display:flex;gap:8px;margin:0 0 14px}
   .openrow select{flex:1;min-width:0;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:10px 12px;color:var(--paper);font:700 14px var(--body)}
   .openrow .btn{padding:10px 16px;font-size:14px}
@@ -175,6 +179,12 @@
 
   <section class="card" style="margin-top:18px">
     <h2>3. Залить на сайт</h2>
+    <div class="pub" id="pubBox">
+      <button class="btn main big" id="pubBtn" type="button">🚀 Опубликовать на сайт</button>
+      <div class="msg" id="pubMsg"></div>
+      <p class="pubhint" id="pubHint" hidden>Кнопка работает, когда ты вошёл как владелец — <a href="login.html?admin">войти</a>.</p>
+    </div>
+    <details class="manual"><summary>Вручную через GitHub (если кнопка не работает)</summary>
     <ol class="steps">
       <li>Нажми «Скопировать файл» — в буфере окажется весь песенник вместе с новой песней.</li>
       <li>Открой <a href="https://github.com/ditrihh87/fretboard/edit/main/songs.json" target="_blank" rel="noopener">songs.json на GitHub</a>, выдели всё (Ctrl+A) и вставь (Ctrl+V).</li>
@@ -184,6 +194,7 @@
     <div class="msg" id="msg"></div>
     <label for="out">Готовый файл songs.json</label>
     <textarea id="out" class="out" readonly spellcheck="false"></textarea>
+    </details>
   </section>
 </main>
 
@@ -487,7 +498,7 @@ function build(){
   $('msg').textContent=`Готово: в песеннике будет ${others.length+1} ${plural(others.length+1)}${replaced?' (песня с таким названием заменена)':''}.`;
 }
 /* ---------- пакетный режим ---------- */
-let MODE='one',BATCH=[];
+let MODE='one',BATCH=[],BATCHOUT=[];
 const HEAD=/^\s*={3,}\s*(.*?)\s*$/;
 function parseBatch(){
   const L=$('bsrc').value.replace(/\r/g,'').split('\n'),parts=[];let cur=null;
@@ -532,7 +543,7 @@ function buildBatch(){
     if(sg.easyFrom)o.easyFrom=sg.easyFrom;
     if(sg.easy)o.easy=sg.easy;
     if(sg.aka||(old&&old.aka))o.aka=sg.aka||old.aka;
-    o.text=sg.text;out.push(o);
+    o.text=sg.text;out.push(o);BATCHOUT=out;
   }
   $('blist').innerHTML=BATCH.map((sg,i)=>{
     const err=!sg.title?'нет названия':!sg.text?'нет текста':'';
@@ -568,6 +579,30 @@ async function copy(t,what){
   $('msg').className='msg';$('msg').textContent=what+' скопирован'+(what==='Файл'?' — вставь его в songs.json на GitHub.':'.');
 }
 $('copyAll').onclick=()=>copy($('out').value,'Файл');
+/* ---------- опубликовать одной кнопкой: сервер сам обновит songs.json на GitHub (только для владельца) ---------- */
+const PAPI='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const ownerLink=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.prov==='admin'?l:null;}catch(e){return null;}};
+$('pubHint').hidden=!!ownerLink();
+$('pubBtn').onclick=async()=>{
+  const l=ownerLink(),m=$('pubMsg');
+  if(!l){$('pubHint').hidden=false;m.className='msg bad';m.textContent='Сначала войди как владелец.';return;}
+  const songs=MODE==='batch'?BATCHOUT:(ONE?[ONE]:[]);
+  if(!songs.length){m.className='msg bad';m.textContent=MODE==='batch'?'Сначала вставь песни.':'Сначала заполни название и текст.';return;}
+  if(MODE==='batch'&&!confirm(`Опубликовать песни: ${songs.length}?`))return;
+  $('pubBtn').disabled=true;m.className='msg';m.textContent='Публикую…';
+  try{
+    const r=await fetch(PAPI,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'publish_song',songs,token:l.token})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(r.status===403?'нужно войти как владелец':j.error||('ошибка '+r.status));
+    const one=j.songs&&j.songs.length===1?j.songs[0]:null;
+    m.className='msg ok';
+    m.innerHTML=one?`✅ «${esc(one.title)}» ${one.upd?'обновлена':'опубликована'}. Страница будет готова через 1–2 минуты: <a href="akkordy/${encodeURIComponent(one.id)}.html" target="_blank" rel="noopener">открыть</a>`:`✅ Опубликовано песен: ${(j.songs||[]).length}. Страницы будут готовы через 1–2 минуты.`;
+    // обновляем список песен сайта, чтобы следующая песня не затёрла эту
+    try{EXIST=await (await fetch('songs.json',{cache:'no-cache'})).json();}catch(e){}
+    songs.forEach(sg=>{const i=EXIST.findIndex(x=>x.id===sg.id);if(i>=0)EXIST[i]=sg;else EXIST.push(sg);});fillOpen();
+  }catch(e){m.className='msg bad';m.textContent='Не получилось: '+e.message;}
+  $('pubBtn').disabled=false;
+};
 $('copyOne').onclick=()=>copy(ONE?JSON.stringify(ONE,null,2)+',':'','Блок песни');
 </script>
 </body>
