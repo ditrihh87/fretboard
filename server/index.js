@@ -675,8 +675,8 @@ async function handleCommentDel(body, token) {
 /* ===== Публикация песен из конвертера (add-song.html) одной кнопкой — только владелец =====
    Сервер сам правит songs.json в репозитории через GitHub API; дальше GitHub Actions собирает страницы песен. */
 const GH_REPO = 'ditrihh87/fretboard', GH_FILE = 'songs.json';
-const SONG_KEYS = ['id', 'title', 'artist', 'words', 'music', 'yandex', 'exclusive', 'fingerstyle', 'aka', 'shapes', 'easyFrom', 'easy', 'video', 'videoV', 'tab', 'chordsBy', 'text'];
-const KEEP_KEYS = ['fingerstyle', 'video', 'videoV', 'chordsBy'];   // конвертер про них не знает — сохраняем от старой версии песни
+const SONG_KEYS = ['id', 'title', 'artist', 'words', 'music', 'yandex', 'exclusive', 'fingerstyle', 'aka', 'shapes', 'easyFrom', 'easy', 'video', 'videoV', 'videoAR', 'tab', 'chordsBy', 'text'];
+const KEEP_KEYS = ['fingerstyle', 'video', 'videoV', 'videoAR', 'chordsBy'];   // конвертер про них не знает — сохраняем от старой версии песни
 function cleanSong(x) {
   if (!x || typeof x !== 'object' || !okSong(x.id) || typeof x.title !== 'string' || !x.title.trim() || x.title.length > 200) return null;
   if (x.text != null && (typeof x.text !== 'string' || x.text.length > 60000)) return null;
