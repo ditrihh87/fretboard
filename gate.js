@@ -1,8 +1,8 @@
-/* Сайт закрыт до запуска: все видят заставку «Скоро открытие», владелец — всё как есть.
-   Доступ: открой любую страницу с ?dev=КЛЮЧ (тот же ключ, что у школы) — браузер запомнит.
-   ?dev=off — снова видеть заставку. Чтобы открыть сайт всем: SITE_OPEN=true и убрать noindex/robots.txt. */
+/* Сайт открыт. Заставка «Скоро открытие» осталась только на power-chords.html (пока не готова).
+   Доступ к ней: открой страницу с ?dev=КЛЮЧ (тот же ключ, что у школы) — браузер запомнит. ?dev=off — снова видеть заставку.
+   Чтобы открыть и её: SITE_OPEN=true, убрать noindex из power-chords.html и строку Disallow из robots.txt. */
 (function(){
-  var SITE_OPEN=false, KEYHASH=3137592198;
+  var SITE_OPEN=!/power-chords/.test(location.pathname), KEYHASH=3137592198;
   function h(s){var x=0x811c9dc5;s=unescape(encodeURIComponent(s));for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,0x01000193)>>>0;}return x;}
   var q=new URLSearchParams(location.search),key=q.get('dev'),ok=false;
   try{

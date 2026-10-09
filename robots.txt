@@ -1,2 +1,5 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /power-chords.html
+
+Sitemap: https://ditrihh.ru/sitemap.xml
