@@ -214,6 +214,8 @@
   /* подвал */
   footer{border-top:1px solid var(--line);padding:40px 0 56px;color:var(--muted);font-size:14px}
   footer .wrap{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
+  footer .legal{flex-basis:100%;margin:0;font-size:12px;color:var(--muted);opacity:.8;text-align:right}
+  @media (max-width:820px){footer .legal{text-align:left}}
   .soc{display:flex;flex-wrap:wrap;gap:10px}
   .soc a{display:inline-flex;align-items:center;gap:8px;background:var(--card);color:var(--paper);font-weight:800;font-size:14px;padding:10px 14px;border-radius:12px;transition:color .15s,background .15s}
   .soc a:hover{background:var(--card2)}
