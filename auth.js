@@ -64,7 +64,7 @@
       const photo=u.photo_url&&String(u.photo_url).replace(/"/g,'');
       box.innerHTML=`<button class="ab-btn ab-ava" aria-label="Мой аккаунт" aria-haspopup="true"${photo?` style="background-image:url(&quot;${esc(photo)}&quot;)"`:''}>${photo?'':esc(ini)}</button>
 <div class="ab-pop" hidden><h4>${esc(nm)}</h4><p>Вход через ${({ya:'Яндекс ID',vk:'VK ID',tg:'Telegram'})[l.prov]||'аккаунт'}</p>
-<a class="ab-go ab-ghost" href="${ROOT}school/">Моя школа</a><button class="ab-go ab-ghost" data-out>Выйти</button></div>`;
+<button class="ab-go ab-ghost" data-out>Выйти</button></div>`;
     }else{
       box.innerHTML=`<button class="ab-btn" aria-haspopup="true">Войти</button>
 <div class="ab-pop" hidden><h4>Вход на сайт</h4><p>Один аккаунт для всего сайта и школы: прогресс не потеряется и будет на любом устройстве.</p>
