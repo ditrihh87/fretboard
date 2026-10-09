@@ -175,8 +175,8 @@ const SECT={
     filters:[['all','Все песни'],['saved','♥ Сохранённые']],cross:['Нужна точная партия? Эксклюзивные табы →','songs.html?type=tab'],empty:'Аккорды к песням скоро появятся здесь — следи за стримами.'},
   tab:{kicker:'Табы',h1:'Эксклюзивные табы<br><em>от ditrihh</em>',lead:'Мои аранжировки — таких табов больше нет нигде. Табы со звуком: слушай, замедляй и играй вместе с ними.',
     title:'Эксклюзивные табы и аранжировки — ditrihh',desc:'Эксклюзивные табы и аранжировки от ditrihh — таких нет нигде. Табы со звуком, замедлением и повтором участка, цветные струны.',
-    filters:[['all','Все табы'],['fs','Фингерстайл'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],cross:['Хочешь просто подобрать под голос? Аккорды →','songs.html?type=chords'],empty:'Первые табы скоро появятся здесь — следи за стримами.'},
-  all:{filters:[['all','Все'],['chords','Аккорды'],['tab','Табы'],['fs','Фингерстайл'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],empty:'Песни скоро появятся здесь — следи за стримами.'}
+    filters:[['all','Все табы'],['fs','Fingerstyle'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],cross:['Хочешь просто подобрать под голос? Аккорды →','songs.html?type=chords'],empty:'Первые табы скоро появятся здесь — следи за стримами.'},
+  all:{filters:[['all','Все'],['chords','Аккорды'],['tab','Табы'],['fs','Fingerstyle'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],empty:'Песни скоро появятся здесь — следи за стримами.'}
 }[TYPE];
 if(TYPE!=='all'){
   $('kicker').textContent=SECT.kicker;$('ttl').innerHTML=SECT.h1;$('lead').textContent=SECT.lead;document.title=SECT.title;
@@ -202,7 +202,7 @@ function render(){
   $('list').innerHTML=items.map(s=>{
     const r=RT[s.id],sv=DR.isSaved(s.id);
     return `<article class="item">
-      <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${s.fingerstyle?'<span class="type fs">Фингерстайл</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
+      <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${s.fingerstyle?'<span class="type fs">Fingerstyle</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
       <h3><a class="go" href="${s.tab?'taby':'akkordy'}/${encodeURIComponent(s.id)}.html">${esc(s.title)}</a></h3><div class="by">${esc(s.artist||'')}</div>
       <div class="meta">
         <span class="rt ${r?'':'none'}" title="${r?`Рейтинг ${r.avg} из 5`:'Пока без оценок'}">${r?`<b>★ ${r.avg.toFixed(1)}</b> <small>${r.n} ${DR.plural(r.n)}</small>`:'<small>Пока без оценок</small>'}</span>

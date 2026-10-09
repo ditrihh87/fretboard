@@ -226,6 +226,7 @@
   .rnd-top .t{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.5px;padding:3px 8px;border-radius:999px;text-transform:uppercase}
   .rnd-top .t.ch{background:rgba(110,123,255,.2);color:#B3BAFF}.rnd-top .t.tb{background:rgba(240,168,48,.18);color:#F3C06A}
   .rnd-top .t.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
+  .rnd-top .t.fs{background:rgba(255,95,207,.16);color:#FF9BE2}
   .rnd-foot{margin-top:24px;display:flex;flex-wrap:wrap;gap:10px}
   @media (min-width:900px){.rnd-list{grid-template-columns:repeat(3,1fr)}}
   @media (max-width:560px){.rnd-list{grid-template-columns:1fr 1fr}.rnd-it{padding:14px}.rnd-it b{font-size:16px}}

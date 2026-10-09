@@ -474,6 +474,7 @@
   .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
   .chip.tab{background:var(--amber);color:#1b1b1b}
   .chip.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
+  .chip.fs{background:rgba(255,95,207,.16);color:#FF9BE2}
   .credits{margin-top:22px;font-size:12px;line-height:1.5;color:var(--p-muted)}
   .credits a{color:inherit}
   .rank{text-align:center;font-weight:700;margin-top:14px;color:var(--p-accent)}
@@ -1173,7 +1174,7 @@ function renderSongList(){
   items.sort((a,b)=>(b.sg.exclusive?1:0)-(a.sg.exclusive?1:0));
   if(!songsLoaded){$('songList').innerHTML='<p class="hint">Не удалось загрузить песни. Проверь интернет.</p>';return;}
   if(!items.length){$('songList').innerHTML=`<p class="hint">${SONGS.length?'Ничего не нашлось.':'Песни скоро появятся здесь — следи за стримами.'}</p>`;return;}
-  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}"><b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.exclusive?'<span class="chip ex">★ ЭКСКЛЮЗИВ</span>':''}${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
+  $('songList').innerHTML=items.map(x=>`<button class="song" data-id="${esc(x.sg.id)}"><b>${esc(x.sg.title)}</b><small>${esc(x.sg.artist||'')}</small><span class="chips">${x.sg.exclusive?'<span class="chip ex">★ ЭКСКЛЮЗИВ</span>':''}${x.sg.fingerstyle?'<span class="chip fs">FINGERSTYLE</span>':''}${x.sg.tab?'<span class="chip tab">ТАБ</span>':''}${x.ch.map(c=>`<span class="chip ${known.has(c)?'known':''}">${esc(c)}</span>`).join('')}</span></button>`).join('');
 }
 async function openSongs(){
   stopScroll();clearInterval(g.timer);g.playing=false;micStop();renderMenu();show('songsView');back(true);

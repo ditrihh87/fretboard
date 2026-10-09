@@ -197,7 +197,7 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7']; // 6 →
     if(list.length<6)list=list.concat(pick(all.filter(x=>!list.includes(x)),6-list.length));
     list=pick(list,list.length);
     $('rndList').innerHTML=list.length?list.map(x=>`<a class="rnd-it" href="${x.tab?'taby':'akkordy'}/${encodeURIComponent(x.id)}.html">
-      <span class="rnd-top">${x.exclusive?'<i class="t ex">★ Эксклюзив</i>':''}<i class="t ${x.tab?'tb':'ch'}">${x.tab?'Таб':'Аккорды'}</i></span>
+      <span class="rnd-top">${x.exclusive?'<i class="t ex">★ Эксклюзив</i>':''}${x.fingerstyle?'<i class="t fs">Fingerstyle</i>':''}<i class="t ${x.tab?'tb':'ch'}">${x.tab?'Таб':'Аккорды'}</i></span>
       <b>${esc(x.title)}</b><small>${esc(x.artist||'')}</small></a>`).join(''):'<p class="lead">Песни скоро появятся.</p>';
     $('rndMore').hidden=all.length<=6;
     // песни подгружаются после перехода по ссылке вида index.html#stream — блок вырос, раздел уехал вниз; возвращаем к нему

@@ -694,7 +694,7 @@ function relayout(){if(!atApi)return;const d=atApi.settings.display;d.layoutMode
 async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
-      <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Фингерстайл</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
+      <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Fingerstyle</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
       <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
