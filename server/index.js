@@ -442,7 +442,7 @@ async function handleStats(body, token) {
   return reply(200, statView(st));
 }
 
-const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
+const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], lvl: (ranks && ranks[c.acc] || 0) + 1, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
