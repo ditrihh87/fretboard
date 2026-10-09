@@ -54,6 +54,19 @@
   function fail(t){document.getElementById('spin').hidden=true;msg.textContent=t;back.hidden=false;}
   if(err){if(err==='access_denied'){location.replace(ret);return;}fail('Не получилось войти. Попробуй ещё раз.');return;}
   if(!code&&!tok){location.replace(ret);return;}
+  // подключение Twitch к уже вошедшему аккаунту — для бонусов за фоллоу и саб
+  if(st&&st.prov==='tw'){
+    if((q.get('state')||h.get('state'))!==st.state){fail('Подключение устарело — попробуй ещё раз.');return;}
+    msg.textContent='Проверяем подписку на Twitch…';
+    try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');
+      const r=await fetch(DAuth.API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({initData:'',action:'tw_link',access_token:tok,token:l&&l.token})});
+      const j=await r.json();
+      if(r.status===409){fail('Этот Twitch уже привязан к другому аккаунту сайта.');return;}
+      if(!r.ok)throw 0;
+      sessionStorage.setItem('dgc_bonus',JSON.stringify(j));location.replace(ret);
+    }catch(e){fail('Не получилось проверить Twitch. Попробуй ещё раз позже.');}
+    return;
+  }
   const state=q.get('state')||h.get('state');
   if(!st||st.state!==state){fail('Вход устарел — нажми «Войти» ещё раз.');return;}
   const body=st.prov==='vk'

@@ -355,6 +355,9 @@ const ACH = [
   { id: 'h1', name: 'Первый час', desc: '1 час на сайте', k: 'sec', n: 3600, icon: '⏱️' },
   { id: 'h10', name: 'Завсегдатай', desc: '10 часов на сайте', k: 'sec', n: 36000, icon: '🎸' },
   { id: 'h100', name: 'Живёт здесь', desc: '100 часов на сайте', k: 'sec', n: 360000, icon: '🏠' },
+  { id: 'tw', name: 'Свой на Twitch', desc: 'Фоллоу на twitch.tv/ditrihh (+100 очков)', k: 'tw', n: 1, icon: '💜', bonus: 100 },
+  { id: 'twsub', name: 'Саб', desc: 'Платная подписка на Twitch (+300 очков)', k: 'twsub', n: 1, icon: '⭐', bonus: 300 },
+  { id: 'tg', name: 'Свой в Telegram', desc: 'Подписка на t.me/ditrihh (+100 очков)', k: 'tg', n: 1, icon: '✈️', bonus: 100 },
   { id: 'd1', name: 'Первый донат', desc: 'Поддержал донатом', k: 'rub', n: 1, icon: '🎁' },
   { id: 'd1000', name: 'Меценат', desc: 'Донаты на 1 000 ₽', k: 'rub', n: 1000, icon: '💛' },
   { id: 'd10000', name: 'Спонсор', desc: 'Донаты на 10 000 ₽', k: 'rub', n: 10000, icon: '💎' },
@@ -364,7 +367,7 @@ const ACH = [
 const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без похожих O/0, I/1/L
 const CODE_RE = /\bDH-([A-Z2-9]{5})\b/gi;
 const PING_SEC = 60;                   // сайт присылает «я тут» раз в минуту, пока вкладка открыта и человек что-то делает
-const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10 + Math.floor((st.rub || 0) / 10);
+const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10 + Math.floor((st.rub || 0) / 10) + (st.bonus || 0);
 const rankIdx = p => { let i = 0; RANKS.forEach((r, j) => { if (p >= r[0]) i = j; }); return i; };
 const statKey = acc => `stats/${acc}.json`;
 async function bumpStats(acc, add, token) {
@@ -381,7 +384,8 @@ async function bumpStats(acc, add, token) {
   if (add.rub) st.rub = Math.max(0, (st.rub || 0) + add.rub);
   st.got = st.got || {};
   const fresh = [];
-  for (const a of ACH) if (!st.got[a.id] && (st[a.k] || 0) >= a.n) { st.got[a.id] = Date.now(); fresh.push(a.id); }
+  if (add.flags) Object.assign(st, add.flags);
+  for (const a of ACH) if (!st.got[a.id] && (st[a.k] || 0) >= a.n) { st.got[a.id] = Date.now(); fresh.push(a.id); if (a.bonus) st.bonus = (st.bonus || 0) + a.bonus; }   // бонус за подписку — один раз
   const after = rankIdx(statPoints(st));
   // начисление «за кадром» (донат) — человек узнает о нём при следующем заходе
   if (add.notify) { st.inbox = (st.inbox || []).concat([{ rub: add.rub || 0, fresh, up: after > before ? RANKS[after][1] : null }]).slice(-10); }
@@ -392,6 +396,58 @@ async function bumpStats(acc, add, token) {
   }
   return { st, fresh, up: after > before ? RANKS[after][1] : null, inbox };
 }
+/* ===== Бонусы за подписки ===== */
+// Twitch: человек подключает свой Twitch (OAuth, токен приходит на login.html), сервер смотрит фоллоу и саб на канал ditrihh.
+// Один аккаунт Twitch — только к одному аккаунту сайта (stats/_twitch.json).
+async function handleTwLink(body, u, token) {
+  if (!process.env.TWITCH_CLIENT_ID) return reply(503, { error: 'twitch not configured' });
+  if (typeof body.access_token !== 'string' || body.access_token.length > 100) return reply(400, { error: 'bad token' });
+  const v = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: 'OAuth ' + body.access_token } });
+  if (!v.ok) return reply(401, { error: 'twitch rejected' });
+  const vi = await v.json();
+  if (vi.client_id !== process.env.TWITCH_CLIENT_ID) return reply(401, { error: 'wrong client' });   // токен должен быть выдан нашему приложению
+  const used = await loadJSON('stats/_twitch.json', token, {});
+  if (used[vi.user_id] && used[vi.user_id] !== u.acc) return reply(409, { error: 'twitch used' });
+  const app = await twitchAppToken(token);
+  const [ch] = await helix('users?login=' + TWITCH_LOGIN, app);
+  const userHelix = path => helix(path, body.access_token);
+  let follow = false, sub = false;
+  try { follow = (await userHelix(`channels/followed?user_id=${vi.user_id}&broadcaster_id=${ch.id}`)).length > 0; } catch (e) { console.error(e); }
+  try { sub = (await userHelix(`subscriptions/user?broadcaster_id=${ch.id}&user_id=${vi.user_id}`)).length > 0; } catch (e) { /* 404 — не подписан */ }
+  if (vi.user_id === ch.id) follow = true;   // сам владелец канала
+  used[vi.user_id] = u.acc; await saveList('stats/_twitch.json', used, token);
+  const flags = { twitch: { id: vi.user_id, login: vi.login } };
+  if (follow) flags.tw = 1;
+  if (sub) flags.twsub = 1;
+  const r = await bumpStats(u.acc, { flags }, token);
+  return reply(200, { follow, sub, login: vi.login, fresh: achNames(r.fresh), up: r.up });
+}
+// Telegram: аккаунт Telegram привязывается через бота (link/claim), сервер спрашивает у бота, подписан ли человек на канал.
+// Бот должен быть админом канала. Канал — TG_CHANNEL (по умолчанию @ditrihh).
+async function tgMember(chat, userId) {
+  for (const tk of [process.env.BOT_TOKEN_NEW, process.env.BOT_TOKEN].filter(Boolean)) {
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${tk}/getChatMember?` + new URLSearchParams({ chat_id: chat, user_id: userId }));
+      const j = await r.json();
+      if (j.ok) return ['creator', 'administrator', 'member', 'restricted'].includes(j.result.status) && j.result.is_member !== false;
+    } catch (e) { console.error(e); }
+  }
+  return null;   // ни один бот не смог проверить (не админ канала)
+}
+async function handleTgCheck(body, u, token) {
+  const meta = await accMeta(u.acc, token);
+  if (!meta.tg || !meta.tg.id) return reply(200, { linked: false });
+  const used = await loadJSON('stats/_tg.json', token, {});
+  if (used[meta.tg.id] && used[meta.tg.id] !== u.acc) return reply(409, { error: 'telegram used' });
+  const ok = await tgMember(process.env.TG_CHANNEL || '@ditrihh', meta.tg.id);
+  if (ok === null) return reply(503, { error: 'bot not admin' });
+  used[meta.tg.id] = u.acc; await saveList('stats/_tg.json', used, token);
+  const flags = { tgId: meta.tg.id };
+  if (ok) flags.tg = 1;
+  const r = await bumpStats(u.acc, { flags }, token);
+  return reply(200, { linked: true, member: ok, fresh: achNames(r.fresh), up: r.up });
+}
+
 // личный код для донатов
 async function ensureCode(acc, st, token) {
   if (st.code) return st.code;
@@ -414,7 +470,7 @@ async function creditDonations(raw, token) {
 }
 function statView(st) {
   const p = statPoints(st), i = rankIdx(p), nx = RANKS[i + 1];
-  return { sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, rank: RANKS[i][1], level: i + 1,
+  return { sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, twitch: st.twitch || null, tgLinked: !!st.tgId, rank: RANKS[i][1], level: i + 1,
     from: RANKS[i][0], next: nx ? { rank: nx[1], at: nx[0] } : null,
     ach: ACH.map(a => ({ id: a.id, name: a.name, desc: a.desc, icon: a.icon, got: (st.got || {})[a.id] || 0, have: Math.min(st[a.k] || 0, a.n), need: a.n, k: a.k })) };
 }
@@ -428,6 +484,9 @@ async function handleStats(body, token) {
     for (const n of r.inbox || []) { fresh = fresh.concat(n.fresh || []); up = n.up || up; rub += n.rub || 0; }
     return reply(200, { ok: !r.skip, fresh: achNames(fresh), up, rub });
   }
+  if (body.action === 'tw_client') return reply(200, { client_id: process.env.TWITCH_CLIENT_ID || null });
+  if (body.action === 'tw_link') return handleTwLink(body, u, token);
+  if (body.action === 'tg_check') return handleTgCheck(body, u, token);
   if (body.action === 'grant_rub') {   // владелец вручную засчитывает донат автору комментария
     if (!adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
     const rub = Math.round(Number(body.rub));
@@ -717,7 +776,7 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
-  if (body.action === 'ping' || body.action === 'stats' || body.action === 'grant_rub') {
+  if (['ping', 'stats', 'grant_rub', 'tw_client', 'tw_link', 'tg_check'].includes(body.action)) {
     try { return await handleStats(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
   if (body.action === 'comment_ok' || body.action === 'comment_ban') {

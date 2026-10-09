@@ -53,6 +53,37 @@
       const css=document.createElement('style');css.textContent='#achToast{position:fixed;right:16px;top:84px;z-index:95;display:flex;flex-direction:column;gap:10px;max-width:min(340px,calc(100vw - 32px))}#achToast .at-i{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:16px;background:#1C1848;border:1px solid rgba(240,168,48,.6);box-shadow:0 14px 34px rgba(0,0,0,.5);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;animation:atin .4s ease-out}#achToast .at-i>span{font-size:28px}#achToast b{display:block;font-size:14px;font-weight:800}#achToast small{display:block;color:#B9B4E6;font-weight:600;font-size:12px;margin-top:2px}@keyframes atin{from{opacity:0;transform:translateY(-10px)}}';document.head.appendChild(css);}
     items.forEach(h=>{const d=document.createElement('div');d.innerHTML=h;const el=d.firstChild;box.appendChild(el);setTimeout(()=>el.remove(),6000);});
   }
+  /* бонусы: подключить Twitch (фоллоу/саб) и Telegram (подписка на канал) */
+  async function connectTwitch(){
+    const l=rated();if(!l)return;
+    let id;try{id=(await post({action:'tw_client',token:l.token})).client_id;}catch(e){}
+    if(!id){alert('Подключение Twitch пока не настроено.');return;}
+    const st={prov:'tw',state:rnd(24),ret:location.href.split('#')[0],t:Date.now()};
+    try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
+    location.href='https://id.twitch.tv/oauth2/authorize?'+new URLSearchParams({response_type:'token',client_id:id,redirect_uri:CB,scope:'user:read:follows user:read:subscriptions',state:st.state,force_verify:'false'});
+  }
+  let tgPoll=null;
+  async function tgCheck(el,quiet){
+    const l=rated();if(!l)return;
+    try{const r=await post({action:'tg_check',token:l.token});
+      if(r.linked&&!r.member&&!quiet)alert('Подписки на t.me/ditrihh пока не видно. Подпишись и нажми «Проверить» ещё раз.');
+      toast(r.fresh,r.up);paintStats(el);
+    }catch(e){if(!quiet)alert(e===409?'Этот Telegram уже привязан к другому аккаунту сайта.':'Не получилось проверить подписку, попробуй позже.');}
+  }
+  function connectTg(el){
+    const l=rated();if(!l)return;
+    const nonce=rnd(18),since=Date.now();
+    window.open(`https://t.me/ditrihh_bot?startapp=link_${nonce}`,'_blank');
+    const b=el.querySelector('[data-tg]');if(b)b.textContent='Ждём подтверждения в Telegram…';
+    clearInterval(tgPoll);
+    tgPoll=setInterval(async()=>{
+      if(Date.now()-since>15*60e3){clearInterval(tgPoll);return;}
+      try{const r=await post({action:'claim',nonce,token:l.token});
+        if(r.token){clearInterval(tgPoll);tgCheck(el,true);}else if(r.expired)clearInterval(tgPoll);}catch(e){}
+    },2500);
+  }
+  try{const b=JSON.parse(sessionStorage.getItem('dgc_bonus')||'null');if(b){sessionStorage.removeItem('dgc_bonus');
+    addEventListener('load',()=>{toast(b.fresh,b.up);if(!b.follow)setTimeout(()=>alert(`Twitch @${b.login} подключён, но фоллоу на twitch.tv/ditrihh пока нет. Зафоллоь и нажми «Проверить» в меню аккаунта.`),400);});}}catch(e){}
   const fmtTime=sec=>{const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60);return h?`${h} ч ${m} мин`:`${m} мин`;};
   async function paintStats(el){
     const l=rated();if(!l||!el)return;
@@ -64,8 +95,15 @@
       <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${r.points} очков — высший статус`}</div>
       <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span>${r.rub?`<span>💛 ${r.rub.toLocaleString('ru-RU')} ₽</span>`:''}</div>
       ${r.code?`<div class="ab-code"><span>Код для доната</span><b>${esc(r.code)}</b><button type="button" data-copy="${esc(r.code)}" title="Скопировать">⧉</button><button type="button" data-help title="Что это?">?</button><small hidden>Добавь код в сообщение к <a href="https://dalink.to/ditrihh" target="_blank" rel="noopener">донату</a> — сумма попадёт в рейтинг и ачивки.</small></div>`:''}
-      <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.k==='rub'?a.have+' ₽ из '+a.need+' ₽':a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
+      <div class="ab-bon">
+        <div class="ab-brow"><span>💜 Twitch</span>${r.twitch?`<em>${r.ach.find(a=>a.id==='tw').got?'фоллоу ✓':'нет фоллоу'}${r.ach.find(a=>a.id==='twsub').got?' · саб ✓':''}</em><button type="button" data-tw>Проверить</button>`:`<em>+100, саб +300</em><button type="button" data-tw>Подключить</button>`}</div>
+        <div class="ab-brow"><span>✈️ Telegram</span>${r.ach.find(a=>a.id==='tg').got?'<em>подписка ✓</em>':r.tgLinked?'<em>+100</em><button type="button" data-tgc>Проверить</button>':'<em>+100</em><button type="button" data-tg>Подключить</button>'}</div>
+      </div>
+      <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.k==='rub'?a.have+' ₽ из '+a.need+' ₽':['tw','twsub','tg'].includes(a.k)?'ещё не получено':a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
     const cp=el.querySelector('[data-copy]');if(cp)cp.onclick=e=>{e.stopPropagation();try{navigator.clipboard.writeText(cp.dataset.copy);}catch(err){}cp.textContent='✓';setTimeout(()=>cp.textContent='⧉',1500);};
+    const tw=el.querySelector('[data-tw]');if(tw)tw.onclick=e=>{e.stopPropagation();connectTwitch();};
+    const tgb=el.querySelector('[data-tg]');if(tgb)tgb.onclick=e=>{e.stopPropagation();connectTg(el);};
+    const tgc=el.querySelector('[data-tgc]');if(tgc)tgc.onclick=e=>{e.stopPropagation();tgc.textContent='…';tgCheck(el);};
     const hp=el.querySelector('[data-help]');if(hp)hp.onclick=e=>{e.stopPropagation();const sm=el.querySelector('.ab-code small');sm.hidden=!sm.hidden;};
   }
 
@@ -103,6 +141,11 @@
 #authBox .ab-next{color:#B9B4E6;font-size:12px;font-weight:600}
 #authBox .ab-nums{display:flex;gap:16px;margin:10px 0 8px;font-size:13px;font-weight:700}
 #authBox .ab-ach{display:flex;flex-wrap:wrap;gap:5px}
+#authBox .ab-bon{margin:0 0 10px;display:flex;flex-direction:column;gap:6px}
+#authBox .ab-brow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+#authBox .ab-brow span{flex:none;width:82px}
+#authBox .ab-brow em{flex:1;font-style:normal;color:#B9B4E6;font-weight:600}
+#authBox .ab-brow button{flex:none;border:none;border-radius:8px;padding:5px 9px;background:rgba(110,123,255,.25);color:#EFECFB;font:800 11px Manrope,system-ui,sans-serif;cursor:pointer}
 #authBox .ab-code{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 10px;padding:7px 10px;border-radius:10px;background:rgba(239,236,251,.06);font-size:12px;font-weight:700;color:#B9B4E6}
 #authBox .ab-code b{color:#F0A830;letter-spacing:1px;font-size:13px;margin-left:auto}
 #authBox .ab-code button{border:none;background:rgba(239,236,251,.1);color:#EFECFB;font:800 12px Manrope,system-ui,sans-serif;width:24px;height:24px;border-radius:7px;cursor:pointer;padding:0}
