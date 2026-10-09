@@ -391,6 +391,7 @@ function tuneInfo(score){
     const notes=t.slice().reverse().map(n=>N[n%12]).join(' ');
     parts.push(`Строй: ${names[key]?names[key]+' ('+notes+')':notes}`);}
   if(st.capo>0)parts.push(`Каподастр: ${st.capo} лад`);
+  if(score.tempo)parts.unshift(`Темп: ${Math.round(score.tempo)} уд/мин`);
   el.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');el.hidden=!parts.length;
 }
 const AT_DIR=new URL('vendor/alphatab/',document.baseURI).href,SPEEDS=[1,.75,.5,1.25];
@@ -464,7 +465,7 @@ async function renderTabPage(){
       core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
       display:{staveProfile:prefs.tabView==='score'?'ScoreTab':'Tab',scale:scale(),layoutMode:horiz()?'Horizontal':'Page',
         resources:{engravingSettings:{tabLineSpacing:16},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(196,190,240,0.62)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif'}},
-      notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false}},
+      notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('atScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
     });
     atApi.scoreLoaded.on(score=>{tp.score=score;
