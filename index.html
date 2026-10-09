@@ -296,9 +296,9 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
     const g=D&&D.goal,own=owner();
     if(g){const p=Math.min(100,g.raised/g.target*100),left=Math.max(0,g.target-g.raised);
       $('dnGoal').innerHTML=`<div class="t"><span>🎯 ${esc(g.title)}</span><small>${fmt(g.raised)} / ${fmt(g.target)} ₽</small></div><div class="bar"><i style="width:${p.toFixed(1)}%"></i></div>`;$('dnGoal').hidden=false;
-      $('goalBig').innerHTML=`<div class="gb-top"><div><div class="gb-k">${g.done?'🎉 Собрали!':'🎯 Идёт сбор'}</div><h3>${esc(g.title)}</h3></div><div class="gb-sum"><b>${fmt(g.raised)} ₽</b><span>из ${fmt(g.target)} ₽</span></div></div>
+      $('goalBig').innerHTML=`<div class="gb-top"><div><div class="gb-k">${g.done?'🎉 Собрали!':g.ended?'Сбор завершён':'🎯 Идёт сбор'}${g.until&&!g.ended&&!g.done?` <small>до ${new Date(g.until).toLocaleDateString('ru-RU',{day:'numeric',month:'long',timeZone:'Europe/Moscow'})}</small>`:''}</div><h3>${esc(g.title)}</h3></div><div class="gb-sum"><b>${fmt(g.raised)} ₽</b><span>из ${fmt(g.target)} ₽</span></div></div>
         <div class="gb-bar${g.done?' done':''}"><i style="width:${p.toFixed(1)}%"></i><em>${Math.floor(p)}%</em></div>
-        <div class="gb-foot"><span>${g.done?'Спасибо всем, кто помог! 💜':`Осталось ${fmt(left)} ₽`}${g.donors?` · поддержали: ${g.donors}`:''}</span>${g.done?'':'<a class="btn main" href="https://dalink.to/ditrihh" target="_blank" rel="noopener">Помочь сбору</a>'}</div>
+        <div class="gb-foot"><span>${g.done||g.ended?'Спасибо всем, кто помог! 💜':`Осталось ${fmt(left)} ₽`}${g.donors?` · поддержали: ${g.donors}`:''}</span>${g.done||g.ended?'':'<a class="btn main" href="https://dalink.to/ditrihh" target="_blank" rel="noopener">Помочь сбору</a>'}</div>
         ${own?'<button class="gb-edit" type="button" id="gEditBtn">✎ Изменить сбор</button>':''}`;
       $('goalBig').hidden=false;}
     else{$('dnGoal').hidden=true;
@@ -310,14 +310,19 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
     box.innerHTML=`<form class="gb-form" id="gForm"><div class="gb-k">🎯 ${g?'Изменить сбор':'Новый сбор'} <small>видно только тебе</small></div>
       <label>На что собираем<input id="gT" maxlength="60" value="${esc(g?g.title:'')}" placeholder="Например: новая гитара" required></label>
       <label>Сколько нужно, ₽<input id="gS" type="number" min="100" step="100" value="${g?g.target:''}" placeholder="50000" required></label>
-      ${g?'<label class="gb-chk"><input type="checkbox" id="gNew"> Начать с нуля — считать донаты с этого момента</label>':'<p class="gb-note">Считаться будут донаты с момента запуска.</p>'}
+      <label>Уже собрано, ₽<input id="gR" type="number" min="0" step="1" value="${g?Math.round(g.raised):0}"></label>
+      <label>До какого числа<input id="gU" type="date" value="${g&&g.until?new Date(g.until+3*3600e3).toISOString().slice(0,10):''}"></label>
+      <p class="gb-note">Если сбор уже идёт в DonationAlerts — впиши, сколько там собрано. Дальше новые донаты прибавятся сами.</p>
       <div class="gb-btns"><button class="btn main" type="submit">${g?'Сохранить':'Запустить сбор'}</button>${g?'<button class="btn ghost" type="button" id="gOff">Завершить сбор</button>':''}<button class="btn ghost" type="button" id="gCancel">Отмена</button></div>
       <div class="gb-msg" id="gMsg"></div></form>`;
     const send=async extra=>{const l=owner();$('gMsg').textContent='Сохраняю…';
       try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(Object.assign({action:'goal_set',token:l&&l.token},extra))});
         const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('ошибка '+r.status));editing=false;D=j;paint();}
       catch(e){$('gMsg').textContent='Не получилось: '+e.message;}};
-    $('gForm').onsubmit=e=>{e.preventDefault();send({title:$('gT').value,target:+$('gS').value,fromNow:!!(document.getElementById('gNew')||{}).checked});};
+    const r0=$('gR').value;
+    $('gForm').onsubmit=e=>{e.preventDefault();const x={title:$('gT').value,target:+$('gS').value,until:$('gU').value?$('gU').value+'T23:59:59+03:00':''};
+      if(!g||$('gR').value!==r0)x.raised=+$('gR').value||0;   // «уже собрано» поменяли — считаем от этой суммы
+      send(x);};
     $('gCancel').onclick=()=>{editing=false;paintGoal();};
     const off=document.getElementById('gOff');if(off)off.onclick=()=>{if(confirm('Завершить сбор? Он пропадёт с сайта и из панели Twitch.'))send({off:true});};
   }

@@ -828,7 +828,7 @@ async function daSync(token, report) {
   // донаты старше 40 дней удаляются — но в активный сбор они уже засчитаны: переносим их сумму в goal.carry
   const gone = store.list.filter((d, i) => !(i < 10 || daTs(d.t) >= cutoff));
   if (gone.length) { const goal = await loadJSON(GOAL_KEY, token, null);
-    if (goal && goal.on) { const add = gone.filter(d => daTs(d.t) >= goal.since).reduce((x, d) => x + toRub(d.a, d.c), 0); if (add) { goal.carry = (goal.carry || 0) + add; await saveList(GOAL_KEY, goal, token); } } }
+    if (goal && goal.on) { const add = gone.filter(d => daTs(d.t) >= goal.since && (!goal.until || daTs(d.t) <= goal.until)).reduce((x, d) => x + toRub(d.a, d.c), 0); if (add) { goal.carry = (goal.carry || 0) + add; await saveList(GOAL_KEY, goal, token); } } }
   store.list = store.list.filter((d, i) => i < 10 || daTs(d.t) >= cutoff);
   if (store.list.length !== before) changed = true;
   rep.count = store.list.length; rep.historyDone = !store.back; rep.ms = Date.now() - t0;
@@ -856,9 +856,9 @@ function daStats(list, goal) {
     dayRub: sum(day), weekRub: sum(week), monthRub: sum(month), count: list.length, updated: now,
   };
   if (goal && goal.on && goal.target > 0) {
-    const inGoal = list.filter(d => ts(d) >= goal.since);
+    const inGoal = list.filter(d => ts(d) >= goal.since && (!goal.until || ts(d) <= goal.until));
     const raised = (goal.carry || 0) + sum(inGoal);
-    out.goal = { title: goal.title, target: goal.target, raised, pct: Math.min(100, Math.round(raised / goal.target * 1000) / 10), done: raised >= goal.target, since: goal.since, donors: new Set(inGoal.map(d => d.n.toLowerCase())).size };
+    out.goal = { title: goal.title, target: goal.target, raised, pct: Math.min(100, Math.round(raised / goal.target * 1000) / 10), done: raised >= goal.target, ended: !!goal.until && now > goal.until, until: goal.until || 0, since: goal.since, donors: new Set(inGoal.map(d => d.n.toLowerCase())).size };
   }
   return out;
 }
@@ -878,8 +878,12 @@ async function handleGoalSet(body, token) {
   else {
     const title = String(body.title || '').replace(/\s+/g, ' ').trim().slice(0, 60), target = Math.round(Number(body.target));
     if (!title || !(target >= 100 && target <= 1e8)) return reply(400, { error: 'Нужны название и сумма от 100 ₽' });
-    const fresh = body.fromNow || !old || !old.on;
-    await saveList(GOAL_KEY, { on: true, title, target, since: fresh ? Date.now() : old.since, carry: fresh ? 0 : (old.carry || 0) }, token);
+    // raised — «уже собрано» вручную (например, сбор начат в DonationAlerts): с этого момента считаем от этой суммы
+    const raised = body.raised != null && body.raised !== '' ? Math.round(Number(body.raised)) : null;
+    if (raised != null && !(raised >= 0 && raised <= 1e8)) return reply(400, { error: 'Странная сумма «уже собрано»' });
+    const fresh = raised != null || body.fromNow || !old || !old.on;
+    const until = Date.parse(String(body.until || '')) || 0;   // дата окончания (необязательно): после неё донаты в сбор не идут
+    await saveList(GOAL_KEY, { on: true, title, target, until, since: fresh ? Date.now() : old.since, carry: fresh ? (raised || 0) : (old.carry || 0) }, token);
   }
   await deleteObj('cache/da_stats.json', token).catch(() => {});
   return handleDonations(token);
