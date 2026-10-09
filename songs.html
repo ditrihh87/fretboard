@@ -53,6 +53,7 @@
   .item h3 a.go{color:inherit;text-decoration:none}
   .item h3 a.go::after{content:"";position:absolute;inset:0;border-radius:20px}
   .meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+  .meta{justify-content:flex-start}.meta .save{margin-left:auto}
   .rt b{color:#F3C06A;font-weight:800;font-size:15px}
   .rt small{color:var(--muted);font-weight:700;font-size:13px}
   .save{position:relative;z-index:2;border:none;background:rgba(239,236,251,.08);color:#CFCCF2;font:800 13px var(--body);padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
@@ -187,7 +188,7 @@ if(TYPE!=='all'){
 }
 const F0=(()=>{const f=new URLSearchParams(location.search).get('f');return SECT.filters.some(x=>x[0]===f)?f:'all';})();
 $('filters').innerHTML=SECT.filters.map(([f,t])=>`<button data-f="${f}" aria-pressed="${f===F0}">${t}</button>`).join('');
-let SONGS=[],filter=F0,RT={};
+let SONGS=[],filter=F0,RT={},VW={};
 if(F0==='fs'&&TYPE==='tab'){$('ttl').innerHTML='Фингерстайл<br><em>от ditrihh</em>';$('lead').textContent='Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.';document.title='Фингерстайл табы и аранжировки — ditrihh';}
 /* поиск: название, исполнитель, «также ищут» и слова песни (по любой строчке) */
 const HAY=new Map();
@@ -200,12 +201,13 @@ function render(){
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
   if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).length?SECT.empty:filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':(TYPE!=='tab'&&q?`Такой песни пока нет. <button class="btn main" type="button" id="reqFromSearch">🎤 Заказать аккорды</button>`:'Ничего не нашлось. Попробуй другое название.')}</p>`;const rb=$('reqFromSearch');if(rb)rb.onclick=()=>REQ.prefill($('q').value.trim());return;}
   $('list').innerHTML=items.map(s=>{
-    const r=RT[s.id],sv=DR.isSaved(s.id);
+    const r=RT[s.id],sv=DR.isSaved(s.id),vw=VW[s.id]||0;
     return `<article class="item">
       <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${s.fingerstyle?'<span class="type fs">Fingerstyle</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
       <h3><a class="go" href="${s.tab?'taby':'akkordy'}/${encodeURIComponent(s.id)}.html">${esc(s.title)}</a></h3><div class="by">${esc(s.artist||'')}</div>
       <div class="meta">
         <span class="rt ${r?'':'none'}" title="${r?`Рейтинг ${r.avg} из 5`:'Пока без оценок'}">${r?`<b>★ ${r.avg.toFixed(1)}</b> <small>${r.n} ${DR.plural(r.n)}</small>`:'<small>Пока без оценок</small>'}</span>
+        ${DR.eye(vw)}
         <button class="save ${sv?'on':''}" data-save="${esc(s.id)}" aria-pressed="${sv}" aria-label="${sv?'Убрать из сохранённых':'Сохранить'}">${sv?'♥ Сохранено':'♡ Сохранить'}</button>
       </div>
     </article>`;}).join('');
@@ -213,6 +215,7 @@ function render(){
 $('q').addEventListener('input',render);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-save]');if(!b)return;DR.toggleSave(b.dataset.save);render();});
 DR.ratings().then(r=>{RT=r;if(SONGS.length)render();});
+DR.views().then(v=>{VW=v;if(SONGS.length)render();});
 document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
   filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));render();
   try{const u=new URL(location.href);filter==='all'?u.searchParams.delete('f'):u.searchParams.set('f',filter);history.replaceState(null,'',u);}catch(e){}

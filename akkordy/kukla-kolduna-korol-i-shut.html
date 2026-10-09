@@ -669,14 +669,14 @@ function paintYm(){
 }
 
 /* ===== рейтинг и «Сохранить» ===== */
-let RTS=null;
+let RTS=null,VWN=null;
 async function paintRate(){
   const box=$('rateBox');if(!box)return;
   const id=SONG.id,mine=DR.mine(id),sv=DR.isSaved(id);
-  if(!RTS)RTS=await DR.ratings();
+  if(!RTS)[RTS,VWN]=await Promise.all([DR.ratings(),VWN===null?DR.view(id):VWN]);
   const r=RTS[id];
   box.innerHTML=`<div class="stars" role="radiogroup" aria-label="Оцени песню">${[1,2,3,4,5].map(n=>`<button data-star="${n}" class="${n<=mine?'on':''}" role="radio" aria-checked="${n===mine}" aria-label="${n} из 5">★</button>`).join('')}</div>
-    <span class="rinfo">${r?`<b>${r.avg.toFixed(1)}</b> · ${r.n} ${DR.plural(r.n)}`:'Оцени первым'}${mine?` · твоя: ${mine}`:''}</span>
+    <span class="rinfo">${r?`<b>${r.avg.toFixed(1)}</b> · ${r.n} ${DR.plural(r.n)}`:'Оцени первым'}${mine?` · твоя: ${mine}`:''}</span>${DR.eye(VWN)}
     <button class="save ${sv?'on':''}" id="saveBtn" aria-pressed="${sv}">${sv?'♥ Сохранено':'♡ Сохранить'}</button>`;
   box.querySelectorAll('[data-star]').forEach(b=>{
     b.onmouseenter=()=>box.querySelectorAll('[data-star]').forEach(x=>x.classList.toggle('hov',+x.dataset.star<=+b.dataset.star));

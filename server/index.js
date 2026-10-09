@@ -342,6 +342,27 @@ async function handleRate(body, token) {
   return reply(200, { avg, n, mine: stars });
 }
 
+/* ===== Просмотры песен: views/summary.json — { songId: число }.
+   Браузер шлёт «view» не чаще раза в 6 часов на песню (см. rate.js), сервер дополнительно режет повторы одного voter за 6 часов. */
+const VIEW_GAP = 6 * 3600e3;
+async function handleViews(token) {
+  return reply(200, { views: await loadJSON('views/summary.json', token, {}) });
+}
+async function handleView(body, token) {
+  if (!okSong(body.song) || !okVoter(body.voter)) return reply(400, { error: 'bad view' });
+  const seenKey = `views/seen/${body.song}.json`;
+  const seen = await loadJSON(seenKey, token, {});
+  const now = Date.now();
+  const sum = await loadJSON('views/summary.json', token, {});
+  if (seen[body.voter] && now - seen[body.voter] < VIEW_GAP) return reply(200, { n: sum[body.song] || 0 });
+  for (const k in seen) if (now - seen[k] > VIEW_GAP) delete seen[k];   // старые отметки не храним
+  seen[body.voter] = now;
+  await saveList(seenKey, seen, token);
+  sum[body.song] = (sum[body.song] || 0) + 1;
+  await saveList('views/summary.json', sum, token);
+  return reply(200, { n: sum[body.song] });
+}
+
 /* ===== Комментарии под песнями: писать могут вошедшие на сайт через Яндекс ID или VK ID ===== */
 const MAX_COMMENTS = 500;     // храним последние 500 комментариев у песни
 const COMMENT_LEN = 1000;     // предел длины комментария
@@ -965,6 +986,11 @@ module.exports.handler = async (event, context) => {
   if (body.action === 'da_client') return reply(200, { client_id: process.env.DA_CLIENT_ID || null });
   if (body.action === 'donations' || body.action === 'da_connect') {
     try { return body.action === 'donations' ? await handleDonations(token) : await handleDaConnect(body, token); }
+    catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
+
+  if (body.action === 'views' || body.action === 'view') {
+    try { return body.action === 'view' ? await handleView(body, token) : await handleViews(token); }
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
