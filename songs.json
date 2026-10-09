@@ -96,5 +96,23 @@
     "tab": "tabs/sunny-boney-m.gpx",
     "exclusive": true,
     "fingerstyle": true
+  },
+  {
+    "id": "family-guy-griffiny-tv-theme",
+    "title": "Гриффины (Family Guy)",
+    "artist": "Family Guy — TV Theme",
+    "music": "Walter Murphy",
+    "aka": [
+      "Family Guy",
+      "Family Guy theme",
+      "Гриффины заставка",
+      "Гриффины на гитаре",
+      "Гриффины фингерстайл",
+      "Гриффины табы",
+      "Family Guy fingerstyle"
+    ],
+    "tab": "tabs/family-guy-griffiny-tv-theme.gpx",
+    "exclusive": true,
+    "fingerstyle": true
   }
 ]
