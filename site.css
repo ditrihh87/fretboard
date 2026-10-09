@@ -178,8 +178,12 @@
   footer{border-top:1px solid var(--line);padding:40px 0 56px;color:var(--muted);font-size:14px}
   footer .wrap{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
   .soc{display:flex;flex-wrap:wrap;gap:10px}
-  .soc a{background:var(--card);color:var(--paper);font-weight:800;font-size:14px;padding:10px 14px;border-radius:12px}
+  .soc a{display:inline-flex;align-items:center;gap:8px;background:var(--card);color:var(--paper);font-weight:800;font-size:14px;padding:10px 14px;border-radius:12px;transition:color .15s,background .15s}
   .soc a:hover{background:var(--card2)}
+  .soc .ic{flex:none;width:18px;height:18px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+  /* при наведении — фирменный цвет площадки */
+  .soc a.s-telegram:hover{color:#2AABEE}.soc a.s-chat:hover{color:#F0A830}.soc a.s-twitch:hover{color:#A970FF}
+  .soc a.s-youtube:hover{color:#FF3B3B}.soc a.s-tiktok:hover{color:#25F4EE}.soc a.s-instagram:hover{color:#FF5C9A}
 
   /* адаптив */
   @media (max-width:960px){
