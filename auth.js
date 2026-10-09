@@ -107,6 +107,23 @@
     const hp=el.querySelector('[data-help]');if(hp)hp.onclick=e=>{e.stopPropagation();const sm=el.querySelector('.ab-code small');sm.hidden=!sm.hidden;};
   }
 
+  /* кнопка «▶ Стрим» в шапке: когда эфир идёт — «Стрим онлайн», мягко пульсирует (статус с Twitch, раз в 2 минуты) */
+  (function(){
+    const btn=()=>document.querySelector('.nav a.btn[href*="#stream"]');
+    async function check(){
+      const b=btn();if(!b)return;
+      let live=null;
+      try{const c=JSON.parse(sessionStorage.getItem('dgc_live')||'null');if(c&&Date.now()-c.t<60e3)live=c.live;}catch(e){}
+      if(live===null){try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'live'})});live=!!(await r.json()).live;
+        try{sessionStorage.setItem('dgc_live',JSON.stringify({t:Date.now(),live}));}catch(e){}}catch(e){return;}}
+      b.classList.toggle('live',live);
+      b.innerHTML=live?'<i class="ld"></i>Стрим онлайн':'▶ Стрим';
+      b.title=live?'Сейчас в эфире — смотреть':'';
+    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check);else check();
+    setInterval(()=>{if(!document.hidden)check();},120e3);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
+  })();
   window.DAuth={API,VK,YA,CB,start,logout,link:getLink,toast};
 
   /* ===== кнопка в шапке сайта ===== */

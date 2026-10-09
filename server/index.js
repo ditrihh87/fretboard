@@ -241,6 +241,18 @@ async function handleTwitch(token) {
   return reply(200, out);
 }
 
+// идёт ли эфир сейчас — для кнопки «Стрим онлайн» в шапке всех страниц; Twitch спрашиваем не чаще раза в минуту
+async function handleLive(token) {
+  if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) return reply(200, { live: false, error: 'not configured' });
+  const c = await loadJSON('cache/live.json', token, null);
+  if (c && Date.now() - c.t < 60e3) return reply(200, { live: c.live });
+  const tw = await twitchAppToken(token);
+  const [stream] = await helix('streams?user_login=' + TWITCH_LOGIN, tw);
+  const live = !!stream;
+  await saveList('cache/live.json', { t: Date.now(), live }, token);
+  return reply(200, { live });
+}
+
 function view(list, myId) {
   list.sort((a, b) => b.score - a.score || a.t - b.t);
   const ranked = list.map((e, i) => ({ rank: i + 1, name: e.name, score: e.score, me: e.id === myId }));
@@ -909,6 +921,9 @@ module.exports.handler = async (event, context) => {
   const token = context && context.token && context.token.access_token;
   if (!token) return reply(500, { error: 'no service account' });
 
+  if (body.action === 'live') {
+    try { return await handleLive(token); } catch (e) { console.error(e); return reply(200, { live: false }); }
+  }
   if (body.action === 'twitch') {
     try { return await handleTwitch(token); }
     catch (e) { console.error(e); return reply(502, { error: 'twitch' }); }
