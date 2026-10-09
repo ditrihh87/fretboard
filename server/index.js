@@ -4,6 +4,7 @@
 // VK_CLIENT_ID — ID приложения VK ID, YA_CLIENT_ID — ClientID приложения Яндекс ID,
 // BOT_TOKEN_NEW — токен второго бота (@ditrihh_bot): приложение работает из обоих ботов.
 // DonationAlerts: DA_CLIENT_ID, DA_CLIENT_SECRET (приложение на donationalerts.com/application/clients),
+// ADMIN_ACC — аккаунт владельца для комментариев (напр. ya_123456; можно несколько через запятую): значок автора и удаление любых комментариев.
 // ADMIN_KEY — секретный ключ владельца (для подключения DonationAlerts), DA_GOAL — цель «Название|сумма|с какой даты», напр. «Новая гитара|50000|2026-10-01».
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
@@ -321,6 +322,48 @@ async function handleRate(body, token) {
   return reply(200, { avg, n, mine: stars });
 }
 
+/* ===== Комментарии под песнями: писать могут вошедшие на сайт через Яндекс ID или VK ID ===== */
+const MAX_COMMENTS = 500;     // храним последние 500 комментариев у песни
+const COMMENT_LEN = 1000;     // предел длины комментария
+const COMMENT_GAP = 20e3;     // не чаще одного комментария в 20 секунд
+const adminAccs = () => String(process.env.ADMIN_ACC || '').split(',').map(s => s.trim()).filter(Boolean);
+const siteUser = u => u && /^(ya|vk)_/.test(String(u.id)) ? u : null;   // Telegram-вход для комментариев не принимаем
+const pubComment = (c, acc, admin) => ({ id: c.id, name: c.name, photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin) });
+async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
+async function handleComments(body, token) {
+  if (!okSong(body.song)) return reply(400, { error: 'bad song' });
+  const [list, u] = await Promise.all([loadJSON(`comments/${body.song}.json`, token, []), commentUser(body, token).catch(() => null)]);
+  const acc = u && u.acc, admin = !!acc && adminAccs().includes(acc);
+  return reply(200, { comments: list.map(c => pubComment(c, acc, admin)), me: acc || null, admin });
+}
+async function handleComment(body, token) {
+  if (!okSong(body.song)) return reply(400, { error: 'bad song' });
+  const u = await commentUser(body, token);
+  if (!u) return reply(401, { error: 'login' });
+  const text = String(body.text || '').replace(/\r/g, '').replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  if (!text || text.length > COMMENT_LEN) return reply(400, { error: 'bad text' });
+  const key = `comments/${body.song}.json`;
+  let list = await loadJSON(key, token, []);
+  if (list.some(c => c.acc === u.acc && Date.now() - c.t < COMMENT_GAP)) return reply(429, { error: 'too fast' });
+  const admin = adminAccs().includes(u.acc);
+  const c = { id: crypto.randomBytes(9).toString('base64url'), acc: u.acc, name: displayName(u), photo: u.photo_url || '', text, t: Date.now(), admin };
+  list.push(c); list = list.slice(-MAX_COMMENTS);
+  await saveList(key, list, token);
+  return reply(200, { comment: pubComment(c, u.acc, admin) });
+}
+async function handleCommentDel(body, token) {
+  if (!okSong(body.song) || typeof body.id !== 'string') return reply(400, { error: 'bad params' });
+  const u = await commentUser(body, token);
+  if (!u) return reply(401, { error: 'login' });
+  const key = `comments/${body.song}.json`, list = await loadJSON(key, token, []);
+  const i = list.findIndex(c => c.id === body.id);
+  if (i < 0) return reply(200, { ok: true });
+  if (list[i].acc !== u.acc && !adminAccs().includes(u.acc)) return reply(403, { error: 'not yours' });
+  list.splice(i, 1);
+  await saveList(key, list, token);
+  return reply(200, { ok: true });
+}
+
 /* ===== DonationAlerts: статистика донатов для сайта и панели Twitch ===== */
 const DA = 'https://www.donationalerts.com';
 const DA_CACHE_MS = 60 * 1000;           // статистику пересчитываем не чаще раза в минуту
@@ -513,6 +556,11 @@ module.exports.handler = async (event, context) => {
 
   if (body.action === 'ratings' || body.action === 'rate') {
     try { return body.action === 'rate' ? await handleRate(body, token) : await handleRatings(token); }
+    catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
+
+  if (body.action === 'comments' || body.action === 'comment' || body.action === 'comment_del') {
+    try { return body.action === 'comments' ? await handleComments(body, token) : body.action === 'comment' ? await handleComment(body, token) : await handleCommentDel(body, token); }
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 

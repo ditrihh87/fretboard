@@ -163,7 +163,25 @@
   .talkhead{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
   .talk h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 4px}
   .talk p{margin:0;color:var(--muted);font-weight:600;line-height:1.45;max-width:560px}
-  #tgDisc iframe{margin-top:14px}
+  .clogin{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;color:var(--muted);font-weight:700}
+  .btn.cya{background:#FC3F1D;color:#fff}.btn.cvk{background:#0077FF;color:#fff}
+  .cform{display:flex;gap:12px;margin-top:16px}
+  .cbox{flex:1;min-width:0}
+  .cbox textarea{width:100%;box-sizing:border-box;resize:vertical;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:14px;padding:12px 14px;color:var(--paper);font:600 15px/1.45 var(--body)}
+  .cbox textarea:focus{outline:none;box-shadow:inset 0 0 0 2px var(--amber)}
+  .crow{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:8px}
+  .crow small{color:var(--muted);font-weight:700}
+  .cava{flex:none;width:40px;height:40px;border-radius:50%;background:#F0A830 center/cover;color:#1b1b1b;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .clist{margin-top:18px;display:flex;flex-direction:column;gap:16px}
+  .cm1{display:flex;gap:12px}
+  .cbody{min-width:0;flex:1}
+  .cmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:14px}
+  .cmeta span{color:var(--muted);font-weight:600;font-size:13px}
+  .cmeta .cbadge{background:var(--amber);color:#1b1b1b;font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
+  .cdel{border:none;background:none;color:var(--muted);font:700 12px var(--body);cursor:pointer;padding:0;margin-left:auto}
+  .cdel:hover{color:#F26B6F}
+  .ctext{margin-top:3px;white-space:pre-wrap;word-wrap:break-word;line-height:1.5}
+  .cmuted{color:var(--muted);font-weight:600;margin:0}
   @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{padding:14px 14px 4px}.chordrow button{width:64px}.pbar{gap:8px}.legend{display:none}}
 </style>
 </head>
@@ -348,20 +366,58 @@ function strumChord(name){const f=chordShape(name);if(!f)return;ctx();setTimeout
 
 /* ===== страница песни ===== */
 let SONG=null;const st={tr:0,fs:prefs.fs||19,scroll:0,raf:0};
-/* ===== Обсуждение: комментарии из канала t.me/ditrihh (виджет Telegram) + чат =====
-   Комментарии появляются, когда в канал выложена ссылка на страницу песни, а к каналу привязана группа-обсуждение.
-   Писать можно прямо с сайта — вход через Telegram делает сам виджет. */
-const TG_CHANNEL='ditrihh',TG_CHAT='https://t.me/+j2O8KYNsBKllM2Iy';
+/* ===== Комментарии под песней: пишут вошедшие через Яндекс ID (и VK ID, когда VK примет домен) =====
+   Хранятся на нашем сервере (comments/<id>.json). Свой комментарий можно удалить; владелец (ADMIN_ACC) удаляет любые. */
+const TG_CHAT='https://t.me/+j2O8KYNsBKllM2Iy';
+const CAPI='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const cpost=b=>fetch(CAPI,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.status),{code:r.status,j});return j;});
+const ses=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.token&&/^(ya|vk)_/.test(String(l.user&&l.user.id))?l:null;}catch(e){return null;}};
+const cWhen=t=>{const d=(Date.now()-t)/1000;if(d<60)return 'только что';if(d<3600)return Math.floor(d/60)+' мин назад';if(d<86400)return Math.floor(d/3600)+' ч назад';
+  const x=new Date(t);return x.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:x.getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
+const cPl=n=>n%10===1&&n%100!==11?'комментарий':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'комментария':'комментариев';
+let COMM=[];
 function paintTalk(){
-  const c=document.querySelector('link[rel=canonical]');
-  const url=c?c.href:'https://ditrihh.ru/'+(SONG.tab?'taby/':'akkordy/')+SONG.id+'.html';
-  const sec=document.createElement('section');sec.className='talk';
-  sec.innerHTML=`<div class="talkhead"><div><h2>Обсуждение</h2><p>Вопросы по песне, свой вариант боя, просьбы разобрать — пиши. Войти можно через Telegram.</p></div><a class="btn ghost" href="${TG_CHAT}" target="_blank" rel="noopener">💬 Чат гитаристов</a></div><div id="tgDisc"></div>`;
+  const sec=document.createElement('section');sec.className='talk';sec.id='comments';
+  sec.innerHTML=`<div class="talkhead"><div><h2>Комментарии <span id="cCount"></span></h2><p>Вопросы по песне, свой вариант боя, просьбы разобрать — пиши.</p></div><a class="btn ghost" href="${TG_CHAT}" target="_blank" rel="noopener">💬 Чат гитаристов</a></div>
+    <div id="cForm"></div><div class="clist" id="cList"><p class="cmuted">Загружаю…</p></div>`;
   $('main').appendChild(sec);
-  const s=document.createElement('script');s.async=true;s.src='https://telegram.org/js/telegram-widget.js?22';
-  s.setAttribute('data-telegram-discussion',TG_CHANNEL);s.setAttribute('data-page-url',url);
-  s.setAttribute('data-comments-limit','10');s.setAttribute('data-colorful','1');s.setAttribute('data-dark','1');s.setAttribute('data-color','F0A830');
-  $('tgDisc').appendChild(s);
+  paintForm();loadComments();
+}
+function paintForm(){
+  const l=ses(),f=$('cForm');
+  if(!l){
+    const A=window.DAuth||{};
+    f.innerHTML=`<div class="clogin"><span>Чтобы написать, войди на сайт:</span>${A.YA?'<button class="btn cya" data-cp="ya">Войти через Яндекс ID</button>':''}${A.VK?'<button class="btn cvk" data-cp="vk">Войти через VK ID</button>':''}</div>`;
+    f.querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>window.DAuth&&DAuth.start(b.dataset.cp));
+    if(!window.DAuth)setTimeout(paintForm,400); // auth.js ещё грузится
+    return;
+  }
+  const u=l.user||{},nm=[u.first_name,u.last_name].filter(Boolean).join(' ')||u.username||'Гитарист';
+  f.innerHTML=`<form class="cform"><div class="cava" ${u.photo_url?`style="background-image:url(&quot;${esc(String(u.photo_url).replace(/"/g,''))}&quot;)"`:''}>${u.photo_url?'':esc(nm[0]||'🎸')}</div>
+    <div class="cbox"><textarea id="cText" maxlength="1000" rows="3" placeholder="Напиши комментарий…"></textarea>
+    <div class="crow"><small id="cMsg">Пишешь как ${esc(nm)}</small><button class="btn main" type="submit" id="cSend">Отправить</button></div></div></form>`;
+  f.querySelector('form').onsubmit=async e=>{
+    e.preventDefault();const t=$('cText').value.trim();if(!t)return;
+    $('cSend').disabled=true;$('cMsg').textContent='Отправляю…';
+    try{const r=await cpost({action:'comment',song:SONG.id,text:t,token:l.token});COMM.push(r.comment);$('cText').value='';$('cMsg').textContent='Готово!';drawComments();}
+    catch(err){$('cMsg').textContent=err.code===429?'Чуть помедленнее — подожди несколько секунд.':err.code===401?'Вход устарел — выйди и войди снова.':'Не получилось отправить, попробуй ещё раз.';}
+    $('cSend').disabled=false;
+  };
+}
+async function loadComments(){
+  const l=ses();
+  try{const r=await cpost({action:'comments',song:SONG.id,token:l?l.token:undefined});COMM=r.comments||[];drawComments();}
+  catch(e){$('cList').innerHTML='<p class="cmuted">Комментарии сейчас не загрузились.</p>';}
+}
+function drawComments(){
+  $('cCount').textContent=COMM.length?`· ${COMM.length}`:'';
+  if(!COMM.length){$('cList').innerHTML='<p class="cmuted">Пока никто не написал — будь первым.</p>';return;}
+  $('cList').innerHTML=COMM.slice().reverse().map(c=>`<div class="cm1"><div class="cava" ${c.photo?`style="background-image:url(&quot;${esc(String(c.photo).replace(/"/g,''))}&quot;)"`:''}>${c.photo?'':esc((c.name||'?')[0])}</div>
+    <div class="cbody"><div class="cmeta"><b>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</div><div class="ctext">${esc(c.text)}</div></div></div>`).join('');
+  $('cList').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('Удалить комментарий?'))return;const l=ses();
+    try{await cpost({action:'comment_del',song:SONG.id,id:b.dataset.del,token:l&&l.token});COMM=COMM.filter(c=>c.id!==b.dataset.del);drawComments();}catch(e){alert('Не получилось удалить.');}
+  });
 }
 function renderChordsPage(){
   $('content').innerHTML=`
