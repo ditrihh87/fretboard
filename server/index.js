@@ -395,6 +395,7 @@ const ACH = [
   { id: 'tw', name: 'Свой на Twitch', desc: 'Фоллоу на twitch.tv/ditrihh (+100 очков)', k: 'tw', n: 1, icon: '💜', bonus: 100 },
   { id: 'twsub', name: 'Саб', desc: 'Платная подписка на Twitch (+300 очков)', k: 'twsub', n: 1, icon: '⭐', bonus: 300 },
   { id: 'tg', name: 'Свой в Telegram', desc: 'Подписка на t.me/ditrihh (+100 очков)', k: 'tg', n: 1, icon: '✈️', bonus: 100 },
+  { id: 'vk', name: 'Свой во ВКонтакте', desc: 'Вступил в группу vk.ru/ditrihh (+100 очков)', k: 'vk', n: 1, icon: '💙', bonus: 100 },
   { id: 'd1', name: 'Первый донат', desc: 'Поддержал донатом', k: 'rub', n: 1, icon: '🎁' },
   { id: 'd1000', name: 'Меценат', desc: 'Донаты на 1 000 ₽', k: 'rub', n: 1000, icon: '💛' },
   { id: 'd10000', name: 'Спонсор', desc: 'Донаты на 10 000 ₽', k: 'rub', n: 10000, icon: '💎' },
@@ -489,6 +490,31 @@ async function handleTgCheck(body, u, token) {
   return reply(200, { linked: true, member: ok, fresh: achNames(r.fresh), up: r.up });
 }
 
+// VK: проверяем, состоит ли человек в группе vk.ru/ditrihh. Работает для входа через VK ID (аккаунт vk_<id>).
+// Нужен ключ доступа сообщества: группа → Управление → Работа с API → Ключи доступа → переменная VK_GROUP_TOKEN.
+const vkIdOf = u => { const m = /^vk_(\d+)$/.exec(String((u && (u.acc || u.id)) || '')) || /^vk_(\d+)$/.exec(String((u && u.id) || '')); return m ? m[1] : null; };
+async function vkMember(userId) {
+  const t = process.env.VK_GROUP_TOKEN;
+  if (!t) return null;
+  const q = new URLSearchParams({ group_id: process.env.VK_GROUP || 'ditrihh', user_id: userId, access_token: t, v: '5.199' });
+  const j = await (await fetch('https://api.vk.com/method/groups.isMember?' + q)).json();
+  if (j.error) { console.error('vk isMember', j.error); return null; }
+  return j.response === 1;
+}
+async function handleVkCheck(body, u, token) {
+  const vkId = vkIdOf(u);
+  if (!vkId) return reply(200, { linked: false });
+  const used = await loadJSON('stats/_vk.json', token, {});
+  if (used[vkId] && used[vkId] !== u.acc) return reply(409, { error: 'vk used' });
+  const ok = await vkMember(vkId);
+  if (ok === null) return reply(503, { error: 'vk not configured' });
+  used[vkId] = u.acc; await saveList('stats/_vk.json', used, token);
+  const flags = { vkId };
+  if (ok) flags.vk = 1;
+  const r = await bumpStats(u.acc, { flags }, token);
+  return reply(200, { linked: true, member: ok, fresh: achNames(r.fresh), up: r.up });
+}
+
 // личный код для донатов
 async function ensureCode(acc, st, token) {
   if (st.code) return st.code;
@@ -511,7 +537,7 @@ async function creditDonations(raw, token) {
 }
 function statView(st, acc) {
   const p = statPoints(st), i = rankIdx(p), own = adminAccs().includes(acc), nx = own ? null : RANKS[i + 1];
-  return { owner: own, sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, twitch: st.twitch || null, tgLinked: !!st.tgId, rank: own ? OWNER_RANK : RANKS[i][1], level: i + 1,
+  return { owner: own, sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, twitch: st.twitch || null, tgLinked: !!st.tgId, vkLinked: !!st.vkId || /^vk_\d+$/.test(String(acc || '')), rank: own ? OWNER_RANK : RANKS[i][1], level: i + 1,
     from: RANKS[i][0], next: nx ? { rank: nx[1], at: nx[0] } : null,
     ach: ACH.map(a => ({ id: a.id, name: a.name, desc: a.desc, icon: a.icon, got: (st.got || {})[a.id] || 0, have: Math.min(st[a.k] || 0, a.n), need: a.n, k: a.k })) };
 }
@@ -529,6 +555,7 @@ async function handleStats(body, token) {
   if (body.action === 'tw_client') return reply(200, { client_id: process.env.TWITCH_CLIENT_ID || null });
   if (body.action === 'tw_link') return handleTwLink(body, u, token);
   if (body.action === 'tg_check') return handleTgCheck(body, u, token);
+  if (body.action === 'vk_check') return handleVkCheck(body, u, token);
   if (body.action === 'grant_rub') {   // владелец вручную засчитывает донат автору комментария
     if (!adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
     const rub = Math.round(Number(body.rub));
@@ -1017,7 +1044,7 @@ module.exports.handler = async (event, context) => {
   if (body.action === 'publish_song') {
     try { return await handlePublish(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
   }
-  if (['ping', 'stats', 'grant_rub', 'tw_client', 'tw_link', 'tg_check'].includes(body.action)) {
+  if (['ping', 'stats', 'grant_rub', 'tw_client', 'tw_link', 'tg_check', 'vk_check'].includes(body.action)) {
     try { return await handleStats(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
   if (body.action === 'comment_ok' || body.action === 'comment_ban') {

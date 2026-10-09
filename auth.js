@@ -62,6 +62,14 @@
     try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
     location.href='https://id.twitch.tv/oauth2/authorize?'+new URLSearchParams({response_type:'token',client_id:id,redirect_uri:CB,scope:'user:read:follows user:read:subscriptions',state:st.state,force_verify:'false'});
   }
+  async function vkCheck(el){
+    const l=rated();if(!l)return;
+    try{const r=await post({action:'vk_check',token:l.token});
+      if(!r.linked)alert('Бонус за группу ВКонтакте — для входа через VK ID. Выйди и войди через VK.');
+      else if(!r.member)alert('Пока не видно тебя в группе vk.ru/ditrihh. Вступи и нажми «Проверить» ещё раз.');
+      toast(r.fresh,r.up);paintStats(el);
+    }catch(e){alert(e===409?'Этот VK уже привязан к другому аккаунту сайта.':'Не получилось проверить группу, попробуй позже.');}
+  }
   let tgPoll=null;
   async function tgCheck(el,quiet){
     const l=rated();if(!l)return;
@@ -99,11 +107,14 @@
       <div class="ab-bon">
         <div class="ab-brow"><span>💜 Twitch</span>${r.twitch?`<em>${r.ach.find(a=>a.id==='tw').got?'фоллоу ✓':'нет фоллоу'}${r.ach.find(a=>a.id==='twsub').got?' · саб ✓':''}</em><button type="button" data-tw>Проверить</button>`:`<em>+100, саб +300</em><button type="button" data-tw>Подключить</button>`}</div>
         <div class="ab-brow"><span>✈️ Telegram</span>${r.ach.find(a=>a.id==='tg').got?'<em>подписка ✓</em>':r.tgLinked?'<em>+100</em><button type="button" data-tgc>Проверить</button>':'<em>+100</em><button type="button" data-tg>Подключить</button>'}</div>
+        <div class="ab-brow"><span>💙 ВКонтакте</span>${(r.ach.find(a=>a.id==='vk')||{}).got?'<em>в группе ✓</em>':r.vkLinked?'<em>+100</em><a href="https://vk.ru/ditrihh" target="_blank" rel="noopener" data-vkj>Вступить</a><button type="button" data-vkc>Проверить</button>':'<em>+100 · вход через VK</em><a href="https://vk.ru/ditrihh" target="_blank" rel="noopener" data-vkj>Группа</a>'}</div>
       </div>
       <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.k==='rub'?a.have+' ₽ из '+a.need+' ₽':['tw','twsub','tg'].includes(a.k)?'ещё не получено':a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
     const cp=el.querySelector('[data-copy]');if(cp)cp.onclick=e=>{e.stopPropagation();try{navigator.clipboard.writeText(cp.dataset.copy);}catch(err){}cp.textContent='✓';setTimeout(()=>cp.textContent='⧉',1500);};
     const tw=el.querySelector('[data-tw]');if(tw)tw.onclick=e=>{e.stopPropagation();connectTwitch();};
     const tgb=el.querySelector('[data-tg]');if(tgb)tgb.onclick=e=>{e.stopPropagation();connectTg(el);};
+    const vkc=el.querySelector('[data-vkc]');if(vkc)vkc.onclick=e=>{e.stopPropagation();vkc.textContent='…';vkCheck(el);};
+    el.querySelectorAll('[data-vkj]').forEach(x=>x.onclick=e=>e.stopPropagation());
     const tgc=el.querySelector('[data-tgc]');if(tgc)tgc.onclick=e=>{e.stopPropagation();tgc.textContent='…';tgCheck(el);};
     const hp=el.querySelector('[data-help]');if(hp)hp.onclick=e=>{e.stopPropagation();const sm=el.querySelector('.ab-code small');sm.hidden=!sm.hidden;};
   }
@@ -164,6 +175,7 @@
 #authBox .ab-brow span{flex:none;width:82px}
 #authBox .ab-brow em{flex:1;font-style:normal;color:#B9B4E6;font-weight:600}
 #authBox .ab-brow button{flex:none;border:none;border-radius:8px;padding:5px 9px;background:rgba(110,123,255,.25);color:#EFECFB;font:800 11px Manrope,system-ui,sans-serif;cursor:pointer}
+#authBox .ab-brow a{flex:none;border-radius:8px;padding:5px 9px;background:#0077FF;color:#fff;font:800 11px Manrope,system-ui,sans-serif;text-decoration:none}
 #authBox .ab-code{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 10px;padding:7px 10px;border-radius:10px;background:rgba(239,236,251,.06);font-size:12px;font-weight:700;color:#B9B4E6}
 #authBox .ab-code b{color:#F0A830;letter-spacing:1px;font-size:13px;margin-left:auto}
 #authBox .ab-code button{border:none;background:rgba(239,236,251,.1);color:#EFECFB;font:800 12px Manrope,system-ui,sans-serif;width:24px;height:24px;border-radius:7px;cursor:pointer;padding:0}
