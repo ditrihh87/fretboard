@@ -1287,7 +1287,9 @@ async function startOAuth(prov){
     st.verifier=rnd(48);
     const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(st.verifier)));
     try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
-    location.href='https://id.vk.ru/authorize?'+new URLSearchParams({response_type:'code',client_id:VK_APP_ID,redirect_uri:VK_REDIR(),state:st.state,code_challenge:ch,code_challenge_method:'S256',scope:'vkid.personal_info'});
+    // без Referer: VK сверяет сайт, с которого начат вход, с базовым доменом (там github.io, а не ditrihh.ru)
+    const vkUrl='https://id.vk.ru/authorize?'+new URLSearchParams({response_type:'code',client_id:VK_APP_ID,redirect_uri:VK_REDIR(),state:st.state,code_challenge:ch,code_challenge_method:'S256',scope:'vkid.personal_info'});
+    const a=document.createElement('a');a.href=vkUrl;a.rel='noreferrer';a.referrerPolicy='no-referrer';document.body.appendChild(a);a.click();
   }else{
     try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
     location.href='https://oauth.yandex.ru/authorize?'+new URLSearchParams({response_type:'token',client_id:YA_CLIENT_ID,redirect_uri:REDIR(),state:st.state,force_confirm:'no'});
