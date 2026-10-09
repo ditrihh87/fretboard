@@ -154,6 +154,7 @@
 #authBox .ab-pop p{margin:0 0 12px;font-size:13px;line-height:1.45;color:#B9B4E6;font-weight:600}
 #authBox .ab-pop .ab-go{display:block;width:100%;margin-top:8px;padding:11px 14px;border:none;border-radius:12px;font:800 14px Manrope,system-ui,sans-serif;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box}
 #authBox .ab-ya{background:#FC3F1D;color:#fff}
+#authBox .ab-prof{background:linear-gradient(90deg,#6E7BFF,#A06BFF);color:#fff}
 #authBox .ab-vk{background:#0077FF;color:#fff}
 #authBox .ab-ghost{background:rgba(239,236,251,.08);color:#EFECFB}
 #authBox .ab-ghost:hover{background:rgba(239,236,251,.14)}
@@ -195,7 +196,7 @@
       const photo=u.photo_url&&String(u.photo_url).replace(/"/g,'');
       box.innerHTML=`<button class="ab-btn ab-ava" aria-label="Мой аккаунт" aria-haspopup="true"${photo?` style="background-image:url(&quot;${esc(photo)}&quot;)"`:''}>${photo?'':esc(ini)}</button>
 <div class="ab-pop" hidden><h4>${esc(nm)}</h4><p>Вход через ${({ya:'Яндекс ID',vk:'VK ID',tg:'Telegram',admin:'ключ владельца — все права'})[l.prov]||'аккаунт'}</p><div class="ab-stats" id="abStats"></div>
-<button class="ab-go ab-ghost" data-out>Выйти</button></div>`;
+<a class="ab-go ab-prof" href="/profile.html">Мой профиль</a><button class="ab-go ab-ghost" data-out>Выйти</button></div>`;
     }else{
       box.innerHTML=`<button class="ab-btn" aria-haspopup="true">Войти</button>
 <div class="ab-pop" hidden><h4>Вход на сайт</h4><p>Один аккаунт для всего сайта и школы: прогресс не потеряется и будет на любом устройстве.</p>

@@ -127,7 +127,7 @@ async function issueSession(user, provider, token) {
   const alias = await loadJSON(`alias/${user.id}.json`, token, null);
   const acc = alias && alias.acc ? alias.acc : user.id;
   const meta = await accMeta(acc, token);
-  meta[provider] = user; meta.t = Date.now();
+  meta[provider] = user; meta.t = Date.now(); if (!meta.since) meta.since = meta.t;   // since — «на сайте с» для профиля
   await saveList(`accounts/${acc}.json`, meta, token);
   const tok = crypto.randomBytes(32).toString('base64url');
   await saveList(`tokens/${sha(tok)}.json`, { user, acc, t: Date.now() }, token);
@@ -404,7 +404,7 @@ const ACH = [
 ];
 const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без похожих O/0, I/1/L
 const CODE_RE = /\bDH-([A-Z2-9]{5})\b/gi;
-const OWNER_RANK = 'Мастер';   // личный статус владельца сайта («Тот Самый»): без очков и ачивок        // очки владельца сайта (выше любого статуса)
+const OWNER_RANK = 'Мастер';   // личный статус владельца сайта («Тот Самый»): без очков и ачивок
 const PING_SEC = 60;                   // сайт присылает «я тут» раз в минуту, пока вкладка открыта и человек что-то делает
 const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10 + Math.floor((st.rub || 0) / 10) + (st.bonus || 0);
 const rankIdx = p => { let i = 0; RANKS.forEach((r, j) => { if (p >= r[0]) i = j; }); return i; };
@@ -515,6 +515,30 @@ async function handleVkCheck(body, u, token) {
   return reply(200, { linked: true, member: ok, fresh: achNames(r.fresh), up: r.up });
 }
 
+/* ===== Публичный профиль (profile.html?u=<acc>): как на Пикабу — аватар, звание, цифры, награды.
+   Без u — свой профиль (по токену). Донаты и код для доната — только себе. */
+const okAcc = v => typeof v === 'string' && /^(ya|vk|tg|admin)_[A-Za-z0-9_-]{1,40}$/.test(v);
+async function handleProfile(body, token) {
+  const me = await commentUser(body, token).catch(() => null);
+  const acc = body.u ? body.u : me && me.acc;
+  if (!acc) return reply(401, { error: 'login' });
+  if (!okAcc(acc)) return reply(400, { error: 'bad user' });
+  const [meta, st, bans] = await Promise.all([accMeta(acc, token), loadJSON(statKey(acc), token, null), loadBans(token)]);
+  const who = meta.admin || meta.vk || meta.ya || meta.tg;
+  if (!who || bans[acc]) return reply(404, { error: 'not found' });
+  const s = st || { got: {} }, own = adminAccs().includes(acc), mine = !!me && me.acc === acc;
+  const p = statPoints(s), i = rankIdx(p), nx = own ? null : RANKS[i + 1];
+  const out = {
+    u: acc, me: mine, owner: own, name: nameOf(acc, displayName(who)), photo: who.photo_url || '', since: meta.since || meta.t || 0,
+    via: meta.admin ? 'admin' : meta.vk ? 'vk' : meta.ya ? 'ya' : 'tg',
+    rank: own ? OWNER_RANK : RANKS[i][1], level: i + 1, points: own ? null : p, from: RANKS[i][0], next: nx ? { rank: nx[1], at: nx[0] } : null,
+    sec: s.sec || 0, comments: s.comments || 0, reqs: s.reqs || 0,
+    ach: own ? [] : ACH.map(a => ({ id: a.id, name: a.name, desc: a.desc, icon: a.icon, got: (s.got || {})[a.id] || 0, have: Math.min(s[a.k] || 0, a.n), need: a.n, k: a.k })),
+  };
+  if (mine && !own) Object.assign(out, { rub: s.rub || 0, code: s.code || null });
+  return reply(200, out);
+}
+
 // личный код для донатов
 async function ensureCode(acc, st, token) {
   if (st.code) return st.code;
@@ -570,7 +594,7 @@ async function handleStats(body, token) {
   return reply(200, statView(st, u.acc));
 }
 
-const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: c.admin || adminAccs().includes(c.acc) ? OWNER_RANK : ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], lvl: (ranks && ranks[c.acc] || 0) + 1, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
+const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: c.admin || adminAccs().includes(c.acc) ? OWNER_RANK : ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], lvl: (ranks && ranks[c.acc] || 0) + 1, u: c.acc, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
@@ -1043,6 +1067,9 @@ module.exports.handler = async (event, context) => {
   }
   if (body.action === 'publish_song') {
     try { return await handlePublish(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
+  }
+  if (body.action === 'profile') {
+    try { return await handleProfile(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
   if (['ping', 'stats', 'grant_rub', 'tw_client', 'tw_link', 'tg_check', 'vk_check'].includes(body.action)) {
     try { return await handleStats(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }

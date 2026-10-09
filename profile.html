@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script src="gate.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Профиль — ditrihh</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0C0A24">
+<link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
+<link rel="stylesheet" href="site.css">
+<script src="auth.js" defer></script>
+<style>
+  .pf{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start;margin:28px 0 80px}
+  @media (max-width:900px){.pf{grid-template-columns:1fr}}
+  .pc{padding:0;border-radius:20px;background:linear-gradient(160deg,rgba(37,31,94,.78),rgba(20,17,55,.88));box-shadow:inset 0 0 0 1px rgba(110,123,255,.18);overflow:hidden}
+  .pc+.pc{margin-top:18px}
+  .pc.pad{padding:20px 24px}
+
+  /* шапка профиля: обложка + большой аватар */
+  .cover{height:150px;background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.10' stroke-width='2'%3E%3Cpath d='M18 8c7 0 11 4 11 9 0 7-6 13-11 17-5-4-11-10-11-17 0-5 4-9 11-9z'/%3E%3Cpath d='M54 40c7 0 11 4 11 9 0 7-6 13-11 17-5-4-11-10-11-17 0-5 4-9 11-9z' transform='rotate(25 54 52)'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(120deg,#3B2FB8 0%,#6E3FD6 45%,#C24CB0 100%)}
+  .phead{position:relative;padding:0 24px 22px}
+  .ava{width:132px;height:132px;border-radius:50%;margin-top:-66px;border:5px solid #1E1A4E;background:#2E2870 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:52px;color:var(--paper);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .phead h1{margin-top:14px;font-family:var(--display);font-weight:400;font-size:clamp(26px,4vw,36px);line-height:1.15;word-break:break-word}
+  .rk{margin-top:4px;font-weight:800;font-size:16px}
+  .rk span{color:var(--muted);font-weight:700}
+  .since{margin-top:8px;color:#CFCCF2;font-weight:600;font-size:15px}
+  .since b{color:var(--paper)}
+  .via{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:8px;background:rgba(239,236,251,.08);font-size:12px;font-weight:800;color:var(--muted);vertical-align:2px}
+  .nums{display:flex;flex-wrap:wrap;gap:10px 36px;padding:18px 24px 22px;border-top:1px solid rgba(110,123,255,.18)}
+  .nums div{min-width:80px}
+  @media (max-width:560px){.nums{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}}
+  .nums b{display:block;font-family:var(--display);font-weight:400;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+  .nums small{color:var(--muted);font-weight:700;font-size:14px}
+
+  /* награды */
+  .pc .tabs{display:flex;flex-wrap:nowrap;gap:22px;margin:0;padding:0 24px;border-bottom:1px solid rgba(110,123,255,.18)}
+  .tabs button{border:none;background:none;padding:16px 0 13px;font:800 16px var(--body);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+  .tabs button[aria-selected="true"]{color:var(--amber);border-bottom-color:var(--amber)}
+  .tabs em{font-style:normal;font-weight:700;color:var(--muted);margin-left:4px}
+  .aw{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px;padding:20px 24px 24px}
+  .a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:14px;background:rgba(239,236,251,.04);text-align:center}
+  .a i{font-style:normal;font-size:36px;line-height:1.1}
+  .a b{font-size:12px;font-weight:800;line-height:1.25}
+  .a small{font-size:11px;color:var(--muted);font-weight:700}
+  .a.on{background:rgba(240,168,48,.12);box-shadow:inset 0 0 0 1px rgba(240,168,48,.45)}
+  .a.off i{filter:grayscale(1);opacity:.35}
+  .a.off b{color:var(--muted)}
+  .empty{padding:22px 24px;color:var(--muted);font-weight:600}
+
+  /* правая колонка */
+  .side h3{font-size:15px;font-weight:800;margin-bottom:10px}
+  .big{font-family:var(--display);font-size:30px;line-height:1.1}
+  .big small{font-family:var(--body);font-size:15px;color:var(--muted);font-weight:700;margin-left:6px}
+  .bar{height:10px;border-radius:99px;background:rgba(239,236,251,.08);overflow:hidden;margin:12px 0 8px}
+  .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6E7BFF,#FF5FCF)}
+  .hint{color:#CFCCF2;font-size:14px;font-weight:600}
+  .code{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .code b{font-family:ui-monospace,Menlo,monospace;font-size:18px;letter-spacing:1px;color:var(--amber)}
+  .code button{border:none;border-radius:8px;padding:6px 10px;background:rgba(110,123,255,.25);color:var(--paper);font:800 12px var(--body);cursor:pointer}
+  .sep{height:1px;background:rgba(110,123,255,.18);margin:0 -24px}
+  .links{display:flex;flex-direction:column}
+  .links a{padding:12px 0;font-weight:700;color:#CFCCF2}
+  .links a:hover{color:var(--paper)}
+  .msg{margin:60px 0 120px;text-align:center;color:var(--muted);font-weight:600}
+  .msg .btn{margin-top:16px}
+
+  .lv1{color:#9D9D9D}.lv2{color:#FFFFFF}.lv3{color:#1EFF00}.lv4{color:#2A8CFF}.lv5{color:#A335EE}.lv6{color:#00CCFF}.lv7{color:#E6CC80}.lv8{color:#E6CC80;text-shadow:0 0 6px rgba(230,204,128,.75)}
+  .lvown{color:#FF8000;text-shadow:0 0 8px rgba(255,128,0,.55)}
+</style>
+<script src="/metrika.js" defer></script>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="ditrihh — на главную"><img src="brand/ditrihh-logo-flat.svg" alt="ditrihh"><span class="slogan">играй как профи</span></a>
+    <nav aria-label="Разделы">
+      <a href="songs.html?type=chords">Аккорды</a>
+      <a href="songs.html?type=tab">Табы</a>
+      <a href="index.html#stream">Стримы</a>
+      <a href="index.html#school">Школа</a>
+      <a href="index.html#support">Донат</a>
+    </nav>
+    <a class="btn main" href="index.html#stream">▶ Стрим</a>
+  </div>
+</header>
+
+<main class="wrap" id="main"><p class="msg">Загружаю профиль…</p></main>
+
+<footer>
+  <div class="wrap">
+    <div><b style="color:var(--paper)">ditrihh</b> · © <span id="yr">2026</span></div>
+    <div class="soc">
+      <a href="https://t.me/ditrihh" target="_blank" rel="noopener" class="s-telegram"><i class="ic" style="--ic:url(/brand/icons/telegram.svg)"></i>Telegram</a>
+      <a href="https://t.me/+j2O8KYNsBKllM2Iy" target="_blank" rel="noopener" class="s-chat"><i class="ic" style="--ic:url(/brand/icons/chat.svg)"></i>Чат</a>
+      <a href="https://vk.ru/ditrihh" target="_blank" rel="noopener" class="s-vk"><i class="ic" style="--ic:url(/brand/icons/vk.svg)"></i>ВКонтакте</a>
+      <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener" class="s-twitch"><i class="ic" style="--ic:url(/brand/icons/twitch.svg)"></i>Twitch</a>
+      <a href="https://www.youtube.com/@ditrihh" target="_blank" rel="noopener" class="s-youtube"><i class="ic" style="--ic:url(/brand/icons/youtube.svg)"></i>YouTube</a>
+      <a href="https://www.tiktok.com/@ditrihh" target="_blank" rel="noopener" class="s-tiktok"><i class="ic" style="--ic:url(/brand/icons/tiktok.svg)"></i>TikTok</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Профиль на сайте — как на Пикабу: обложка, аватар, звание, цифры, награды.
+   profile.html — свой профиль, profile.html?u=<аккаунт> — чужой (ссылка с имени в комментариях). */
+(function(){
+const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const $=id=>document.getElementById(id);
+$('yr').textContent=new Date().getFullYear();
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const link=()=>{try{return JSON.parse(localStorage.getItem('dgc_link')||'null');}catch(e){return null;}};
+const U=new URLSearchParams(location.search).get('u')||'';
+const main=$('main');
+
+const plural=(n,a,b,c)=>{n=Math.abs(n)%100;const m=n%10;return n>10&&n<20?c:m===1?a:m>=2&&m<=4?b:c;};
+const num=n=>Number(n||0).toLocaleString('ru-RU');
+const hours=s=>{const h=Math.floor((s||0)/3600);return h>=1?num(h):((s||0)>=60?'<1':'0');};
+const ago=t=>{
+  if(!t)return '';
+  const d=Math.max(0,Math.floor((Date.now()-t)/864e5));
+  const y=Math.floor(d/365),mo=Math.floor((d%365)/30),dd=d%365%30;
+  const parts=[];
+  if(y)parts.push(y+' '+plural(y,'год','года','лет'));
+  if(mo)parts.push(mo+' '+plural(mo,'месяц','месяца','месяцев'));
+  if(dd||!parts.length)parts.push(dd+' '+plural(dd,'день','дня','дней'));
+  return parts.join(' ');
+};
+const date=t=>new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+
+async function load(){
+  const l=link();
+  if(!U&&!l){
+    main.innerHTML='<div class="msg"><p>Войди на сайт — и здесь появится твой профиль: звание, очки и награды.</p><button class="btn main" type="button" id="goIn">Войти</button></div>';
+    $('goIn').onclick=()=>{const b=document.querySelector('#authBox .ab-btn');if(b)b.click();else location.href='login.html';};
+    return;
+  }
+  let p;
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'profile',u:U||undefined,token:l&&l.token})});
+    if(r.status===404){main.innerHTML='<p class="msg">Такого профиля нет.</p>';return;}
+    if(!r.ok)throw r.status;
+    p=await r.json();
+  }catch(e){main.innerHTML='<p class="msg">Не получилось загрузить профиль. Попробуй обновить страницу.</p>';return;}
+  draw(p);
+}
+
+function draw(p){
+  document.title=p.name+' — профиль на ditrihh';
+  const ini=(p.name||'?').trim().charAt(0).toUpperCase();
+  const lvc=p.owner?'lvown':'lv'+p.level;
+  const got=(p.ach||[]).filter(a=>a.got).sort((a,b)=>a.got-b.got),rest=(p.ach||[]).filter(a=>!a.got);
+  const via={ya:'Яндекс ID',vk:'VK ID',tg:'Telegram',admin:'ditrihh'}[p.via]||'';
+  const pct=p.next?Math.max(3,Math.min(100,Math.round((p.points-p.from)/(p.next.at-p.from)*100))):100;
+  const prog=a=>a.k==='sec'?`${hours(a.have)} из ${num(a.need/3600)} ч`:a.k==='rub'?`${num(a.have)} из ${num(a.need)} ₽`:['tw','twsub','tg','vk'].includes(a.k)?'бонус за подписку':`${num(a.have)} из ${num(a.need)}`;
+  const tile=a=>`<div class="a ${a.got?'on':'off'}" title="${esc(a.name)} — ${esc(a.desc)}"><i>${a.icon}</i><b>${esc(a.name)}</b><small>${a.got?date(a.got):prog(a)}</small></div>`;
+
+  main.innerHTML=`<div class="pf">
+    <div>
+      <section class="pc">
+        <div class="cover"></div>
+        <div class="phead">
+          <div class="ava"${p.photo?` style="background-image:url(&quot;${esc(p.photo)}&quot;)"`:''}>${p.photo?'':esc(ini)}</div>
+          <h1>${esc(p.name)}</h1>
+          <div class="rk"><b class="${lvc}">${esc(p.rank)}</b> <span>· ${p.owner?'Директор цирка':'уровень '+p.level}</span></div>
+          ${p.since?`<div class="since">На сайте <b>${ago(p.since)}</b> · с ${date(p.since)}${via?`<span class="via">${esc(via)}</span>`:''}</div>`:''}
+        </div>
+        ${p.owner?'':`<div class="nums">
+          <div><b>${num(p.points)}</b><small>очков</small></div>
+          <div><b>${num(p.comments)}</b><small>${plural(p.comments,'комментарий','комментария','комментариев')}</small></div>
+          <div><b>${hours(p.sec)}</b><small>часов на сайте</small></div>
+          <div><b>${num(p.reqs)}</b><small>${plural(p.reqs,'заказ','заказа','заказов')} аккордов</small></div>
+        </div>`}
+      </section>
+      ${p.owner?'':`<section class="pc">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-t="got">Награды<em>${got.length}</em></button>
+          <button role="tab" aria-selected="false" data-t="rest">Ещё впереди<em>${rest.length}</em></button>
+        </div>
+        <div id="awGot">${got.length?`<div class="aw">${got.map(tile).join('')}</div>`:`<p class="empty">${p.me?'Наград пока нет. Комментируй песни, заказывай аккорды и заходи почаще — первые ачивки придут быстро.':'Наград пока нет.'}</p>`}</div>
+        <div id="awRest" hidden>${rest.length?`<div class="aw">${rest.map(tile).join('')}</div>`:'<p class="empty">Собраны все награды 🏆</p>'}</div>
+      </section>`}
+    </div>
+    <aside>
+      <section class="pc pad side">
+        ${p.owner?`<h3>Статус</h3><div class="big lvown">${esc(p.rank)}</div><p class="hint" style="margin-top:8px">Хозяин сайта. Очки и награды не копит — раздаёт.</p>`
+        :`<h3>Звание</h3><div class="big ${lvc}">${esc(p.rank)}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <p class="hint">${p.next?`${num(p.points)} / ${num(p.next.at)} очков до «${esc(p.next.rank)}»`:'Высший статус — дальше только легенды'}</p>`}
+      </section>
+      ${p.me&&p.code?`<section class="pc pad side">
+        <h3>Код для доната</h3>
+        <div class="code"><b>${esc(p.code)}</b><button type="button" id="cp">Скопировать</button></div>
+        <p class="hint" style="margin-top:8px">Впиши код в сообщение доната — сумма засчитается тебе: +1 очко за каждые 10 ₽.${p.rub?` Уже засчитано ${num(p.rub)} ₽.`:''}</p>
+      </section>`:''}
+      <section class="pc pad side">
+        <div class="links">
+          ${p.me?'':'<a href="profile.html">Мой профиль</a>'}
+          <a href="songs.html?type=chords">Аккорды</a>
+          <a href="songs.html?type=tab&amp;f=fs">Fingerstyle табы</a>
+          <a href="songs.html#req">Заказать аккорды</a>
+          <a href="school/">Школа</a>
+        </div>
+      </section>
+    </aside>
+  </div>`;
+
+  main.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
+    main.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-selected',x===b));
+    $('awGot').hidden=b.dataset.t!=='got';$('awRest').hidden=b.dataset.t!=='rest';
+  });
+  const cp=$('cp');if(cp)cp.onclick=()=>{try{navigator.clipboard.writeText(p.code);}catch(e){}cp.textContent='✓ Скопировано';setTimeout(()=>cp.textContent='Скопировать',1500);};
+}
+load();
+})();
+</script>
+</body>
+</html>
