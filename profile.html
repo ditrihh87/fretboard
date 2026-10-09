@@ -134,7 +134,7 @@ const date=t=>new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'long'
 async function load(){
   const l=link();
   if(!U&&!l){
-    main.innerHTML='<div class="msg"><p>Войди на сайт — и здесь появится твой профиль: звание, очки и награды.</p><button class="btn main" type="button" id="goIn">Войти</button></div>';
+    main.innerHTML='<div class="msg"><p>Войди на сайт — и здесь появится твой профиль: звание, очки и ачивки.</p><button class="btn main" type="button" id="goIn">Войти</button></div>';
     $('goIn').onclick=()=>{const b=document.querySelector('#authBox .ab-btn');if(b)b.click();else location.href='login.html';};
     return;
   }
@@ -177,16 +177,16 @@ function draw(p){
       </section>
       ${p.owner?'':`<section class="pc">
         <div class="tabs" role="tablist">
-          <button role="tab" aria-selected="true" data-t="got">Награды<em>${got.length}</em></button>
+          <button role="tab" aria-selected="true" data-t="got">Ачивки<em>${got.length}</em></button>
           <button role="tab" aria-selected="false" data-t="rest">Ещё впереди<em>${rest.length}</em></button>
         </div>
-        <div id="awGot">${got.length?`<div class="aw">${got.map(tile).join('')}</div>`:`<p class="empty">${p.me?'Наград пока нет. Комментируй песни, заказывай аккорды и заходи почаще — первые ачивки придут быстро.':'Наград пока нет.'}</p>`}</div>
-        <div id="awRest" hidden>${rest.length?`<div class="aw">${rest.map(tile).join('')}</div>`:'<p class="empty">Собраны все награды 🏆</p>'}</div>
+        <div id="awGot">${got.length?`<div class="aw">${got.map(tile).join('')}</div>`:`<p class="empty">${p.me?'Ачивок пока нет. Комментируй песни, заказывай аккорды и заходи почаще — первые ачивки придут быстро.':'Ачивок пока нет.'}</p>`}</div>
+        <div id="awRest" hidden>${rest.length?`<div class="aw">${rest.map(tile).join('')}</div>`:'<p class="empty">Собраны все ачивки 🏆</p>'}</div>
       </section>`}
     </div>
     <aside>
       <section class="pc pad side">
-        ${p.owner?`<h3>Статус</h3><div class="big lvown">${esc(p.rank)}</div><p class="hint" style="margin-top:8px">Хозяин сайта. Очки и награды не копит — раздаёт.</p>`
+        ${p.owner?`<h3>Статус</h3><div class="big lvown">${esc(p.rank)}</div><p class="hint" style="margin-top:8px">Хозяин сайта. Очки и ачивки не копит — раздаёт.</p>`
         :`<h3>Звание</h3><div class="big ${lvc}">${esc(p.rank)}</div>
         <div class="bar"><i style="width:${pct}%"></i></div>
         <p class="hint">${p.next?`${num(p.points)} / ${num(p.next.at)} очков до «${esc(p.next.rank)}»`:'Высший статус — дальше только легенды'}</p>`}
