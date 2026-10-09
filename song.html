@@ -31,6 +31,8 @@
   .grp{display:flex;align-items:center;gap:2px;background:rgba(37,31,94,.8);border-radius:12px;padding:3px}
   .credits{color:var(--muted);font-weight:600;font-size:14px;line-height:1.5;margin-top:6px}
   .credits:empty{display:none}
+  .tinfo{display:inline-flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding:8px 12px;border-radius:12px;background:rgba(240,168,48,.12);box-shadow:inset 0 0 0 1px rgba(240,168,48,.35);color:#F3C06A;font-weight:800;font-size:14px}
+  .tinfo[hidden]{display:none}
   .ym{margin-top:12px}
   .ymbtn{display:inline-flex;align-items:center;gap:8px;border:none;background:#FFCC00;color:#1b1b1b;font:800 14px var(--body);padding:9px 16px 9px 10px;border-radius:999px;cursor:pointer}
   .ymbtn:hover{filter:brightness(1.05)}
@@ -337,6 +339,19 @@ async function paintRate(){
 }
 
 /* ===== таб-плеер (alphaTab, MPL-2.0) ===== */
+/* строй и каподастр из файла — показываем, только если они не стандартные */
+function tuneInfo(score){
+  const el=$('tInfo');if(!el)return;
+  const st=score&&score.tracks[0]&&score.tracks[0].staves[0];if(!st||st.isPercussion){el.hidden=true;return;}
+  const N=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],t=(st.tuning||[]).slice();
+  const names={'38,45,50,55,59,64':'Drop D','38,45,50,55,59,62':'Double Drop D','38,45,50,55,57,62':'DADGAD','38,43,50,55,59,62':'Open G','40,47,52,56,59,64':'Open E','38,45,50,54,57,62':'Open D','39,44,49,54,58,63':'на полтона ниже','38,43,48,53,57,62':'на тон ниже'};
+  const key=t.slice().reverse().join(','),parts=[];
+  if(t.length&&key!=='40,45,50,55,59,64'){
+    const notes=t.slice().reverse().map(n=>N[n%12]).join(' ');
+    parts.push(`Строй: ${names[key]?names[key]+' ('+notes+')':notes}`);}
+  if(st.capo>0)parts.push(`Каподастр: ${st.capo} лад`);
+  el.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');el.hidden=!parts.length;
+}
 const AT_DIR=new URL('vendor/alphatab/',document.baseURI).href,SPEEDS=[1,.75,.5,1.25];
 const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#5AB0E8','#B98AE8'];
 let atApi=null;const tp={speedI:0,dur:0,score:null};
@@ -376,7 +391,7 @@ async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Фингерстайл</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
     <div class="panel">
       <div class="bar">
         <div class="legend" id="legend">${SC.map((c,i)=>`<span><i style="background:${c}"></i>${6-i}</span>`).join('')}</div>
@@ -411,7 +426,7 @@ async function renderTabPage(){
       notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('atScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
     });
-    atApi.scoreLoaded.on(score=>{tp.score=score;colorScore(score);const tr=$('tTracks');tr.hidden=score.tracks.length<2;
+    atApi.scoreLoaded.on(score=>{tp.score=score;colorScore(score);tuneInfo(score);const tr=$('tTracks');tr.hidden=score.tracks.length<2;
       tr.innerHTML=score.tracks.map((t,i)=>`<option value="${i}">${esc(t.name||('Партия '+(i+1)))}</option>`).join('');});
     atApi.postRenderFinished.on(fixSurface);
     atApi.renderFinished.on(()=>{if(atApi.isReadyForPlayback)$('tLoading').hidden=true;else $('tLoadText').textContent='Загружаю звук гитары…';});

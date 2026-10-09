@@ -58,5 +58,21 @@
     "tab": "tabs/dzhentlmeny-udachi.gp5",
     "exclusive": true,
     "fingerstyle": true
+  },
+  {
+    "id": "winnie-the-pooh-tv-theme",
+    "title": "Винни-Пух (Winnie the Pooh)",
+    "artist": "Winnie the Pooh — TV Theme",
+    "aka": [
+      "Winnie the Pooh",
+      "Winnie-the-Pooh TV Theme",
+      "Винни-Пух на гитаре",
+      "Винни-Пух фингерстайл",
+      "Винни-Пух табы",
+      "Винни Пух заставка"
+    ],
+    "tab": "tabs/winnie-the-pooh-tv-theme.gpx",
+    "exclusive": true,
+    "fingerstyle": true
   }
 ]
