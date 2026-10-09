@@ -825,13 +825,17 @@ async function daSync(token, report) {
   }
   // подчищаем старое, но последние 10 донатов оставляем всегда
   const before = store.list.length;
+  // донаты старше 40 дней удаляются — но в активный сбор они уже засчитаны: переносим их сумму в goal.carry
+  const gone = store.list.filter((d, i) => !(i < 10 || daTs(d.t) >= cutoff));
+  if (gone.length) { const goal = await loadJSON(GOAL_KEY, token, null);
+    if (goal && goal.on) { const add = gone.filter(d => daTs(d.t) >= goal.since).reduce((x, d) => x + toRub(d.a, d.c), 0); if (add) { goal.carry = (goal.carry || 0) + add; await saveList(GOAL_KEY, goal, token); } } }
   store.list = store.list.filter((d, i) => i < 10 || daTs(d.t) >= cutoff);
   if (store.list.length !== before) changed = true;
   rep.count = store.list.length; rep.historyDone = !store.back; rep.ms = Date.now() - t0;
   if (changed) await saveList('da/all.json', store, token);
   return store.list;
 }
-function daStats(list) {
+function daStats(list, goal) {
   const ts = d => Date.parse(d.t.replace(' ', 'T') + 'Z') || 0;
   const top = items => {
     const m = new Map();
@@ -851,12 +855,34 @@ function daStats(list) {
     topDay: top(day), topWeek: top(week), topMonth: top(month), topAll: top(list),
     dayRub: sum(day), weekRub: sum(week), monthRub: sum(month), count: list.length, updated: now,
   };
-  const g = String(process.env.DA_GOAL || '').split('|');
-  if (g[0] && Number(g[1]) > 0) {
-    const since = Date.parse(g[2] || '') || 0;
-    out.goal = { title: g[0].slice(0, 60), target: Number(g[1]), raised: list.filter(d => ts(d) >= since).reduce((s, d) => s + toRub(d.a, d.c), 0) };
+  if (goal && goal.on && goal.target > 0) {
+    const inGoal = list.filter(d => ts(d) >= goal.since);
+    const raised = (goal.carry || 0) + sum(inGoal);
+    out.goal = { title: goal.title, target: goal.target, raised, pct: Math.min(100, Math.round(raised / goal.target * 1000) / 10), done: raised >= goal.target, since: goal.since, donors: new Set(inGoal.map(d => d.n.toLowerCase())).size };
   }
   return out;
+}
+/* ===== Активный сбор (цель донатов): владелец задаёт на сайте — название, сумма, с какого момента считать ===== */
+const GOAL_KEY = 'da/goal.json';
+async function loadGoal(token) {
+  const g = await loadJSON(GOAL_KEY, token, null);
+  if (g) return g;
+  const e = String(process.env.DA_GOAL || '').split('|');   // старый способ — переменная DA_GOAL «Название|сумма|дата»
+  return e[0] && Number(e[1]) > 0 ? { on: true, title: e[0].slice(0, 60), target: Number(e[1]), since: Date.parse(e[2] || '') || 0, carry: 0 } : null;
+}
+async function handleGoalSet(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  const old = await loadJSON(GOAL_KEY, token, null);
+  if (body.off) { await saveList(GOAL_KEY, Object.assign({}, old || {}, { on: false }), token); }
+  else {
+    const title = String(body.title || '').replace(/\s+/g, ' ').trim().slice(0, 60), target = Math.round(Number(body.target));
+    if (!title || !(target >= 100 && target <= 1e8)) return reply(400, { error: 'Нужны название и сумма от 100 ₽' });
+    const fresh = body.fromNow || !old || !old.on;
+    await saveList(GOAL_KEY, { on: true, title, target, since: fresh ? Date.now() : old.since, carry: fresh ? 0 : (old.carry || 0) }, token);
+  }
+  await deleteObj('cache/da_stats.json', token).catch(() => {});
+  return handleDonations(token);
 }
 async function handleDonations(token) {
   const c = await loadJSON('cache/da_stats.json', token, null);
@@ -865,7 +891,7 @@ async function handleDonations(token) {
     const rep = {};
     const list = await daSync(token, rep);
     if (!list) return reply(200, { connected: false });
-    const st = Object.assign(daStats(list), { connected: true, loading: !rep.historyDone });
+    const st = Object.assign(daStats(list, await loadGoal(token)), { connected: true, loading: !rep.historyDone });
     if (!rep.historyDone) st.updated = Date.now() - DA_CACHE_MS + 5000; // пока грузится история — обновляем чаще
     await saveList('cache/da_stats.json', st, token);
     return reply(200, st);
@@ -929,6 +955,9 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'twitch' }); }
   }
 
+  if (body.action === 'goal_set') {
+    try { return await handleGoalSet(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
   if (body.action === 'da_client') return reply(200, { client_id: process.env.DA_CLIENT_ID || null });
   if (body.action === 'donations' || body.action === 'da_connect') {
     try { return body.action === 'donations' ? await handleDonations(token) : await handleDaConnect(body, token); }

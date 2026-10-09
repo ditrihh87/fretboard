@@ -78,6 +78,32 @@
   .donate .btn.big{font-size:18px;padding:16px 34px;border-radius:16px}
   .donate small{display:block;margin-top:10px;color:var(--muted);font-weight:700;font-size:12px}
   @media (max-width:700px){.donate{grid-template-columns:1fr}.donate .btn.big{display:block}}
+  /* активный сбор */
+  .goalbig{margin-top:26px;padding:24px 26px;border-radius:22px;background:linear-gradient(120deg,rgba(110,123,255,.16),rgba(37,31,94,.65) 50%,rgba(255,95,207,.14));box-shadow:inset 0 0 0 1px rgba(160,107,255,.35)}
+  .goalbig[hidden]{display:none}
+  .gb-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .gb-k{font-weight:800;font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:#CFA6F7}
+  .gb-k small{text-transform:none;letter-spacing:0;color:var(--muted);font-weight:700;margin-left:6px}
+  .goalbig h3{font-family:var(--display);font-weight:400;font-size:clamp(22px,3vw,30px);margin-top:4px}
+  .gb-sum{text-align:right}.gb-sum b{display:block;font-size:26px;font-weight:800}.gb-sum span{color:var(--muted);font-weight:700;font-size:14px}
+  .gb-bar{position:relative;height:22px;border-radius:99px;background:rgba(239,236,251,.08);margin-top:14px;overflow:hidden}
+  .gb-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6E7BFF,#A06BFF,#FF5FCF);box-shadow:0 0 16px rgba(160,107,255,.6);background-size:200% 100%;animation:gbShine 4s linear infinite}
+  .gb-bar.done i{background:linear-gradient(90deg,#6FBF73,#F0A830)}
+  .gb-bar em{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-weight:800;font-size:12.5px;color:#EFECFB;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  @keyframes gbShine{from{background-position:0 0}to{background-position:200% 0}}
+  @media (prefers-reduced-motion:reduce){.gb-bar i{animation:none}}
+  .gb-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;color:#CFCCF2;font-weight:700}
+  .gb-foot .btn{padding:11px 20px;font-size:15px}
+  .gb-edit{margin-top:12px;border:none;background:rgba(239,236,251,.08);color:#CFCCF2;font:800 13px var(--body);padding:8px 14px;border-radius:10px;cursor:pointer}
+  .gb-form{display:grid;grid-template-columns:1fr 200px;gap:10px 14px}
+  .gb-form .gb-k,.gb-form .gb-chk,.gb-form .gb-note,.gb-form .gb-btns,.gb-form .gb-msg{grid-column:1/-1}
+  .gb-form label{display:flex;flex-direction:column;gap:6px;font-weight:800;font-size:13px;color:#CFCCF2}
+  .gb-form input[type=text],.gb-form input:not([type]),.gb-form input[type=number]{background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:12px 14px;color:var(--paper);font:600 15px var(--body)}
+  .gb-form .gb-chk{flex-direction:row;align-items:center;gap:8px}
+  .gb-note{margin:0;color:var(--muted);font-weight:600;font-size:13px}
+  .gb-btns{display:flex;flex-wrap:wrap;gap:10px}.gb-btns .btn{padding:11px 18px;font-size:14px}
+  .gb-msg{color:#F3C06A;font-weight:700;font-size:13px;min-height:1em}
+  @media (max-width:560px){.goalbig{padding:20px 16px}.gb-form{grid-template-columns:1fr}.gb-sum{text-align:left}}
   .hero .ctas{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
   .hero .note{margin-top:18px;color:var(--muted);font-size:14px}
   /* окно стрима на первом экране */

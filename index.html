@@ -150,6 +150,7 @@
       <div class="kicker">Донат</div>
       <h2><span class="brandtxt">ditrihh</span> живёт благодаря вам</h2>
       <p class="lead">Табы, аккорды и стримы — бесплатно. Если хочется сказать спасибо — задонать, сообщение прочитаю на стриме.</p>
+      <div class="goalbig" id="goalBig" hidden></div>
       <div class="donate">
         <ul>
           <li><b>💬 Сообщение прочитаю на стриме</b><span>Привет, заказ песни или просто спасибо.</span></li>
@@ -285,10 +286,40 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
     if(tab==='l')(D.last||[]).forEach(e=>{h+=`<li><span class="n">${esc(e.name)}</span><span class="s">${fmt(e.amount)} ${CUR[e.currency]||esc(e.currency)}</span><small>${ago(e.t)}</small></li>`;});
     else((tab==='w'?D.topWeek:D.topMonth)||[]).forEach((e,i)=>{h+=`<li><span class="p">${i+1}</span><span class="n">${esc(e.name)}</span><span class="s">${fmt(e.rub)} ₽</span></li>`;});
     $('dnList').innerHTML=h||'<li class="empty">Пока никого — будь первым!</li>';
-    const g=D.goal;
-    if(g){const p=Math.min(100,g.raised/g.target*100);
-      $('dnGoal').innerHTML=`<div class="t"><span>🎯 ${esc(g.title)}</span><small>${fmt(g.raised)} / ${fmt(g.target)} ₽</small></div><div class="bar"><i style="width:${p.toFixed(1)}%"></i></div>`;$('dnGoal').hidden=false;}
-    else $('dnGoal').hidden=true;
+    paintGoal();
+  }
+  /* активный сбор: маленький — над топом донатеров, большой — в блоке «Поддержать» */
+  const owner=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.prov==='admin'?l:null;}catch(e){return null;}};
+  let editing=false;
+  function paintGoal(){
+    if(editing)return;   // владелец заполняет форму — обновление статистики её не трогает
+    const g=D&&D.goal,own=owner();
+    if(g){const p=Math.min(100,g.raised/g.target*100),left=Math.max(0,g.target-g.raised);
+      $('dnGoal').innerHTML=`<div class="t"><span>🎯 ${esc(g.title)}</span><small>${fmt(g.raised)} / ${fmt(g.target)} ₽</small></div><div class="bar"><i style="width:${p.toFixed(1)}%"></i></div>`;$('dnGoal').hidden=false;
+      $('goalBig').innerHTML=`<div class="gb-top"><div><div class="gb-k">${g.done?'🎉 Собрали!':'🎯 Идёт сбор'}</div><h3>${esc(g.title)}</h3></div><div class="gb-sum"><b>${fmt(g.raised)} ₽</b><span>из ${fmt(g.target)} ₽</span></div></div>
+        <div class="gb-bar${g.done?' done':''}"><i style="width:${p.toFixed(1)}%"></i><em>${Math.floor(p)}%</em></div>
+        <div class="gb-foot"><span>${g.done?'Спасибо всем, кто помог! 💜':`Осталось ${fmt(left)} ₽`}${g.donors?` · поддержали: ${g.donors}`:''}</span>${g.done?'':'<a class="btn main" href="https://dalink.to/ditrihh" target="_blank" rel="noopener">Помочь сбору</a>'}</div>
+        ${own?'<button class="gb-edit" type="button" id="gEditBtn">✎ Изменить сбор</button>':''}`;
+      $('goalBig').hidden=false;}
+    else{$('dnGoal').hidden=true;
+      $('goalBig').innerHTML=own?'<button class="gb-edit" type="button" id="gEditBtn">＋ Запустить сбор</button>':'';$('goalBig').hidden=!own;}
+    const eb=document.getElementById('gEditBtn');if(eb)eb.onclick=()=>{editing=true;goalForm();};
+  }
+  function goalForm(){
+    const g=D&&D.goal,box=$('goalBig');box.hidden=false;
+    box.innerHTML=`<form class="gb-form" id="gForm"><div class="gb-k">🎯 ${g?'Изменить сбор':'Новый сбор'} <small>видно только тебе</small></div>
+      <label>На что собираем<input id="gT" maxlength="60" value="${esc(g?g.title:'')}" placeholder="Например: новая гитара" required></label>
+      <label>Сколько нужно, ₽<input id="gS" type="number" min="100" step="100" value="${g?g.target:''}" placeholder="50000" required></label>
+      ${g?'<label class="gb-chk"><input type="checkbox" id="gNew"> Начать с нуля — считать донаты с этого момента</label>':'<p class="gb-note">Считаться будут донаты с момента запуска.</p>'}
+      <div class="gb-btns"><button class="btn main" type="submit">${g?'Сохранить':'Запустить сбор'}</button>${g?'<button class="btn ghost" type="button" id="gOff">Завершить сбор</button>':''}<button class="btn ghost" type="button" id="gCancel">Отмена</button></div>
+      <div class="gb-msg" id="gMsg"></div></form>`;
+    const send=async extra=>{const l=owner();$('gMsg').textContent='Сохраняю…';
+      try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(Object.assign({action:'goal_set',token:l&&l.token},extra))});
+        const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('ошибка '+r.status));editing=false;D=j;paint();}
+      catch(e){$('gMsg').textContent='Не получилось: '+e.message;}};
+    $('gForm').onsubmit=e=>{e.preventDefault();send({title:$('gT').value,target:+$('gS').value,fromNow:!!(document.getElementById('gNew')||{}).checked});};
+    $('gCancel').onclick=()=>{editing=false;paintGoal();};
+    const off=document.getElementById('gOff');if(off)off.onclick=()=>{if(confirm('Завершить сбор? Он пропадёт с сайта и из панели Twitch.'))send({off:true});};
   }
   function load(){
     const ctl=window.AbortController?new AbortController():null,tm=setTimeout(()=>ctl&&ctl.abort(),12000);
