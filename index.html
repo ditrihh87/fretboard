@@ -105,7 +105,7 @@
         <div class="screen" id="screen">
           <div class="poster">
             <button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button>
-            <p id="posterText">Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.</p>
+            <p id="posterText">Нажми, чтобы включить трансляцию на Twitch.</p>
           </div>
         </div>
         <aside class="dn" id="donors" aria-label="Топ донатеров">
@@ -307,8 +307,8 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
 /* плеер: грузим iframe только по нажатию */
 const VK_CHANNEL='ditrihh'; // имя канала на VK Видео Live (live.vkvideo.ru/ИМЯ)
 const P={
-  twitch:{video:`https://player.twitch.tv/?channel=ditrihh&${TW_PARENT}&autoplay=true`,chat:`https://www.twitch.tv/embed/ditrihh/chat?${TW_PARENT}&darkpopout`,text:'Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.'},
-  youtube:{video:'https://www.youtube.com/embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1',chat:null,text:'Нажми, чтобы включить трансляцию на YouTube. Если эфира нет, YouTube так и скажет.',noChat:'Чат YouTube смотри на самом YouTube — встроить его можно только во время эфира.'},
+  twitch:{video:`https://player.twitch.tv/?channel=ditrihh&${TW_PARENT}&autoplay=true`,chat:`https://www.twitch.tv/embed/ditrihh/chat?${TW_PARENT}&darkpopout`,text:'Нажми, чтобы включить трансляцию на Twitch.'},
+  youtube:{video:'https://www.youtube.com/embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1',chat:null,text:'Нажми, чтобы включить трансляцию на YouTube.',noChat:'Чат YouTube смотри на самом YouTube — встроить его можно только во время эфира.'},
   vk:{video:`https://live.vkvideo.ru/app/embed/${VK_CHANNEL}?autoplay=true`,chat:null,text:'Нажми, чтобы включить трансляцию на VK Видео Live.',noChat:`Чат VK Видео Live — на <a href="https://live.vkvideo.ru/${VK_CHANNEL}" target="_blank" rel="noopener">странице канала</a>.`}
 };
 let cur='twitch',on=false;
