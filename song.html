@@ -102,7 +102,8 @@
   @media (min-width:1000px){
     .songgrid{display:grid;grid-template-columns:minmax(0,1fr) 262px;align-items:start}
     .songgrid .lycol{grid-column:1;grid-row:1;min-width:0}
-    .songgrid .sidecol{display:block;grid-column:2;grid-row:1;position:sticky;top:140px;max-height:calc(100vh - 160px);overflow-y:auto;padding:20px 20px 20px 0}
+    .songgrid .sidecol{scrollbar-width:none;display:block;grid-column:2;grid-row:1;position:sticky;top:140px;max-height:calc(100vh - 160px);overflow-y:auto;padding:20px 20px 20px 0}
+    .songgrid .sidecol::-webkit-scrollbar{display:none}
     .songgrid .chordrow{justify-content:flex-start;align-content:flex-start;padding:0}
     /* видео — плавающим окном в правом нижнем углу; в шапке на компьютере не дублируем */
     .vfloat{display:block}
@@ -529,10 +530,7 @@ function floatVid(){
     if(btn.length&&!box.classList.contains('min')){const L=Math.min(...btn.map(b=>b.getBoundingClientRect().left)),R=Math.max(...btn.map(b=>b.getBoundingClientRect().right));
       if(R-L>120){box.style.left=L+'px';box.style.right='auto';box.style.width=(R-L)+'px';}}
     else{box.style.left='';box.style.right='';box.style.width='';}
-    // схемы не прячутся под видео: колонка схем заканчивается над окном и прокручивается сама
-    const sc=document.querySelector('.songgrid .sidecol');
-    if(sc){if(box.classList.contains('min')||getComputedStyle(box).display==='none')sc.style.maxHeight='';
-      else sc.style.maxHeight=Math.max(160,box.getBoundingClientRect().top-sc.getBoundingClientRect().top-12)+'px';}};
+};
   addEventListener('scroll',place,{passive:true});addEventListener('resize',place);place();
   const cr0=document.getElementById('chordRow');if(cr0)new MutationObserver(place).observe(cr0,{childList:true});   // сменили тон — схем стало больше/меньше
 }
