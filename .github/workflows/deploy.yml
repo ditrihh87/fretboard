@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '20 3 * * *'   # каждый день в 6:20 МСК — подтянуть в ленту Дзена посты из очереди
 permissions:
   contents: write
 concurrency:

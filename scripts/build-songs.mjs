@@ -160,12 +160,22 @@ console.log(`Готово: ${pages.length} стр. песен, sitemap — ${url
    Дзен забирает новые записи сам (Студия → Настройки → Свой сайт → Транслировать материалы).
    В пост идёт не весь текст песни, а анонс: обложка, аккорды, простые аккорды, первые строчки и ссылка на сайт —
    полные тексты принадлежат правообладателям, а копия на Дзене не должна обгонять сайт в поиске.
-   Дата публикации — когда песня впервые попала в сборку (feed-dates.json). В ленте — свежие за 3 дня, но не меньше 10. */
+   Дата публикации — слот в очереди (feed-dates.json): не больше 3 постов в день, 10:00 / 15:00 / 20:00 МСК. */
 const DZEN_MODE = 'draft';   // 'draft' — приходят черновиками (проверить и опубликовать руками), 'publish' — сразу на канал
 const datesFile = path.join(ROOT, 'feed-dates.json');
 const dates = fs.existsSync(datesFile) ? JSON.parse(fs.readFileSync(datesFile, 'utf8')) : {};
-const nowIso = new Date().toISOString();
-for (const s of songs) if (okId(s.id) && !dates[s.id]) dates[s.id] = nowIso;
+// очередь: в Дзен выходит не больше 3 постов в день — в 10:00, 15:00 и 20:00 по Москве.
+// Новая песня встаёт в ближайший свободный слот (не раньше чем через час — так требует Дзен для отложенной публикации).
+const SLOTS_UTC = [7, 12, 17];
+const taken = new Set(Object.values(dates));
+function nextSlot() {
+  const min = Date.now() + 65 * 60e3, d = new Date(); d.setUTCHours(0, 0, 0, 0);
+  for (;;) {
+    for (const h of SLOTS_UTC) { const t = new Date(d.getTime() + h * 3600e3); if (t.getTime() >= min && !taken.has(t.toISOString())) { taken.add(t.toISOString()); return t.toISOString(); } }
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+}
+for (const s of songs) if (okId(s.id) && !dates[s.id]) dates[s.id] = nextSlot();
 for (const id of Object.keys(dates)) if (!songs.some(s => s.id === id)) delete dates[id];
 fs.writeFileSync(datesFile, JSON.stringify(dates, null, 1) + '\n');
 
@@ -207,10 +217,15 @@ ${cover ? `    <enclosure url="${cover}" type="image/jpeg"/>\n` : ''}    <descri
     <content:encoded>${cdata(`<h1>${esc(title)}</h1>` + P.join(''))}</content:encoded>
   </item>`;
 }
-const fresh = songs.filter(s => okId(s.id)).sort((a, b) => dates[b.id].localeCompare(dates[a.id]));
-const cut = Date.now() - 3 * 864e5;
-let feed = fresh.filter(s => Date.parse(dates[s.id]) >= cut);
-if (feed.length < 10) feed = fresh.slice(0, 10);
+// в ленте: вышедшие за последние 3 дня и запланированные на 2 дня вперёд (сборка идёт каждый день — очередь подтягивается);
+// если вышло меньше 10 — добираем последними вышедшими (Дзену нужно не меньше 10 записей)
+const all = songs.filter(s => okId(s.id)).sort((a, b) => dates[b.id].localeCompare(dates[a.id]));
+const now = Date.now(), at = s => Date.parse(dates[s.id]);
+const ahead = all.filter(s => at(s) > now && at(s) <= now + 2 * 864e5);
+let past = all.filter(s => at(s) <= now && at(s) >= now - 3 * 864e5);
+if (past.length < 10) past = all.filter(s => at(s) <= now).slice(0, 10);
+const feed = [...ahead, ...past];
+const queued = all.filter(s => at(s) > now).length;
 fs.writeFileSync(path.join(ROOT, 'dzen.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:georss="http://www.georss.org/georss">
 <channel>
@@ -221,4 +236,4 @@ ${feed.map(dzenItem).join('\n')}
 </channel>
 </rss>
 `);
-console.log(`Дзен: в ленте ${feed.length} записей (${DZEN_MODE === 'draft' ? 'черновики' : 'публикация сразу'}).`);
+console.log(`Дзен: в ленте ${feed.length} записей, в очереди ${queued} (${DZEN_MODE === 'draft' ? 'черновики' : 'публикация по расписанию'}).`);
