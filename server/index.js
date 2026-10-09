@@ -386,6 +386,9 @@ const ACH = [
   { id: 'c10', name: 'Разговорчивый', desc: '10 комментариев', k: 'comments', n: 10, icon: '🗣️' },
   { id: 'c100', name: 'Душа компании', desc: '100 комментариев', k: 'comments', n: 100, icon: '🎤' },
   { id: 'c1000', name: 'Голос сцены', desc: '1000 комментариев', k: 'comments', n: 1000, icon: '📣' },
+  { id: 'r1', name: 'Первый заказ', desc: 'Заказал подбор аккордов', k: 'reqs', n: 1, icon: '🎶' },
+  { id: 'r10', name: 'Постоянный клиент', desc: '10 заказов подбора аккордов', k: 'reqs', n: 10, icon: '📝' },
+  { id: 'r100', name: 'Хозяин репертуара', desc: '100 заказов подбора аккордов', k: 'reqs', n: 100, icon: '📜' },
   { id: 'h1', name: 'Первый час', desc: '1 час на сайте', k: 'sec', n: 3600, icon: '⏱️' },
   { id: 'h10', name: 'Завсегдатай', desc: '10 часов на сайте', k: 'sec', n: 36000, icon: '🎸' },
   { id: 'h100', name: 'Живёт здесь', desc: '100 часов на сайте', k: 'sec', n: 360000, icon: '🏠' },
@@ -416,13 +419,14 @@ async function bumpStats(acc, add, token) {
   if (add.sec) st.sec = (st.sec || 0) + add.sec;
   if (add.comments) st.comments = Math.max(0, (st.comments || 0) + add.comments);
   if (add.rub) st.rub = Math.max(0, (st.rub || 0) + add.rub);
+  if (add.reqs) st.reqs = Math.max(0, (st.reqs || 0) + add.reqs);   // заказы подбора аккордов (удалил свой заказ — минус один)
   st.got = st.got || {};
   const fresh = [];
   if (add.flags) Object.assign(st, add.flags);
   for (const a of ACH) if (!st.got[a.id] && (st[a.k] || 0) >= a.n) { st.got[a.id] = Date.now(); fresh.push(a.id); if (a.bonus) st.bonus = (st.bonus || 0) + a.bonus; }   // бонус за подписку — один раз
   const after = rankIdx(statPoints(st));
   // начисление «за кадром» (донат) — человек узнает о нём при следующем заходе
-  if (add.notify) { st.inbox = (st.inbox || []).concat([{ rub: add.rub || 0, fresh, up: after > before ? RANKS[after][1] : null }]).slice(-10); }
+  if (add.notify && (add.rub || fresh.length || after > before)) { st.inbox = (st.inbox || []).concat([{ rub: add.rub || 0, fresh, up: after > before ? RANKS[after][1] : null }]).slice(-10); }
   await saveList(statKey(acc), st, token);
   if (after !== before || fresh.length) {
     const ranks = await loadJSON('stats/_ranks.json', token, {});
@@ -735,6 +739,7 @@ async function handleRequests(body, token) {
     // переполнилось — выкидываем самые старые выполненные, потом самые старые без голосов
     while (list.length > REQ_MAX) { const i = list.findIndex(r => r.done) >= 0 ? list.findIndex(r => r.done) : 0; list.splice(i, 1); }
     await saveList(REQ_KEY, list, token);
+    await bumpStats(acc, { reqs: 1, notify: true }, token).catch(console.error);   // ачивки «заказал 1/10/100 подборов»
     return reply(200, out());
   }
   const r = typeof body.id === 'string' && list.find(x => x.id === body.id);
@@ -745,6 +750,7 @@ async function handleRequests(body, token) {
   } else if (body.action === 'req_del') {
     if (!admin && !(r.acc === acc && r.votes.length <= 1 && !r.done)) return reply(403, { error: 'Нельзя' });
     list = list.filter(x => x !== r);
+    if (r.acc && !r.done) await bumpStats(r.acc, { reqs: -1 }, token).catch(console.error);   // удалённый заказ не считается — ачивку не накрутить
   } else if (body.action === 'req_done') {
     if (!admin) return reply(403, { error: 'admin only' });
     if (!okSong(body.song)) return reply(400, { error: 'bad song' });
