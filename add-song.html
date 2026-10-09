@@ -84,7 +84,7 @@
   <div class="grid" id="batchMode" hidden>
     <section class="card">
       <h2>1. Песни</h2>
-      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
+      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, <code>Баре: Am 5, Bm 7, G 3</code> (на каком ладу играть аккорд баре; в «Простых аккордах» будут открытые), ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
       <div class="row">
         <div><label for="bArtist">Исполнитель по умолчанию</label><input type="text" id="bArtist" value="Король и Шут"></div>
         <div><label for="bWords">Слова по умолчанию</label><input type="text" id="bWords" placeholder="например, Андрей Князев"></div>
@@ -146,12 +146,16 @@ const H_RE=/^\s*([А-ЯЁA-Z][^:：]{0,40})[:：]\s*(.*)$/;   // «Куплет 
 const PART=/^(куплет|припев|пре-?припев|предприпев|вступление|интро|проигрыш|переход|бридж|соло|кода|концовка|финал|окончание|аутро|запев|речитатив|модуляция|рифф|verse|chorus|pre-?chorus|intro|outro|bridge|solo|interlude|coda|riff)(?![а-яёa-z])/i;
 const isHead=(name,rest)=>!rest?PART.test(name.trim()):!!chordTokens(rest);
 
+// «Баре: Am 5, Bm 7, G 3» → {Am:5,Bm:7,G:3}
+const BARRE_RE=/^\s*(баре|барре|barre)\s*[:：]\s*(.+)$/i;
+function parseShapes(v){const o={};String(v).replace(/([A-H][#b]?[^\s,;:\d-]*)\s*[-–—]?\s*(\d{1,2})/g,(m,c,f)=>{if(isChord(c))o[c]=+f;return m;});return Object.keys(o).length?o:null;}
 function convert(src,meta){
   const L=src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
   const out=[];
   for(let i=0;i<L.length;i++){
     const line=L[i].replace(/\s+$/,'');
     if(!line.trim()){if(out.length&&out[out.length-1]!==''&&!/^\{comment:/.test(out[out.length-1]))out.push('');continue;}
+    const br=line.match(BARRE_RE);if(br){const o=parseShapes(br[2]);if(o)meta.shapes=Object.assign(meta.shapes||{},o);continue;}
     // «Автор текста:» / «Слова:» / «Музыка:» — в поля, не в текст
     const au=line.match(/^\s*(автор\s+текста|слова|автор\s+музыки|музыка|автор)\s*[:：]\s*(.*)$/i);
     if(au){let v=au[2].trim();if(!v){while(i+1<L.length&&!L[i+1].trim())i++;if(i+1<L.length)v=L[++i].trim();}
@@ -240,7 +244,9 @@ function build(){
   if($('yandex').value.trim())ONE.yandex=$('yandex').value.trim().split('?')[0];else if(old&&old.yandex)ONE.yandex=old.yandex;
   if(old&&old.tab)ONE.tab=old.tab;
   if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
+  if(meta.shapes)ONE.shapes=meta.shapes;else if(old&&old.shapes)ONE.shapes=old.shapes;
   if($('exclusive').checked)ONE.exclusive=true;
+  if(ONE.shapes){const s=ONE.shapes;delete ONE.shapes;ONE.shapes=s;}
   ONE.text=text;
   const replaced=others.length<EXIST.length;
   $('out').value=JSON.stringify([...others,ONE],null,2)+'\n';
@@ -262,11 +268,12 @@ function parseBatch(){
       if(!l){body.shift();continue;}
       if(/music\.yandex\./i.test(l)&&/^\S*https?:\/\//i.test(l.replace(/^(яндекс|yandex)\s*[:：]\s*/i,''))){song.yandex=l.replace(/^(яндекс|yandex)\s*[:：]\s*/i,'').split('?')[0];body.shift();continue;}
       if(/^эксклюзив$/i.test(l)){song.exclusive=true;body.shift();continue;}
+      const br=l.match(BARRE_RE);if(br){const o=parseShapes(br[2]);if(o){meta.shapes=Object.assign(meta.shapes||{},o);body.shift();continue;}}
       const au=l.match(/^(автор\s+текста|слова|автор\s+музыки|музыка)\s*[:：]\s*(.+)$/i);
       if(au){if(/музык/i.test(au[1]))meta.music=au[2].trim();else meta.words=au[2].trim();body.shift();continue;}
       break;}
     song.text=convert(body.join('\n'),meta);
-    song.words=meta.words||dW;song.music=meta.music||dM;
+    song.words=meta.words||dW;song.music=meta.music||dM;if(meta.shapes)song.shapes=meta.shapes;
     return song;
   });
 }
@@ -284,10 +291,11 @@ function buildBatch(){
   for(const sg of ok){
     const old=EXIST.find(s=>s.title===sg.title&&(s.artist||'')===(sg.artist||''));
     let id=old?old.id:slug(sg.title+(sg.artist?' '+sg.artist:'')),k=2,base=id;if(!old)while(used.has(id))id=base+'-'+k++;used.add(id);
-    if(old){sg.words=sg.words||old.words;sg.music=sg.music||old.music;sg.yandex=sg.yandex||old.yandex;sg.exclusive=sg.exclusive||old.exclusive;if(old.tab)sg.tab=old.tab;}
+    if(old){sg.shapes=sg.shapes||old.shapes;sg.words=sg.words||old.words;sg.music=sg.music||old.music;sg.yandex=sg.yandex||old.yandex;sg.exclusive=sg.exclusive||old.exclusive;if(old.tab)sg.tab=old.tab;}
     const o={id,title:sg.title};
     if(sg.artist)o.artist=sg.artist;if(sg.words)o.words=sg.words;if(sg.music)o.music=sg.music;if(sg.yandex)o.yandex=sg.yandex;if(sg.exclusive)o.exclusive=true;
     if(sg.tab)o.tab=sg.tab;
+    if(sg.shapes)o.shapes=sg.shapes;
     o.text=sg.text;out.push(o);
   }
   $('blist').innerHTML=BATCH.map((sg,i)=>{
