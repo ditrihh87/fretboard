@@ -84,7 +84,7 @@
   <div class="grid" id="batchMode" hidden>
     <section class="card">
       <h2>1. Песни</h2>
-      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, <code>Баре: Am 5, Bm 7, G 3</code> (на каком ладу играть аккорд баре; в «Простых аккордах» будут открытые), ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
+      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, <code>Баре: Am 5, Bm 7, A5 0</code> (аккорд, пробел, лад: с какого лада играть; струна 6-я или 5-я — где на этом ладу корень; в «Простых аккордах» будут открытые), ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
       <div class="row">
         <div><label for="bArtist">Исполнитель по умолчанию</label><input type="text" id="bArtist" value="Король и Шут"></div>
         <div><label for="bWords">Слова по умолчанию</label><input type="text" id="bWords" placeholder="например, Андрей Князев"></div>
@@ -146,9 +146,9 @@ const H_RE=/^\s*([А-ЯЁA-Z][^:：]{0,40})[:：]\s*(.*)$/;   // «Куплет 
 const PART=/^(куплет|припев|пре-?припев|предприпев|вступление|интро|проигрыш|переход|бридж|соло|кода|концовка|финал|окончание|аутро|запев|речитатив|модуляция|рифф|verse|chorus|pre-?chorus|intro|outro|bridge|solo|interlude|coda|riff)(?![а-яёa-z])/i;
 const isHead=(name,rest)=>!rest?PART.test(name.trim()):!!chordTokens(rest);
 
-// «Баре: Am 5, Bm 7, G 3» → {Am:5,Bm:7,G:3}
+// «Баре: Am 5, Bm 7, A5 0» → {Am:5,Bm:7,A5:0}: цифры слитно — часть аккорда (A5, Am7), через пробел — лад
 const BARRE_RE=/^\s*(баре|барре|barre)\s*[:：]\s*(.+)$/i;
-function parseShapes(v){const o={};String(v).replace(/([A-Ha-h][#b]?[^\s,;:]*?[^\s,;:\d]?[^\s,;:]*)\s*[-–—]?\s*(\d{1,2})(?=[\s,;]|$)/g,(m,c,f)=>{c=c[0].toUpperCase()+c.slice(1);if(isChord(c)&&+f>=1&&+f<=15)o[c]=+f;return m;});return Object.keys(o).length?o:null;}
+function parseShapes(v){const o={};String(v).replace(/(?:^|[\s,;])([A-Ha-h][#b]?[^\s,;:]*?)(?:\s+|\s*[-–—]\s*)(\d{1,2})(?=[\s,;]|$)/g,(m,c,f)=>{c=c[0].toUpperCase()+c.slice(1);if(isChord(c)&&+f<=15)o[c]=+f;return m;});return Object.keys(o).length?o:null;}
 function convert(src,meta){
   const L=src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
   const out=[];

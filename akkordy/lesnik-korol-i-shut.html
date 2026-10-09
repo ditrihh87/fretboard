@@ -281,10 +281,11 @@ const BARRE={E:{'':[0,2,2,1,0,0],m:[0,2,2,0,0,0],'7':[0,2,0,1,0,0],m7:[0,2,0,0,0
 /* "shapes" в songs.json: {"Am":5,"G":3} — аккорд баре на этом ладу (от 6-й струны, если корень там, иначе от 5-й).
    Работает в обычном виде; в «Простых аккордах» песня играется на открытых струнах. */
 let SH={};
+const POW={E:[0,2,2,-1,-1,-1],A:[-1,0,2,2,-1,-1]}; // квинта от 6-й / 5-й струны
 function shapeAt(c,q,fr){
-  if(!(q in BARRE.E))return null;fr=+fr;
+  const B=q==='5'?{E:POW.E,A:POW.A}:q in BARRE.E?{E:BARRE.E[q],A:BARRE.A[q]}:null;if(!B)return null;fr=+fr;
   const fe=(c.pc-4+12)%12||12,fa=(c.pc-9+12)%12||12;
-  const sh=fr%12===fe%12?BARRE.E[q]:fr%12===fa%12?BARRE.A[q]:null;
+  const sh=fr%12===fe%12?B.E:fr%12===fa%12?B.A:null;
   return sh?sh.map(x=>x<0?-1:x+fr):null;
 }
 function chordShape(name){
