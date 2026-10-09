@@ -381,6 +381,17 @@ function start(){
     $('screen').innerHTML=`<div class="poster"><p>Twitch показывает плеер только на защищённых сайтах (https). Смотри эфир прямо на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
     return;
   }
+  // Twitch — через JS-плеер без панелей (подписка, название, кнопки); звук — нашей кнопкой
+  if(cur==='twitch'&&window.Twitch&&Twitch.Player){
+    $('screen').innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><button class="lb-sound" id="scSound" type="button">🔇 Выключить звук</button>';
+    try{
+      const pl=new Twitch.Player('twMain',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',autoplay:true,muted:false,controls:false});
+      let m=false;
+      $('scSound').onclick=()=>{m=!m;try{pl.setMuted(m);if(!m)pl.setVolume(.7);}catch(e){}$('scSound').textContent=m?'🔊 Включить звук':'🔇 Выключить звук';};
+      pl.addEventListener(Twitch.Player.PLAYING,()=>{try{m=pl.getMuted();}catch(e){}$('scSound').textContent=m?'🔊 Включить звук':'🔇 Выключить звук';});
+      return;
+    }catch(e){}
+  }
   $('screen').innerHTML=`<iframe src="${P[cur].video}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Трансляция ditrihh"></iframe>`;
 }
 document.querySelectorAll('.tab[data-p]').forEach(b=>b.addEventListener('click',()=>{
@@ -391,7 +402,7 @@ document.querySelectorAll('.tab[data-p]').forEach(b=>b.addEventListener('click',
 $('playBtn').onclick=start;
 /* «Смотреть …»: с компьютера — включаем плеер на сайте, с телефона/планшета — открываем приложение */
 (function(){
-  const touch=matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>1; // iPad с iPadOS выдаёт себя за Mac — ловим по тачу
+  const ua=navigator.userAgent;const touch=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1); // iPad с iPadOS выдаёт себя за Mac; ноутбук с сенсорным экраном — это ПК
   if(touch)return;
   $('extLbl').textContent='Смотреть на сайте:';
   document.querySelectorAll('#ext a[data-p]').forEach(a=>{
