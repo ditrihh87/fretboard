@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Добавить таб — ditrihh</title>
+<meta name="theme-color" content="#0C0A24">
+<link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
+<link rel="stylesheet" href="site.css">
+<style>
+  main{padding:40px 0 80px}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,4.5vw,44px);margin-bottom:6px}
+  .lead{color:var(--muted);font-weight:600;margin-bottom:24px;max-width:760px;line-height:1.5}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:rgba(28,24,72,.7);box-shadow:inset 0 0 0 1px rgba(110,123,255,.2);border-radius:18px;padding:18px;min-width:0}
+  .card h2{font-family:var(--display);font-weight:400;font-size:20px;margin-bottom:12px}
+  label{display:block;font-weight:800;font-size:13px;color:#CFCCF2;margin:10px 0 5px}
+  input[type=text]{width:100%;box-sizing:border-box;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:11px 13px;color:var(--paper);font:600 15px var(--body)}
+  input[type=text]::placeholder{color:rgba(207,204,242,.45)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;color:#CFCCF2}
+  .msg{margin-top:10px;font-weight:700;font-size:14px;color:#8FD493;min-height:1.2em}
+  .msg.bad{color:#F26B6F}.msg a{color:var(--amber)}
+  .note{color:var(--muted);font-weight:600;font-size:12.5px;margin:4px 0 0}
+  .openrow{display:flex;gap:8px;margin:0 0 14px}
+  .openrow select{flex:1;min-width:0;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:10px 12px;color:var(--paper);font:700 14px var(--body)}
+  .openrow .btn{padding:10px 16px;font-size:14px}
+  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px;border-radius:14px;border:2px dashed rgba(110,123,255,.45);background:rgba(12,10,36,.45);cursor:pointer;text-align:center;padding:16px;transition:.15s}
+  .drop.over{border-color:var(--amber);background:rgba(240,168,48,.08)}
+  .drop b{font-size:16px}.drop small{color:var(--muted);font-weight:600}
+  .drop .fname{color:var(--amber);font-weight:800;word-break:break-all}
+  .pv{position:relative;min-height:260px;max-height:70vh;overflow:auto;border-radius:14px;background:rgba(12,10,36,.55)}
+  .pv .empty{color:var(--muted);font-weight:600;padding:24px;text-align:center}
+  .pvbar{display:flex;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap}
+  .pvbar .btn{padding:9px 16px;font-size:14px}
+  .pvbar small{color:var(--muted);font-weight:600}
+  .info{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+  .info span{background:rgba(239,236,251,.08);border-radius:8px;padding:4px 9px;font-weight:700;font-size:12.5px;color:#CFCCF2}
+  .pub{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+  .btn.big{font-size:17px;padding:15px 26px}
+  .pubhint{margin:0;color:var(--muted);font-weight:600;font-size:14px}.pubhint a{color:var(--amber)}
+  .at-surface{background:transparent}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Добавить таб</h1>
+  <p class="lead">Служебная страница. Перетащи файл Guitar Pro (.gp, .gpx, .gp5, .gp4, .gp3), впиши название и исполнителя — или оставь пустыми, тогда они возьмутся из самого файла. Справа видно, как таб откроется на сайте.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. Таб</h2>
+      <div class="openrow"><select id="openSel" aria-label="Таб с сайта"><option value="">Открыть таб с сайта для правки…</option></select><button class="btn ghost" id="openBtn" type="button">Открыть</button></div>
+      <label class="drop" id="drop" for="file">
+        <b>📄 Перетащи файл таба сюда</b>
+        <small>или нажми, чтобы выбрать</small>
+        <span class="fname" id="fname"></span>
+        <input type="file" id="file" accept=".gp,.gpx,.gp5,.gp4,.gp3" hidden>
+      </label>
+      <div class="row">
+        <div><label for="title">Название</label><input type="text" id="title"></div>
+        <div><label for="artist">Исполнитель</label><input type="text" id="artist"></div>
+      </div>
+      <div class="row">
+        <div><label for="words">Слова</label><input type="text" id="words"></div>
+        <div><label for="music">Музыка</label><input type="text" id="music"></div>
+      </div>
+      <p class="note">Пустое поле — значение из файла (серым). Слова и музыку из файла не берём: впиши, если нужно.</p>
+      <label for="yandex">Ссылка на трек в Яндекс Музыке</label><input type="text" id="yandex" placeholder="https://music.yandex.ru/album/…/track/…">
+      <label for="aka">Также ищут</label><input type="text" id="aka" placeholder="другие названия для поисковиков, через запятую">
+      <label class="chk"><input type="checkbox" id="fingerstyle" checked> Фингерстайл</label>
+      <label class="chk"><input type="checkbox" id="exclusive" checked> Моя аранжировка (★ Эксклюзив)</label>
+    </section>
+
+    <section class="card">
+      <h2>2. Как получилось</h2>
+      <div class="pvbar"><button class="btn ghost" id="play" type="button" disabled>▶ Послушать</button><small id="pvState"></small></div>
+      <div class="info" id="info" hidden></div>
+      <div class="pv" id="pvBox"><div class="empty" id="pvEmpty">Здесь появится таб.</div><div id="at"></div></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2>3. Залить на сайт</h2>
+    <div class="pub">
+      <button class="btn main big" id="pubBtn" type="button">🚀 Опубликовать на сайт</button>
+      <div class="msg" id="pubMsg"></div>
+      <p class="pubhint" id="pubHint" hidden>Кнопка работает, когда ты вошёл как владелец — <a href="login.html?admin">войти</a>.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TR={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+const slug=s=>s.toLowerCase().split('').map(c=>TR[c]!==undefined?TR[c]:c).join('').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)||'tab';
+const PAPI='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+const AT_DIR=new URL('vendor/alphatab/',document.baseURI).href;
+const ownerLink=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.prov==='admin'?l:null;}catch(e){return null;}};
+$('pubHint').hidden=!!ownerLink();
+
+let EXIST=[],EDIT=null,FILE=null,FROM={title:'',artist:''};
+
+/* ---------- список табов с сайта ---------- */
+function fillOpen(){
+  const list=EXIST.filter(s=>s.tab).sort((a,b)=>a.title.localeCompare(b.title,'ru'));
+  $('openSel').innerHTML='<option value="">Открыть таб с сайта для правки…</option>'+list.map(s=>`<option value="${esc(s.id)}">${esc(s.title)}${s.artist?' — '+esc(s.artist):''}</option>`).join('');
+}
+function openTab(id){
+  const sg=EXIST.find(s=>s.id===id&&s.tab);if(!sg)return;
+  EDIT=sg;FILE=null;$('file').value='';
+  $('title').value=sg.title||'';$('artist').value=sg.artist||'';$('words').value=sg.words||'';$('music').value=sg.music||'';
+  $('yandex').value=sg.yandex||'';$('aka').value=(sg.aka||[]).join(', ');
+  $('fingerstyle').checked=!!sg.fingerstyle;$('exclusive').checked=!!sg.exclusive;
+  $('fname').textContent=sg.tab.split('/').pop()+' — сейчас на сайте. Перетащи новый файл, чтобы заменить.';
+  $('pubMsg').textContent='';
+  preview(new URL(sg.tab,document.baseURI).href);
+}
+$('openBtn').onclick=()=>{if($('openSel').value)openTab($('openSel').value);};
+fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=j;fillOpen();
+  const e=new URLSearchParams(location.search).get('edit');if(e)openTab(e);}).catch(()=>{});
+
+/* ---------- файл ---------- */
+const EXT=/\.(gp|gpx|gp5|gp4|gp3)$/i;
+function takeFile(f){
+  if(!f)return;
+  if(!EXT.test(f.name)){$('fname').textContent='Это не файл Guitar Pro: '+f.name;return;}
+  if(f.size>2e6){$('fname').textContent='Файл больше 2 МБ — слишком большой.';return;}
+  const rd=new FileReader();
+  rd.onload=()=>{FILE={name:f.name,ext:f.name.match(EXT)[1].toLowerCase(),buf:rd.result};
+    $('fname').textContent=f.name+(EDIT?' — заменит файл на сайте':'');$('pubMsg').textContent='';preview(rd.result.slice(0));};
+  rd.readAsArrayBuffer(f);
+}
+$('file').onchange=e=>takeFile(e.target.files[0]);
+const drop=$('drop');
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>takeFile(e.dataTransfer.files[0]));
+// файл можно бросить в любое место страницы
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{if(!drop.contains(e.target)){e.preventDefault();takeFile(e.dataTransfer.files[0]);}});
+
+/* ---------- название и исполнитель: пусто → из файла ---------- */
+function paintFrom(){
+  $('title').placeholder=FROM.title?'из файла: '+FROM.title:'';
+  $('artist').placeholder=FROM.artist?'из файла: '+FROM.artist:'';
+}
+const val=id=>$(id).value.trim();
+const finalTitle=()=>val('title')||FROM.title;
+const finalArtist=()=>val('artist')||FROM.artist;
+
+/* ---------- предпросмотр (alphaTab) ---------- */
+let api=null;
+function loadAT(){return window.alphaTab?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src=AT_DIR+'alphaTab.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+function tune(score){
+  const st=score&&score.tracks[0]&&score.tracks[0].staves[0],parts=[];
+  if(st&&!st.isPercussion){
+    const N=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],t=(st.tuning||[]).slice().reverse();
+    if(t.length&&t.join(',')!=='40,45,50,55,59,64')parts.push('Строй: '+t.map(n=>N[n%12]).join(' '));
+    if(st.capo>0)parts.push('Каподастр: '+st.capo+' лад');
+  }
+  if(score.tracks.length>1)parts.push('Партий: '+score.tracks.length);
+  parts.push('Тактов: '+score.masterBars.length);
+  $('info').innerHTML=parts.map(p=>`<span>${esc(p)}</span>`).join('');$('info').hidden=false;
+}
+async function preview(src){
+  $('pvEmpty').hidden=false;$('pvEmpty').textContent='Открываю таб…';$('play').disabled=true;$('play').textContent='▶ Послушать';$('pvState').textContent='';
+  try{
+    await loadAT();
+    if(!api){
+      api=new alphaTab.AlphaTabApi($('at'),{
+        core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
+        display:{staveProfile:'Tab',scale:.9,resources:{staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(196,190,240,0.75)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
+        notation:{rhythmMode:'ShowWithBars',elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false}},
+        player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('pvBox'),enableCursor:true}
+      });
+      api.scoreLoaded.on(score=>{
+        score.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;});
+        let t=String(score.title||'').trim(),a=String(score.artist||'').trim();
+        // часто в файле всё в названии: «Boney M - Sunny» → исполнитель и название отдельно
+        const m=!a&&t.match(/^(.+?)\s+[-–—]\s+(.+)$/);if(m){a=m[1].trim();t=m[2].trim();}
+        FROM={title:t,artist:a};paintFrom();tune(score);});
+      api.renderFinished.on(()=>{$('pvEmpty').hidden=true;});
+      api.soundFontLoad.on(e=>{if(e.total)$('pvState').textContent=`звук гитары… ${Math.round(100*e.loaded/e.total)}%`;});
+      api.playerReady.on(()=>{$('play').disabled=false;$('pvState').textContent='';});
+      api.playerStateChanged.on(e=>{$('play').textContent=e.state===1?'❚❚ Пауза':'▶ Послушать';});
+      api.error.on(e=>{console.error(e);$('pvEmpty').hidden=false;$('pvEmpty').textContent='Не получилось открыть файл — он точно из Guitar Pro?';FROM={title:'',artist:''};paintFrom();});
+      $('play').onclick=()=>api.playPause();
+    }else api.stop();
+    FROM={title:'',artist:''};paintFrom();
+    api.load(src);
+  }catch(e){console.error(e);$('pvEmpty').textContent='Не загрузился плеер табов.';}
+}
+
+/* ---------- запись для songs.json ---------- */
+function buildSong(){
+  const title=finalTitle(),artist=finalArtist();
+  if(!title)return {err:'Впиши название (в файле его нет).'};
+  if(!EDIT&&!FILE)return {err:'Добавь файл таба.'};
+  let id;
+  if(EDIT)id=EDIT.id;
+  else{
+    const taken=x=>EXIST.some(s=>s.id===x);
+    const base=slug(title+(artist?' '+artist:''));id=base;
+    if(taken(id))id=base+'-tab';
+    for(let k=2;taken(id);k++)id=base+'-tab-'+k;
+  }
+  const sg={id,title};
+  if(artist)sg.artist=artist;
+  if(val('words'))sg.words=val('words');
+  if(val('music'))sg.music=val('music');
+  if(val('yandex'))sg.yandex=val('yandex').split('?')[0];
+  const aka=val('aka').split(',').map(x=>x.trim()).filter(Boolean);if(aka.length)sg.aka=aka;
+  if($('exclusive').checked)sg.exclusive=true;
+  if($('fingerstyle').checked)sg.fingerstyle=true;
+  if(EDIT&&!FILE)sg.tab=EDIT.tab;
+  return {sg};
+}
+function b64(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s);}
+
+$('pubBtn').onclick=async()=>{
+  const l=ownerLink(),m=$('pubMsg');
+  if(!l){$('pubHint').hidden=false;m.className='msg bad';m.textContent='Сначала войди как владелец.';return;}
+  const r0=buildSong();if(r0.err){m.className='msg bad';m.textContent=r0.err;return;}
+  const sg=r0.sg;
+  if(!EDIT){const twin=EXIST.find(s=>s.tab&&s.title===sg.title&&(s.artist||'')===(sg.artist||''));
+    if(twin&&!confirm(`Таб «${sg.title}» уже есть на сайте. Добавить ещё один?\n(Чтобы заменить старый — открой его через «Открыть таб с сайта».)`))return;}
+  $('pubBtn').disabled=true;m.className='msg';m.textContent=FILE?'Загружаю файл и публикую…':'Публикую…';
+  try{
+    const body={action:'publish_tab',song:sg,token:l.token};
+    if(FILE)body.file={ext:FILE.ext,data:b64(FILE.buf)};
+    const r=await fetch(PAPI,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(r.status===403?'нужно войти как владелец':j.error||('ошибка '+r.status));
+    const one=(j.songs||[])[0]||sg;
+    m.className='msg';
+    m.innerHTML=`✅ Таб «${esc(one.title)}» ${one.upd?'обновлён':'опубликован'}. Страница будет готова через 1–2 минуты: <a href="taby/${encodeURIComponent(one.id)}.html" target="_blank" rel="noopener">открыть</a>`;
+    if(FILE)sg.tab=`tabs/${sg.id}.${FILE.ext}`;
+    const i=EXIST.findIndex(x=>x.id===sg.id);if(i>=0)EXIST[i]=sg;else EXIST.push(sg);
+    fillOpen();EDIT=sg;FILE=null;$('file').value='';$('fname').textContent=sg.tab.split('/').pop()+' — на сайте.';
+  }catch(e){m.className='msg bad';m.textContent='Не получилось: '+e.message;}
+  $('pubBtn').disabled=false;
+};
+</script>
+</body>
+</html>

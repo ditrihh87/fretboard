@@ -584,7 +584,7 @@ async function handleCommentDel(body, token) {
    Сервер сам правит songs.json в репозитории через GitHub API; дальше GitHub Actions собирает страницы песен. */
 const GH_REPO = 'ditrihh87/fretboard', GH_FILE = 'songs.json';
 const SONG_KEYS = ['id', 'title', 'artist', 'words', 'music', 'yandex', 'exclusive', 'fingerstyle', 'aka', 'shapes', 'easyFrom', 'easy', 'video', 'videoV', 'tab', 'chordsBy', 'text'];
-const KEEP_KEYS = ['tab', 'fingerstyle', 'video', 'videoV', 'chordsBy'];   // конвертер про них не знает — сохраняем от старой версии песни
+const KEEP_KEYS = ['fingerstyle', 'video', 'videoV', 'chordsBy'];   // конвертер про них не знает — сохраняем от старой версии песни
 function cleanSong(x) {
   if (!x || typeof x !== 'object' || !okSong(x.id) || typeof x.title !== 'string' || !x.title.trim() || x.title.length > 200) return null;
   if (x.text != null && (typeof x.text !== 'string' || x.text.length > 60000)) return null;
@@ -597,24 +597,23 @@ async function gh(path, opt = {}) {
   if (!r.ok) { const e = new Error('github ' + r.status + ' ' + (j.message || '')); e.status = r.status; throw e; }
   return j;
 }
-async function handlePublish(body, token) {
-  const u = await commentUser(body, token);
-  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
-  if (!process.env.GH_TOKEN) return reply(503, { error: 'GH_TOKEN не задан' });
-  const incoming = (Array.isArray(body.songs) ? body.songs : [body.song]).map(cleanSong);
-  if (!incoming.length || incoming.some(x => !x) || incoming.length > 200) return reply(400, { error: 'bad song' });
+// вливаем песни в songs.json на GitHub (с повтором, если файл успели поменять)
+async function mergeSongs(incoming, label, keep = KEEP_KEYS) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const f = await gh(`repos/${GH_REPO}/contents/${GH_FILE}?ref=main`);
     let list; try { list = JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); } catch { return reply(500, { error: 'songs.json не читается' }); }
     if (!Array.isArray(list)) return reply(500, { error: 'songs.json не список' });
     const done = [];
-    for (const sg of incoming) {
+    for (const src of incoming) {
+      const sg = Object.assign({}, src);
       const i = list.findIndex(x => x.id === sg.id);
-      if (i >= 0) { const old = list[i]; for (const k of KEEP_KEYS) if (sg[k] === undefined && old[k] !== undefined) sg[k] = old[k];
+      // таб и песню с аккордами не путаем: чужую запись с тем же id не перезаписываем
+      if (i >= 0 && !!list[i].tab !== !!sg.tab) return reply(409, { error: `адрес «${sg.id}» уже занят ${list[i].tab ? 'табом' : 'песней с аккордами'}` });
+      if (i >= 0) { const old = list[i]; for (const k of keep) if (sg[k] === undefined && old[k] !== undefined) sg[k] = old[k];
         const ord = {}; for (const k of SONG_KEYS) if (sg[k] !== undefined) ord[k] = sg[k]; list[i] = ord; done.push({ id: sg.id, title: sg.title, upd: true }); }
       else { const ord = {}; for (const k of SONG_KEYS) if (sg[k] !== undefined) ord[k] = sg[k]; list.push(ord); done.push({ id: sg.id, title: sg.title, upd: false }); }
     }
-    const msg = done.length === 1 ? `Песня: ${done[0].title}${done[0].upd ? ' (правка)' : ''}` : `Песни: ${done.length} шт.`;
+    const msg = done.length === 1 ? `${label}: ${done[0].title}${done[0].upd ? ' (правка)' : ''}` : `${label}: ${done.length} шт.`;
     try {
       const r = await gh(`repos/${GH_REPO}/contents/${GH_FILE}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg, content: Buffer.from(JSON.stringify(list, null, 2) + '\n', 'utf8').toString('base64'), sha: f.sha, branch: 'main' }) });
@@ -622,6 +621,36 @@ async function handlePublish(body, token) {
     } catch (e) { if (e.status === 409 || e.status === 422) continue; throw e; }   // файл успели поменять — перечитываем и пробуем ещё раз
   }
   return reply(409, { error: 'songs.json меняется, попробуй ещё раз' });
+}
+async function handlePublish(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  if (!process.env.GH_TOKEN) return reply(503, { error: 'GH_TOKEN не задан' });
+  const incoming = (Array.isArray(body.songs) ? body.songs : [body.song]).map(cleanSong);
+  if (!incoming.length || incoming.some(x => !x) || incoming.length > 200) return reply(400, { error: 'bad song' });
+  if (incoming.some(x => x.tab)) return reply(400, { error: 'табы — через страницу «Добавить таб»' });
+  return mergeSongs(incoming, 'Песня');
+}
+// таб: файл Guitar Pro кладём в tabs/<id>.<расширение>, запись — в songs.json
+const TAB_EXT = /^(gp|gp3|gp4|gp5|gpx)$/;
+async function handlePublishTab(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  if (!process.env.GH_TOKEN) return reply(503, { error: 'GH_TOKEN не задан' });
+  const sg = cleanSong(Object.assign({}, body.song, { text: undefined }));
+  if (!sg) return reply(400, { error: 'bad song' });
+  const f = body.file;
+  if (f) {
+    if (typeof f.ext !== 'string' || !TAB_EXT.test(f.ext) || typeof f.data !== 'string' || f.data.length > 2.8e6) return reply(400, { error: 'файл таба не подходит (gp, gp3, gp4, gp5, gpx, до 2 МБ)' });
+    const buf = Buffer.from(f.data, 'base64');
+    if (buf.length < 16) return reply(400, { error: 'пустой файл' });
+    const path = `tabs/${sg.id}.${f.ext}`;
+    let sha; try { sha = (await gh(`repos/${GH_REPO}/contents/${path}?ref=main`)).sha; } catch (e) { if (e.status !== 404) throw e; }
+    await gh(`repos/${GH_REPO}/contents/${path}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ message: `Таб: ${sg.title} (файл)`, content: buf.toString('base64'), branch: 'main' }, sha ? { sha } : {})) });
+    sg.tab = path;
+  } else if (typeof sg.tab !== 'string' || !/^tabs\/[a-z0-9-]{1,80}\.(gp|gp3|gp4|gp5|gpx)$/.test(sg.tab)) return reply(400, { error: 'нет файла таба' });
+  return mergeSongs([sg], 'Таб', ['video', 'videoV', 'chordsBy']);   // галочки «фингерстайл/эксклюзив» берём как есть
 }
 
 /* ===== DonationAlerts: статистика донатов для сайта и панели Twitch ===== */
@@ -821,6 +850,9 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
+  if (body.action === 'publish_tab') {
+    try { return await handlePublishTab(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
+  }
   if (body.action === 'publish_song') {
     try { return await handlePublish(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
   }

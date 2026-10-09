@@ -474,16 +474,15 @@ function build(){
   $('prev').innerHTML=text?preview(text):'<p class="lead">Здесь появится песня, как она будет выглядеть на сайте.</p>';
   if(SEL&&!document.querySelector('#prev .ch.sel'))SEL=null;paintSel();
   if(!title||!text){ONE=null;$('out').value='';$('msg').className='msg bad';$('msg').textContent=!text?'Вставь текст с аккордами.':'Впиши название песни.';return;}
-  const old=EXIST.find(s=>s.title===title&&(s.artist||'')===artist);
+  const old=EXIST.find(s=>!s.tab&&s.title===title&&(s.artist||'')===artist);
   let id=old?old.id:slug(title+(artist?' '+artist:''));
-  const others=EXIST.filter(s=>!(s.title===title&&(s.artist||'')===artist));
+  const others=EXIST.filter(s=>s!==old);
   let k=2,base=id;if(!old)while(others.some(s=>s.id===id))id=base+'-'+k++;
   ONE={id,title};
   if(artist)ONE.artist=artist;
   if($('words').value.trim())ONE.words=$('words').value.trim();
   if($('music').value.trim())ONE.music=$('music').value.trim();
   if($('yandex').value.trim())ONE.yandex=$('yandex').value.trim().split('?')[0];else if(old&&old.yandex)ONE.yandex=old.yandex;
-  if(old&&old.tab)ONE.tab=old.tab;
   if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
   if(meta.shapes)ONE.shapes=meta.shapes;else if(old&&old.shapes)ONE.shapes=old.shapes;
   if(meta.easyFrom)ONE.easyFrom=meta.easyFrom;
@@ -527,18 +526,17 @@ function buildBatch(){
   let others=EXIST.slice(),ok=[],bad=0;
   for(const sg of BATCH){
     if(!sg.title||!sg.text){bad++;continue;}
-    others=others.filter(s=>!(s.title===sg.title&&(s.artist||'')===(sg.artist||'')));
+    others=others.filter(s=>s.tab||!(s.title===sg.title&&(s.artist||'')===(sg.artist||'')));
     ok=ok.filter(s=>!(s.title===sg.title&&(s.artist||'')===(sg.artist||'')));
     ok.push(sg);
   }
   const used=new Set(others.map(s=>s.id)),out=[];
   for(const sg of ok){
-    const old=EXIST.find(s=>s.title===sg.title&&(s.artist||'')===(sg.artist||''));
+    const old=EXIST.find(s=>!s.tab&&s.title===sg.title&&(s.artist||'')===(sg.artist||''));
     let id=old?old.id:slug(sg.title+(sg.artist?' '+sg.artist:'')),k=2,base=id;if(!old)while(used.has(id))id=base+'-'+k++;used.add(id);
-    if(old){sg.shapes=sg.shapes||old.shapes;sg.words=sg.words||old.words;sg.music=sg.music||old.music;sg.yandex=sg.yandex||old.yandex;sg.exclusive=sg.exclusive||old.exclusive;if(old.tab)sg.tab=old.tab;}
+    if(old){sg.shapes=sg.shapes||old.shapes;sg.words=sg.words||old.words;sg.music=sg.music||old.music;sg.yandex=sg.yandex||old.yandex;sg.exclusive=sg.exclusive||old.exclusive;}
     const o={id,title:sg.title};
     if(sg.artist)o.artist=sg.artist;if(sg.words)o.words=sg.words;if(sg.music)o.music=sg.music;if(sg.yandex)o.yandex=sg.yandex;if(sg.exclusive)o.exclusive=true;
-    if(sg.tab)o.tab=sg.tab;
     if(sg.shapes)o.shapes=sg.shapes;
     if(sg.easyFrom)o.easyFrom=sg.easyFrom;
     if(sg.easy)o.easy=sg.easy;

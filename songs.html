@@ -93,9 +93,9 @@
     <input class="search" id="q" type="search" placeholder="Найти песню или исполнителя" autocomplete="off" aria-label="Поиск">
     <a class="btn main addsong" id="addSong" href="add-song.html" hidden>＋ Добавить песню</a>
   </div>
-  <script>/* кнопка «Добавить песню» — только владельцу (вход «Тот Самый») и только в аккордах */
+  <script>/* кнопка «Добавить песню» / «Добавить таб» — только владельцу (вход «Тот Самый»), на телефоне скрыта */
   (function(){try{var l=JSON.parse(localStorage.getItem('dgc_link')||'null');var t=new URLSearchParams(location.search).get('type');
-    if(l&&l.prov==='admin'&&t!=='tab')document.getElementById('addSong').hidden=false;}catch(e){}})();</script>
+    if(l&&l.prov==='admin'){const a=document.getElementById('addSong');if(t==='tab'){a.href='add-tab.html';a.textContent='＋ Добавить таб';}a.hidden=false;}}catch(e){}})();</script>
   <div class="list" id="list"><p class="empty">Загружаю песни…</p></div>
 
   <div class="ask">
