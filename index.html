@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/vendor/fonts/fonts.css">
 <link rel="stylesheet" href="site.css">
 <script src="auth.js" defer></script>
+<script>window.JUMP=location.hash;if(JUMP)history.replaceState(null,"",location.pathname+location.search);</script>
 <script src="/metrika.js" defer></script>
 </head>
 <body>
@@ -198,10 +199,11 @@ const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7']; // 6 →
       <b>${esc(x.title)}</b><small>${esc(x.artist||'')}</small></a>`).join(''):'<p class="lead">Песни скоро появятся.</p>';
     $('rndMore').hidden=all.length<=6;
     // песни подгружаются после перехода по ссылке вида index.html#stream — блок вырос, раздел уехал вниз; возвращаем к нему
-    if(!draw.done){draw.done=1;const h=location.hash&&document.getElementById(location.hash.slice(1));
-      if(h&&h.id!=='tabs')requestAnimationFrame(()=>h.scrollIntoView({behavior:'instant',block:'start'}));}
+    // пришли по ссылке вида index.html#stream — плавно едем к разделу, когда всё выше уже на месте
+    if(!draw.done){draw.done=1;const h=window.JUMP&&document.getElementById(window.JUMP.slice(1));
+      if(h)setTimeout(()=>{h.scrollIntoView({behavior:'smooth',block:'start'});history.replaceState(null,'',window.JUMP);},150);}
   }
-  fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{all=Array.isArray(j)?j:[];draw();}).catch(()=>{$('rndList').innerHTML='<p class="lead">Не удалось загрузить песни.</p>';});
+  fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{all=Array.isArray(j)?j:[];draw();}).catch(()=>{$('rndList').innerHTML='<p class="lead">Не удалось загрузить песни.</p>';draw.done=1;const h=window.JUMP&&document.getElementById(window.JUMP.slice(1));if(h)h.scrollIntoView({behavior:'smooth'});});
   $('rndMore').onclick=draw;
 })();
 
