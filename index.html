@@ -114,9 +114,15 @@
             <p id="posterText">Нажми, чтобы включить трансляцию с Twitch. Если сейчас не эфир — покажется запись или заставка канала.</p>
           </div>
         </div>
-        <div class="chat" id="chat">
-          <div class="poster"><p>Чат трансляции появится здесь вместе с плеером.</p></div>
-        </div>
+        <aside class="dn" id="donors" aria-label="Топ донатеров">
+          <div class="dn-h">Топ донатеров</div>
+          <div class="dn-goal" id="dnGoal" hidden></div>
+          <div class="dn-tabs" id="dnTabs" role="tablist">
+            <button class="on" data-t="m" role="tab" aria-selected="true">Месяц</button><button data-t="w" role="tab" aria-selected="false">Неделя</button><button data-t="l" role="tab" aria-selected="false">Последние</button>
+          </div>
+          <ol class="dn-list" id="dnList"><li class="empty">Загружаю…</li></ol>
+          <a class="dn-btn" href="https://dalink.to/ditrihh" target="_blank" rel="noopener">Задонатить</a>
+        </aside>
       </div>
       <div class="ext"><span>Смотреть в приложении:</span>
         <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener"><i style="background:#9146FF"></i>Twitch<small>↗</small></a>
@@ -289,6 +295,42 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
   document.head.appendChild(sc);
 })();
 
+/* топ донатеров DonationAlerts рядом с плеером */
+(function(){
+  const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmt=n=>Math.round(n).toLocaleString('ru-RU');
+  const CUR={RUB:'₽',USD:'$',EUR:'€',KZT:'₸',BYN:'Br',UAH:'₴'};
+  const ago=t=>{const d=(Date.now()-(Date.parse(String(t).replace(' ','T')+'Z')||Date.now()))/60e3;
+    return d<60?Math.max(1,Math.round(d))+' мин':d<1440?Math.round(d/60)+' ч':Math.round(d/1440)+' дн';};
+  let D=null,tab='m';
+  function paint(){
+    if(!D)return;
+    if(!D.connected){$('dnList').innerHTML='<li class="empty">Статистика скоро появится</li>';return;}
+    let h='';
+    if(tab==='l')(D.last||[]).forEach(e=>{h+=`<li><span class="n">${esc(e.name)}</span><span class="s">${fmt(e.amount)} ${CUR[e.currency]||esc(e.currency)}</span><small>${ago(e.t)}</small></li>`;});
+    else((tab==='w'?D.topWeek:D.topMonth)||[]).forEach((e,i)=>{h+=`<li><span class="p">${i+1}</span><span class="n">${esc(e.name)}</span><span class="s">${fmt(e.rub)} ₽</span></li>`;});
+    $('dnList').innerHTML=h||'<li class="empty">Пока никого — будь первым!</li>';
+    const g=D.goal;
+    if(g){const p=Math.min(100,g.raised/g.target*100);
+      $('dnGoal').innerHTML=`<div class="t"><span>🎯 ${esc(g.title)}</span><small>${fmt(g.raised)} / ${fmt(g.target)} ₽</small></div><div class="bar"><i style="width:${p.toFixed(1)}%"></i></div>`;$('dnGoal').hidden=false;}
+    else $('dnGoal').hidden=true;
+  }
+  function load(){
+    const ctl=window.AbortController?new AbortController():null,tm=setTimeout(()=>ctl&&ctl.abort(),12000);
+    fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'donations'}),signal:ctl?ctl.signal:undefined})
+      .then(r=>{clearTimeout(tm);return r.json();})
+      .then(d=>{D=d&&d.error?{connected:false}:d;paint();})
+      .catch(()=>{clearTimeout(tm);if(!D)$('dnList').innerHTML='<li class="empty">Не удалось загрузить — попробую ещё раз</li>';});
+  }
+  document.querySelectorAll('#dnTabs button').forEach(b=>b.addEventListener('click',()=>{
+    tab=b.dataset.t;
+    document.querySelectorAll('#dnTabs button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b);});
+    paint();
+  }));
+  load();setInterval(load,90000);
+})();
+
 /* плеер: грузим iframe только по нажатию */
 const VK_CHANNEL='ditrihh'; // имя канала на VK Видео Live (live.vkvideo.ru/ИМЯ)
 const P={
@@ -300,17 +342,14 @@ let cur='twitch',on=false;
 function poster(){
   $('screen').innerHTML=`<div class="poster"><button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button><p>${P[cur].text}</p></div>`;
   $('playBtn').onclick=start;
-  $('chat').innerHTML=`<div class="poster"><p>${P[cur].chat?'Чат трансляции появится здесь вместе с плеером.':P[cur].noChat}</p></div>`;
 }
 function start(){
   on=true;
   if(cur==='twitch'&&!TW_OK){
     $('screen').innerHTML=`<div class="poster"><p>Twitch показывает плеер только на защищённых сайтах (https). Смотри эфир прямо на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
-    $('chat').innerHTML=`<div class="poster"><p>Чат — на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
     return;
   }
   $('screen').innerHTML=`<iframe src="${P[cur].video}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Трансляция ditrihh"></iframe>`;
-  if(P[cur].chat)$('chat').innerHTML=`<iframe src="${P[cur].chat}" title="Чат трансляции"></iframe>`;
 }
 document.querySelectorAll('.tab[data-p]').forEach(b=>b.addEventListener('click',()=>{
   if(b.disabled)return;cur=b.dataset.p;
