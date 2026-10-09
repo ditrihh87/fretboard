@@ -27,8 +27,8 @@
   },
   {
     "id": "utinye-istorii-duck-tales",
-    "title": "Утиные истории",
-    "artist": "DuckTales — TV Theme",
+    "title": "Утиные истории (DuckTales)",
+    "artist": "Заставка мультсериала (Disney)",
     "aka": [
       "Duck Tales",
       "DuckTales",
@@ -44,7 +44,7 @@
   {
     "id": "dzhentlmeny-udachi",
     "title": "Джентльмены удачи",
-    "artist": "Музыка из к/ф «Джентльмены удачи»",
+    "artist": "Музыка из фильма",
     "music": "Геннадий Гладков",
     "aka": [
       "Джентльмены удачи на гитаре",
@@ -62,7 +62,7 @@
   {
     "id": "winnie-the-pooh-tv-theme",
     "title": "Винни-Пух (Winnie the Pooh)",
-    "artist": "Disney — Winnie the Pooh TV Theme",
+    "artist": "Заставка мультсериала (Disney)",
     "aka": [
       "Winnie the Pooh",
       "Winnie-the-Pooh TV Theme",
@@ -100,7 +100,7 @@
   {
     "id": "family-guy-griffiny-tv-theme",
     "title": "Гриффины (Family Guy)",
-    "artist": "Family Guy — TV Theme",
+    "artist": "Заставка мультсериала",
     "music": "Walter Murphy",
     "aka": [
       "Family Guy",
@@ -118,7 +118,7 @@
   {
     "id": "chyornyj-plashch-darkwing-duck",
     "title": "Чёрный Плащ (Darkwing Duck)",
-    "artist": "Darkwing Duck — TV Theme",
+    "artist": "Заставка мультсериала (Disney)",
     "aka": [
       "Darkwing Duck",
       "Darkwing Duck theme",

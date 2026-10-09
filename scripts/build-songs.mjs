@@ -41,7 +41,8 @@ function staticBody(s) {
 function page(s) {
   const kind = s.tab ? 'tab' : 'chords';
   const url = `${SITE}${DIRS[kind]}/${s.id}.html`;
-  const who = s.artist ? ` (${s.artist})` : '';
+  // если в названии уже есть скобки — исполнителя в заголовок не дописываем, чтобы главное влезло в выдачу
+  const who = s.artist && !/\)\s*$/.test(s.title) ? ` (${s.artist})` : '';
   const title = s.tab
     ? `${s.title}${who} — ${s.fingerstyle ? 'фингерстайл таб (fingerstyle)' : 'таб и аранжировка'} | ditrihh`
     : `${s.title}${who} — аккорды | ditrihh`;
