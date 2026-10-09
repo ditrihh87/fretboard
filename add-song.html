@@ -89,6 +89,7 @@
           <tr><td><code>Куплет 1:</code> <code>Припев:</code></td><td>заголовок части. Понимает: куплет, припев, вступление, проигрыш, бридж, соло, кода, интро, финал…</td></tr>
           <tr><td><code>Вступление: Dm Gm A }x4</code></td><td>заголовок + аккорды + повтор «×4»</td></tr>
           <tr><td><code>x4</code> <span class="mut">(отдельной строкой)</span></td><td>повтор к последней части</td></tr>
+          <tr><td>2-й, 3-й куплет / припев <span class="mut">без аккордов</span></td><td>аккорды подставятся сами из первого куплета/припева — строка за строкой, по слогам</td></tr>
           <tr><td>строка с «:» в конце</td><td>если это не название части — остаётся текстом песни</td></tr>
         </table></div>
       <div class="cblk"><h3>Аккорды</h3>
@@ -334,11 +335,56 @@ function convert(src,meta){
     }
     out.push(line.trim());seenText=true; // строка без аккордов
   }
+  autoChords(out);
   while(out.length&&out[out.length-1]==='')out.pop();
   while(out.length&&out[0]==='')out.shift();
   return out.join('\n');
 }
 
+/* ---------- аккорды в повторяющихся частях ----------
+   Если во 2-м, 3-м… куплете (или в любом припеве, кроме первого) аккордов нет совсем,
+   берём их из первой такой части с аккордами: строка за строкой, по слогам (аккорд встаёт на тот же по счёту слог). */
+const VOW=/[аеёиоуыэюяaeiouy]/i;
+function sylIdx(txt,pos){let n=0;for(let i=0;i<txt.length;i++){if(VOW.test(txt[i])){if(i>=pos)return n;n++;}}return -1;} // слог, к которому относится аккорд (-1 — после последнего)
+const LET=/[a-zа-яё]/i;
+// куда поставить аккорд на k-й слог: в начало слова, если это первый слог слова (или в образце аккорд стоял в начале слова), иначе — перед согласной слога
+function sylPos(txt,k,atWord){if(k<0)return -1;let n=0;for(let i=0;i<txt.length;i++){if(VOW.test(txt[i])){if(n===k){
+  let w=i;while(w>0&&LET.test(txt[w-1]))w--;
+  const firstInWord=![...txt.slice(w,i)].some(c=>VOW.test(c));
+  if(atWord||firstInWord)return w;
+  let j=i;if(j>0&&LET.test(txt[j-1])&&!VOW.test(txt[j-1]))j--;return j;}n++;}}return -1;}
+const secType=h=>h.replace(/\{comment:\s*|\}/g,'').replace(/×\d+/g,'').replace(/\d+/g,'').trim().toLowerCase();
+const hasCh=l=>/\[[^\]]+\]/.test(l);
+const onlyCh=l=>hasCh(l)&&!l.replace(/\[[^\]]+\]/g,'').trim();
+function autoChords(out){
+  const secs=[];let cur=null;
+  out.forEach((l,i)=>{if(/^\{comment:/.test(l)){cur={type:secType(l),from:i+1,to:i+1};secs.push(cur);}else if(cur)cur.to=i+1;});
+  const tpl={};
+  for(const sc of secs){
+    const lines=out.slice(sc.from,sc.to);
+    if(lines.some(hasCh)){const tl=lines.filter(l=>l.trim()&&!onlyCh(l));if(tl.length&&!tpl[sc.type])tpl[sc.type]=lines;continue;}
+    const t=tpl[sc.type];if(!t)continue;
+    const tText=t.filter(l=>l.trim()&&!onlyCh(l));
+    let k=0;const res=[];
+    for(let i=sc.from;i<sc.to;i++){
+      const line=out[i];if(!line.trim()){res.push(line);continue;}
+      const plain=l=>l.replace(/\[[^\]]+\]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+      // та же строка, что в образце (повтор припева) — берём её целиком
+      const same=t.find(x=>x.trim()&&!onlyCh(x)&&plain(x)===plain(line));
+      if(same){res.push(same);k++;continue;}
+      const src=tText[k%tText.length];k++;
+      // аккорды строки-образца: позиция в тексте → номер слога
+      let txt='',chs=[];src.split(/(\[[^\]]+\])/).forEach(p=>{const m=p.match(/^\[([^\]]+)\]$/);if(m)chs.push([txt.length,m[1]]);else txt+=p;});
+      const tail=[],marks=[];
+      chs.forEach(([pos,c])=>{const atWord=pos===0||!LET.test(txt[pos-1]||'');const q=sylPos(line,sylIdx(txt,pos),atWord);if(q<0)tail.push(c);else marks.push([q,c]);});
+      marks.sort((a,b)=>a[0]-b[0]);
+      let o='',p0=0;marks.forEach(([pos,c])=>{o+=line.slice(p0,pos)+'['+c+']';p0=pos;});o+=line.slice(p0);
+      if(tail.length)o=o.replace(/\s+$/,'')+' '+tail.map(c=>'['+c+']').join(' ');   // аккорды после последнего слога — в конец строки
+      res.push(o);
+    }
+    out.splice(sc.from,sc.to-sc.from,...res);
+  }
+}
 /* ---------- id латиницей ---------- */
 const TR={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
 const slug=s=>s.toLowerCase().split('').map(c=>TR[c]!==undefined?TR[c]:c).join('').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)||'song';
