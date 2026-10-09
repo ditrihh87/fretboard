@@ -45,7 +45,9 @@
   .svid.v{width:180px;aspect-ratio:9/16}
   .shead:has(.svid){align-items:center}
   .svid iframe{width:100%;height:100%;border:0;display:block}
-  @media (max-width:760px){.svid{width:100%}.svid.v{width:min(280px,78vw);margin:0 auto}}
+  .svid.r45{aspect-ratio:4/5;width:min(300px,100%)}
+  .sidecol{display:contents}.svid.side{display:none}
+  @media (max-width:760px){.svid{width:100%}.svid.v,.svid.r45{width:min(300px,82vw);margin:0 auto}}
   .ymbtn{display:inline-flex;align-items:center;gap:8px;border:none;background:#FFCC00;color:#1b1b1b;font:800 14px var(--body);padding:9px 16px 9px 10px;border-radius:999px;cursor:pointer}
   .ymbtn:hover{filter:brightness(1.05)}
   .ymlogo{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#1b1b1b;color:#FFCC00;font-size:13px}
@@ -91,7 +93,11 @@
   @media (min-width:1000px){
     .songgrid{display:grid;grid-template-columns:minmax(0,1fr) 262px;align-items:start}
     .songgrid .lycol{grid-column:1;grid-row:1;min-width:0}
-    .songgrid .chordrow{grid-column:2;grid-row:1;position:sticky;top:140px;justify-content:flex-start;align-content:flex-start;padding:20px 20px 20px 0;max-height:calc(100vh - 160px);overflow-y:auto}
+    .songgrid .sidecol{display:block;grid-column:2;grid-row:1;position:sticky;top:140px;max-height:calc(100vh - 160px);overflow-y:auto;padding:20px 20px 20px 0}
+    .songgrid .chordrow{justify-content:flex-start;align-content:flex-start;padding:0}
+    /* видео — в правой колонке под схемами аккордов; в шапке на компьютере не дублируем */
+    .songgrid .svid.side{display:block;width:100%;margin-top:14px}
+    .shead .svid.top.has-side{display:none}
     .songgrid .lyrics{width:auto;margin:0;padding:22px 40px 48px}
   }
   .lyrics .cm{display:block;color:#B3AEE8;font-weight:800;font-size:12px;margin:26px 0 10px;letter-spacing:2.2px;text-transform:uppercase}
@@ -486,7 +492,7 @@ function renderChordsPage(){
         <button class="ib solo" id="scrollBtn" aria-label="Автопрокрутка">▶ Прокрутка</button>
       </div>
       <p class="easynote" id="easyNote" hidden></p>
-      <div class="songgrid"><div class="chordrow" id="chordRow"></div><div class="lycol"><div class="lyrics" id="lyrics"></div></div></div>
+      <div class="songgrid"><div class="sidecol"><div class="chordrow" id="chordRow"></div>${vidHTML('side')}</div><div class="lycol"><div class="lyrics" id="lyrics"></div></div></div>
     </div>`;
   st.tr=(prefs.tr||{})[SONG.id]||0;st.easy=!!(prefs.easy||{})[SONG.id];
   $('easyBtn').onclick=()=>{st.easy=!st.easy;prefs.easy=prefs.easy||{};prefs.easy[SONG.id]=st.easy;savePrefs();drawSong();};
@@ -576,10 +582,12 @@ function vidEmbed(u){
     return {src:`https://vkvideo.ru/video_ext.php?oid=${m[2]}&id=${m[3]}&hd=2`,v:m[1]==='clip'};
   return null;
 }
-function vidHTML(){
+function vidHTML(where){
   const e=vidEmbed(SONG&&SONG.video);if(!e)return '';
-  const v=typeof SONG.videoV==='boolean'?SONG.videoV:e.v;
-  return `<div class="svid${v?' v':''}"><iframe src="${esc(e.src)}" title="${esc(SONG.title)} — видео с игрой" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock" allowfullscreen></iframe></div>`;
+  const v=typeof SONG.videoV==='boolean'?SONG.videoV:e.v,r45=SONG.videoAR==='4:5';
+  // аккорды: на компьютере видео в правой колонке (where='side'), в шапке — только на телефоне; у табов — как раньше, в шапке
+  const pos=where==='side'?' side':(!SONG.tab?' top has-side':'');
+  return `<div class="svid${r45?' r45':v?' v':''}${pos}"><iframe src="${esc(e.src)}" title="${esc(SONG.title)} — видео с игрой" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock" allowfullscreen></iframe></div>`;
 }
 
 /* Яндекс Музыка: ссылка на трек → встроенный плеер */
