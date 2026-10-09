@@ -124,6 +124,14 @@
   .play{width:56px;height:56px;border-radius:50%;border:none;background:var(--amber);color:#1b1b1b;font-size:22px;font-weight:800;cursor:pointer;box-shadow:0 5px 0 var(--amber-d);padding-left:4px}
   .play.pause{padding-left:0;font-size:16px;letter-spacing:-2px}
   .play:disabled{opacity:.5;cursor:default}
+  /* полный экран таб-плеера */
+  .panel.full{position:fixed;inset:0;z-index:100;margin:0;border-radius:0;display:flex;flex-direction:column;background:#0C0A24;max-width:none}
+  .panel.full .bar{position:static;border-radius:0}
+  .panel.full .atwrap{flex:1;min-height:0}
+  .panel.full #atScroll{height:100%}
+  .panel.full .pbar{position:static}
+  .panel.full .hint{display:none}
+  body.tfull{overflow:hidden}
   .hint{color:var(--muted);font-size:13px;font-weight:700;padding:0 16px 14px;background:rgba(12,10,36,.6);border-radius:0 0 22px 22px}
   .notfound{padding:80px 0;text-align:center}
   .notfound h1{font-family:var(--display);font-weight:400;font-size:34px;margin-bottom:12px}
@@ -451,6 +459,8 @@ const ICONS={
   tab:IC('<path d="M3 6h18M3 10h18M3 14h18M3 18h18" stroke-width="1.4"/><text x="7" y="12.2" font-size="6" font-weight="800" fill="currentColor" stroke="none">3</text><text x="14" y="16.2" font-size="6" font-weight="800" fill="currentColor" stroke="none">5</text>'),
   zoomOut:IC('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/><path d="M8 11h6"/>'),
   zoomIn:IC('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/><path d="M8 11h6"/><path d="M11 8v6"/>'),
+  full:IC('<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>'),
+  unfull:IC('<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>'),
   score:IC('<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5" fill="currentColor"/><circle cx="17.5" cy="16" r="2.5" fill="currentColor"/>')
 };
 const btnHTML=(icon,label)=>`${ICONS[icon]}<span class="lbl">${label}</span>`;
@@ -516,6 +526,7 @@ async function renderTabPage(){
         <button class="ib solo" id="tColor" title="Цветные струны" aria-label="Цветные струны"></button>
         <button class="ib solo" id="tLayout" title="Перенос строк" aria-label="Перенос строк"></button>
         <button class="ib solo" id="tView" title="Таб или ноты" aria-label="Таб или ноты"></button>
+        <button class="ib solo" id="tFull" title="Во весь экран" aria-label="Во весь экран">${ICONS.full}</button>
       </div>
       <div class="atwrap">
         <div id="atScroll"><div id="atRender"></div></div>
@@ -560,6 +571,20 @@ async function renderTabPage(){
     else atApi.load(new URL(src,document.baseURI).href);
   }catch(e){$('tLoadText').textContent='Не удалось загрузить плеер. Проверь интернет и обнови страницу.';}
   $('tPlay').onclick=()=>atApi&&atApi.playPause();
+  /* во весь экран: настоящий fullscreen, где браузер умеет, иначе (iPhone) — растягиваем плеер на всё окно */
+  const panel=$('tFull').closest('.panel');
+  const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+  const paintFull=on=>{panel.classList.toggle('full',on);document.body.classList.toggle('tfull',on);
+    $('tFull').innerHTML=on?ICONS.unfull:ICONS.full;$('tFull').title=on?'Свернуть':'Во весь экран';$('tFull').setAttribute('aria-label',$('tFull').title);$('tFull').classList.toggle('on',on);
+    setTimeout(relayout,120);};
+  $('tFull').onclick=()=>{
+    if(panel.classList.contains('full')){if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);paintFull(false);return;}
+    const req=panel.requestFullscreen||panel.webkitRequestFullscreen;
+    if(req){try{const r=req.call(panel);if(r&&r.catch)r.catch(()=>{});}catch(e){}}
+    paintFull(true);
+  };
+  ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{if(!fsEl()&&panel.classList.contains('full'))paintFull(false);}));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('full')&&!fsEl())paintFull(false);});
   $('tRestart').onclick=()=>{if(!atApi)return;const playing=atApi.playerState===1;atApi.stop();$('atScroll').scrollTo(0,0);if(playing)setTimeout(()=>atApi.play(),60);};
   $('tSpeed').onclick=()=>{if(!atApi)return;tp.speedI=(tp.speedI+1)%SPEEDS.length;atApi.playbackSpeed=SPEEDS[tp.speedI];paintTabUI();};
   $('tLoop').onclick=()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;paintTabUI();};
