@@ -23,7 +23,7 @@ const credits = s => [
   s.music && s.words !== s.music ? 'Музыка: ' + s.music : '',
 ].filter(Boolean);
 
-const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].trim()).filter(Boolean))];
+const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].split('|')[0].trim()).filter(Boolean))];
 
 // текст песни в простом HTML: его сразу видит поисковик, а в браузере страницу перерисовывает скрипт
 function staticBody(s) {
@@ -35,7 +35,7 @@ function staticBody(s) {
     if (/^\s*\{.*\}\s*$/.test(line)) continue;
     // ((текст)) — курсив
     const html = line.split(/(\(\(|\)\))/).map(p => p === '((' ? (it = true, '') : p === '))' ? (it = false, '') : p ? (it ? '<i>' + esc(p) + '</i>' : esc(p)) : '').join('')
-      .replace(/\[([^\]]+)\]/g, (_, c) => `<b>${c}</b>`);
+      .replace(/\[([^\]]+)\]/g, (_, c) => `<b>${c.split('|')[0]}</b>`);
     body += `<p>${html || '&nbsp;'}</p>\n`;
   }
   return body;

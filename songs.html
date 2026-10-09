@@ -114,7 +114,7 @@
 const $=id=>document.getElementById(id);
 $('yr').textContent=new Date().getFullYear();
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const chordsIn=t=>[...new Set([...(t||'').matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(Boolean))];
+const chordsIn=t=>[...new Set([...(t||'').matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].split('|')[0].trim()).filter(Boolean))];
 /* раздел: ?type=chords — аккорды, ?type=tab — табы, без параметра — всё вместе */
 const TYPE=(()=>{const t=new URLSearchParams(location.search).get('type');return t==='tab'||t==='chords'?t:'all';})();
 const SECT={

@@ -327,8 +327,8 @@ const savePrefs=()=>{try{localStorage.setItem('dgc_site',JSON.stringify(prefs));
 /* ===== аккорды: разбор, транспонирование, схемы ===== */
 const PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11,H:11};
 const SHARP=['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'];
-function parseChord(name){const m=String(name).trim().match(/^([A-H])([#b]?)(.*)$/);if(!m)return null;return {pc:(PC[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)+12)%12,q:m[3]};}
-function transposeChord(name,st){if(!st)return name;return name.split('/').map(p=>{const c=parseChord(p);return c?SHARP[(c.pc+st+120)%12]+c.q:p;}).join('/');}
+function parseChord(name){const m=String(name).split('|')[0].trim().match(/^([A-H])([#b]?)(.*)$/);if(!m)return null;return {pc:(PC[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)+12)%12,q:m[3]};}
+function transposeChord(name,st){if(!st)return name;name=name.split('|')[0];return name.split('/').map(p=>{const c=parseChord(p);return c?SHARP[(c.pc+st+120)%12]+c.q:p;}).join('/');}
 /* «Простые аккорды»: переносим песню в Am/C или Em/G и ставим каподастр, чтобы звучало как в оригинале */
 const EASY=new Set(['C','D','E','G','A','Am','Dm','Em','A7','B7','C7','D7','E7','G7','Am7','Dm7','Em7','Cmaj7','Gmaj7','Asus2','Asus4','Dsus2','Dsus4','Esus4','Hm7','B7']);
 function easyCapo(list){
@@ -363,9 +363,11 @@ function shapeAt(c,q,fr){
   return sh?sh.map(x=>x<0?-1:x+fr):null;
 }
 function chordShape(name){
+  // [Am7|5x5553] / [A|5] — аппликатура, заданная в этом месте песни
+  const pv=String(name).split('|');name=pv[0];const own=pv[1]!=null?(/^\d{1,2}$/.test(pv[1])?+pv[1]:pv[1]):null;
   const c=parseChord(name.split('/')[0]);if(!c)return null;
   const q=normQ(c.q),key=SHARP[c.pc]+q;
-  const ov=SH[name]??SH[key];
+  const ov=own??SH[name]??SH[key];
   if(typeof ov==='string'){ // своя аппликатура: "x02010" или "x-12-14-12-13-12"
     const p=ov.includes('-')?ov.split('-'):ov.split('');
     if(p.length===6)return p.map(v=>/^x$/i.test(v)?-1:+v);
@@ -383,7 +385,7 @@ function chordShape(name){
 }
 function chordSVG(name,label=true){
   const f=chordShape(name);
-  if(!f)return `<svg viewBox="0 0 62 76"><text x="31" y="44" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">нет схемы</text>${label?`<text x="31" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="currentColor">${esc(name)}</text>`:''}</svg>`;
+  if(!f)return `<svg viewBox="0 0 62 76"><text x="31" y="44" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">нет схемы</text>${label?`<text x="31" y="72" text-anchor="middle" font-size="12" font-weight="800" fill="currentColor">${esc(name.split('|')[0])}</text>`:''}</svg>`;
   const pos=f.filter(x=>x>0),max=Math.max(0,...pos),min=pos.length?Math.min(...pos):1,base=max<=4?1:min;
   const X=i=>9+i*9,Y=k=>14+k*10;let g='';
   for(let k=0;k<=5;k++)g+=`<line x1="9" x2="54" y1="${Y(k)}" y2="${Y(k)}" stroke="currentColor" stroke-width="${k===0&&base===1?2.6:1}" opacity="${k===0&&base===1?1:.55}"/>`;
@@ -399,7 +401,7 @@ function chordSVG(name,label=true){
   // баррэ: номер лада справа от полоски, на её уровне
   const bh=0;
   if(barreFr)g+=`<text x="${X(5)+5}" y="${barreY+3}" font-size="8.5" font-weight="800" fill="currentColor">${barreFr}</text>`;
-  if(label)g+=`<text x="31" y="${74+bh}" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">${esc(name)}</text>`;
+  if(label)g+=`<text x="31" y="${74+bh}" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">${esc(name.split('|')[0])}</text>`;
   return `<svg viewBox="0 0 66 ${(label?78:68)+bh}">${g}</svg>`;
 }
 const chordsIn=t=>[...new Set([...(t||'').matchAll(/\[([^\]]+)\]/g)].map(m=>m[1].trim()).filter(x=>parseChord(x)))];
@@ -565,7 +567,8 @@ function drawSong(){
   if(ez)$('easyNote').innerHTML=ez.k?`Каподастр на <b>${ez.k} лад</b> — будет звучать как в оригинале. Без каподастра — ${ez.k<=4?'просто чуть ниже':'заметно ниже, но играть можно и так'}.`:'Песня и так в простой тональности — каподастр не нужен.';
   $('trLabel').textContent=ez?(ez.k?'Капо '+ez.k:'Тон'):tr?(tr>0?'+':'')+tr:'Тон';
   $('lyrics').style.setProperty('--lf',st.fs+'px');
-  $('chordRow').innerHTML=chordsIn(t).map(c=>transposeChord(c,tr)).map(c=>`<button data-chord="${esc(c)}" aria-label="Аккорд ${esc(c)}">${chordSVG(c)}</button>`).join('');
+  const vis=c=>st.easy&&/\|\d{1,2}$/.test(c)?c.split('|')[0]:c;
+  $('chordRow').innerHTML=[...new Set(chordsIn(t).map(c=>vis(transposeChord(c,tr))))].map(c=>`<button data-chord="${esc(c)}" aria-label="Аккорд ${esc(c)}">${chordSVG(c)}</button>`).join('');
   let html='';const S={it:false};
   t.split('\n').forEach(line=>{
     const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
@@ -573,9 +576,9 @@ function drawSong(){
     if(/^\s*\{.*\}\s*$/.test(line))return;
     const parts=line.split(/(\[[^\]]+\])/),textOnly=parts.filter(p=>!/^\[/.test(p)).join('').trim()==='';
     let segs='',pend=null;
-    const seg=(ch,txt)=>{const c=ch?`<button class="ch" data-chord="${esc(ch)}">${esc(ch)}</button>`:(textOnly?'':'<span class="ch">&nbsp;</span>');return textOnly?c:`<span class="sg">${c}<span>${itx(txt,S)||' '}</span></span>`;};
+    const seg=(ch,txt)=>{const c=ch?`<button class="ch" data-chord="${esc(ch)}">${esc(ch.split('|')[0])}</button>`:(textOnly?'':'<span class="ch">&nbsp;</span>');return textOnly?c:`<span class="sg">${c}<span>${itx(txt,S)||' '}</span></span>`;};
     parts.forEach(p=>{const m=p.match(/^\[([^\]]+)\]$/);
-      if(m){if(pend!==null)segs+=seg(pend,'');pend=transposeChord(m[1].trim(),tr);return;}
+      if(m){if(pend!==null)segs+=seg(pend,'');pend=vis(transposeChord(m[1].trim(),tr));return;}
       if(p===''&&pend===null)return;segs+=seg(pend,p);pend=null;});
     if(pend!==null)segs+=seg(pend,'');
     html+=segs?`<div class="ln ${textOnly?'only':''}">${segs}</div>`:'<div class="gap"></div>';
@@ -609,7 +612,7 @@ function toggleScroll(){
 addEventListener('wheel',()=>{if(st.scroll)stopScroll();},{passive:true});
 addEventListener('touchstart',()=>{if(st.scroll)stopScroll();},{passive:true});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-chord]');if(!b)return;
-  const n=b.dataset.chord;$('popSvg').innerHTML=chordSVG(n,false);$('popName').textContent=n;$('pop').dataset.name=n;$('pop').hidden=false;});
+  const n=b.dataset.chord;$('popSvg').innerHTML=chordSVG(n,false);$('popName').textContent=n.split('|')[0];$('pop').dataset.name=n;$('pop').hidden=false;});
 $('pop').addEventListener('click',e=>{if(e.target===$('pop'))$('pop').hidden=true;});
 $('popPlay').onclick=()=>strumChord($('pop').dataset.name);
 
