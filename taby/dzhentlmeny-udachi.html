@@ -28,7 +28,12 @@
   .shead{padding:18px 0 22px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
   .shead h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,4.6vw,52px);line-height:1.05;text-shadow:0 0 26px rgba(110,123,255,.45)}
   .shead .by{color:#CFCCF2;font-weight:700;font-size:18px;margin-top:6px}
-  .badges{display:flex;gap:8px;margin-bottom:12px}
+  .badges{display:flex;flex-wrap:wrap;gap:6px 8px;margin-bottom:12px}
+  .badges .type{white-space:nowrap}
+  /* страница никогда не шире экрана — на телефоне не «ездит» вбок */
+  html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
+  .panel{max-width:100%}
+  #atScroll{overscroll-behavior:contain;touch-action:pan-x pan-y}
   .type{font-weight:800;font-size:12px;letter-spacing:.5px;padding:5px 10px;border-radius:999px;text-transform:uppercase}
   .type.ch{background:rgba(110,123,255,.2);color:#B3BAFF}.type.tb{background:rgba(240,168,48,.18);color:#F3C06A}
   .type.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
