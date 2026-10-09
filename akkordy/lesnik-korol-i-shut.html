@@ -16,8 +16,7 @@
 <meta property="og:description" content="Правильные аккорды к песне «Лесник» (Король и Шут): Am, F, G, D5, E5, G5. Подобраны и проверены на гитаре, схемы со звуком, смена тональности.">
 <meta name="theme-color" content="#0C0A24">
 <link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
 <link rel="stylesheet" href="site.css">
 <script src="auth.js" defer></script>
 <style>
@@ -95,6 +94,13 @@
   /* текст песни — колонкой по центру, строки внутри ровно по левому краю */
   .lyrics{width:fit-content;max-width:100%;margin:0 auto;box-sizing:border-box}
   .chordrow{justify-content:center}
+  /* компьютер: текст слева во всю ширину, схемы аккордов — колонкой справа и не уезжают при прокрутке */
+  @media (min-width:1000px){
+    .songgrid{display:grid;grid-template-columns:minmax(0,1fr) 262px;align-items:start}
+    .songgrid .lycol{grid-column:1;grid-row:1;min-width:0}
+    .songgrid .chordrow{grid-column:2;grid-row:1;position:sticky;top:140px;justify-content:flex-start;align-content:flex-start;padding:20px 20px 20px 0;max-height:calc(100vh - 160px);overflow-y:auto}
+    .songgrid .lyrics{width:auto;margin:0;padding:22px 40px 48px}
+  }
   .lyrics .cm{display:block;color:#B3AEE8;font-weight:800;font-size:12px;margin:26px 0 10px;letter-spacing:2.2px;text-transform:uppercase}
   .lyrics .cm:first-child{margin-top:4px}
   .lyrics .gap{height:.4em}
@@ -119,14 +125,15 @@
   .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:-1px}
   .tracks{background:rgba(37,31,94,.8);color:var(--paper);border:none;border-radius:12px;padding:9px 10px;font:700 14px var(--body)}
   .atwrap{position:relative;background:#0C0A24}
-  #atScroll{height:min(68vh,640px);overflow:auto;position:relative;padding:12px 6px 0;isolation:isolate}
+  /* табулатура прокручивается внутри своего окна; окно по высоте экрана за вычетом шапки и панелей — плеер целиком помещается на экране и ничего не перекрывает */
+  #atScroll{height:max(320px,calc(100vh - 64px - 64px - 82px));height:max(320px,calc(100dvh - 64px - 64px - 82px));overflow:auto;position:relative;padding:12px 6px 0;isolation:isolate}
   .loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0C0A24;z-index:3;font-weight:700;color:#CFCCF2;text-align:center;padding:20px}
   .spin{width:34px;height:34px;border-radius:50%;border:4px solid #2E2870;border-top-color:var(--amber);animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   #atRender .at-cursor-bar{background:transparent}
   #atRender .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
   #atRender .at-selection div{background:rgba(111,191,115,.22)}
-  .pbar{position:sticky;bottom:0;z-index:5;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid rgba(110,123,255,.18);background:rgba(12,10,36,.6);flex-wrap:wrap}
+  .pbar{position:relative;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid rgba(110,123,255,.18);background:#120F33;flex-wrap:wrap}
   .pbar .t{font-weight:800;font-size:14px;color:var(--muted);min-width:38px}
   .prog{flex:1 1 200px;height:6px;border-radius:3px;background:#2E2870;cursor:pointer;position:relative}
   .prog i{position:absolute;left:0;top:0;bottom:0;background:var(--amber);border-radius:3px;width:0}
@@ -207,6 +214,15 @@
   .clogin.flash{animation:cfl 1.2s}
   @keyframes cfl{0%,100%{background:transparent}30%{background:rgba(240,168,48,.18)}}
   @media (max-width:560px){.creplies{margin-left:20px;padding-left:10px}}
+  /* телефон: плеер табов — прогресс сверху, кнопки одной строкой под ним; табулатура по высоте экрана */
+  @media (max-width:560px){
+    .pbar{display:grid;grid-template-columns:auto auto 1fr auto auto auto auto;gap:8px;padding:10px 12px;align-items:center}
+    #tCur{grid-row:1;grid-column:1}.pbar .prog{grid-row:1;grid-column:2/7}#tEnd{grid-row:1;grid-column:7;text-align:right}
+    #tPlay{grid-row:2;grid-column:1;width:46px;height:46px;font-size:18px}#tRestart{grid-row:2;grid-column:2}
+    #tSpeed{grid-row:2;grid-column:4}#tLoop{grid-row:2;grid-column:5}#tMetro{grid-row:2;grid-column:6}#tCount{grid-row:2;grid-column:7}
+    .hint{display:none}
+    #atScroll{height:max(300px,calc(100vh - 64px - 59px - 104px));height:max(300px,calc(100dvh - 64px - 59px - 104px))}
+  }
   @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scroll-snap-type:x proximity;padding:14px 14px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.chordrow button{flex:none;width:60px;scroll-snap-align:start}.pbar{gap:8px}.legend{display:none}}
 </style>
 <script src="/metrika.js" defer></script>
@@ -509,8 +525,7 @@ function renderChordsPage(){
         <button class="ib solo" id="scrollBtn" aria-label="Автопрокрутка">▶ Прокрутка</button>
       </div>
       <p class="easynote" id="easyNote" hidden></p>
-      <div class="chordrow" id="chordRow"></div>
-      <div class="lyrics" id="lyrics"></div>
+      <div class="songgrid"><div class="chordrow" id="chordRow"></div><div class="lycol"><div class="lyrics" id="lyrics"></div></div></div>
     </div>`;
   st.tr=(prefs.tr||{})[SONG.id]||0;st.easy=!!(prefs.easy||{})[SONG.id];
   $('easyBtn').onclick=()=>{st.easy=!st.easy;prefs.easy=prefs.easy||{};prefs.easy[SONG.id]=st.easy;savePrefs();drawSong();};
