@@ -22,15 +22,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Страницы песен
+      - name: Обложки песен (рисуются только новые и изменённые)
+        run: |
+          if node scripts/covers.mjs --check; then exit 0; fi
+          npm i --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+          node scripts/covers.mjs
+      - name: Страницы песен и лента Дзена
         run: node scripts/build-songs.mjs
       - name: Сохранить пересобранные страницы
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A akkordy taby sitemap.xml
+          git add -A akkordy taby sitemap.xml covers dzen.xml feed-dates.json
           if git diff --cached --quiet; then echo "Без изменений"; exit 0; fi
-          git commit -m "Страницы песен: пересборка"
+          git commit -m "Страницы песен, обложки и лента Дзена: пересборка"
           git pull --rebase origin main
           git push
       - name: Залить в Yandex Object Storage

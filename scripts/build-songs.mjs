@@ -93,6 +93,8 @@ function easyOf(s, ch) {
   return easy.join() === ch.join() ? null : { k, chords: easy };
 }
 
+const coverOf = s => fs.existsSync(path.join(ROOT, 'covers', s.id + '.jpg')) ? `${SITE}covers/${s.id}.jpg` : '';
+
 function page(s) {
   const kind = s.tab ? 'tab' : 'chords';
   const url = `${SITE}${DIRS[kind]}/${s.id}.html`;
@@ -126,7 +128,7 @@ ${s.tab ? '<p>Таб со звуком: слушай, замедляй и игр
   const swap = (re, rep) => { if (!re.test(html)) throw new Error('шаблон song.html изменился: ' + re); html = html.replace(re, rep); };
   // все относительные адреса (стили, скрипты, songs.json, табы) — от корня сайта
   swap(/<head>/, `<head>\n<base href="../">`);
-  swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${SITE}brand/ditrihh-logo-dark.png">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};</script>`);
+  swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${coverOf(s) || SITE + 'brand/ditrihh-logo-dark.png'}">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};</script>`);
   swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(descFull)}">${aka.length ? `\n<meta name="keywords" content="${esc([s.title, s.artist, ...aka].filter(Boolean).map(k => k.replace(/,/g, '')).join(', '))}">` : ''}\n<meta property="og:description" content="${esc(desc)}">`);
   swap(/<div id="content">[\s\S]*?<\/div>\n/, `<div id="content">${pre}</div>\n`);
   return { file: path.join(ROOT, DIRS[kind], s.id + '.html'), url, html };
@@ -153,3 +155,70 @@ fs.writeFileSync(path.join(ROOT, 'sitemap.xml'),
   urls.map(u => `  <url><loc>${esc(u)}</loc><lastmod>${today}</lastmod></url>`).join('\n') + `\n</urlset>\n`);
 
 console.log(`Готово: ${pages.length} стр. песен, sitemap — ${urls.length} адресов.`);
+
+/* ===== Лента для Дзена: dzen.xml =====
+   Дзен забирает новые записи сам (Студия → Настройки → Свой сайт → Транслировать материалы).
+   В пост идёт не весь текст песни, а анонс: обложка, аккорды, простые аккорды, первые строчки и ссылка на сайт —
+   полные тексты принадлежат правообладателям, а копия на Дзене не должна обгонять сайт в поиске.
+   Дата публикации — когда песня впервые попала в сборку (feed-dates.json). В ленте — свежие за 3 дня, но не меньше 10. */
+const DZEN_MODE = 'draft';   // 'draft' — приходят черновиками (проверить и опубликовать руками), 'publish' — сразу на канал
+const datesFile = path.join(ROOT, 'feed-dates.json');
+const dates = fs.existsSync(datesFile) ? JSON.parse(fs.readFileSync(datesFile, 'utf8')) : {};
+const nowIso = new Date().toISOString();
+for (const s of songs) if (okId(s.id) && !dates[s.id]) dates[s.id] = nowIso;
+for (const id of Object.keys(dates)) if (!songs.some(s => s.id === id)) delete dates[id];
+fs.writeFileSync(datesFile, JSON.stringify(dates, null, 1) + '\n');
+
+const rfc822 = iso => { const d = new Date(new Date(iso).getTime() + 3 * 3600e3);   // по Москве
+  const D = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], p = n => String(n).padStart(2, '0');
+  return `${D[d.getUTCDay()]}, ${p(d.getUTCDate())} ${M[d.getUTCMonth()]} ${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} +0300`; };
+const cdata = h => '<![CDATA[' + h.replace(/]]>/g, ']]]]><![CDATA[>') + ']]>';
+
+function dzenItem(s) {
+  const url = `${SITE}${s.tab ? DIRS.tab : DIRS.chords}/${s.id}.html`, cover = coverOf(s);
+  const who = s.artist ? ` — ${s.artist}` : '';
+  const P = [];
+  if (cover) P.push(`<figure><img src="${cover}"><figcaption>${esc(s.title)}${esc(who)}</figcaption></figure>`);
+  if (s.tab) {
+    P.push(`<p>${s.fingerstyle ? 'Фингерстайл-аранжировка' : 'Таб'} «${esc(s.title)}»${esc(who)} для одной гитары: мелодия, бас и аккомпанемент сразу.${s.exclusive ? ' Моя аранжировка — такого таба больше нигде нет.' : ''}</p>`);
+    P.push(`<p>Таб со звуком: можно слушать, замедлять до 50%, повторять трудное место по кругу и играть вместе с ним. Есть метроном и отсчёт перед началом.</p>`);
+  } else {
+    const ch = chordsIn(s.text), ez = easyOf(s, ch), lines = firstLines(s.text);
+    P.push(`<p>Правильные аккорды к песне «${esc(s.title)}»${esc(who)} — подобраны и проверены на гитаре.${credits(s).length ? ' ' + esc(credits(s).join('. ')) + '.' : ''}</p>`);
+    if (ch.length) P.push(`<p><b>Аккорды:</b> ${esc(ch.join(', '))}</p>`);
+    if (ez) P.push(`<p><b>Простые аккорды для начинающих:</b> ${esc(ez.chords.join(', '))}${ez.k ? ` — с каподастром на ${ez.k} ладу` : ' — в той же тональности, на открытых струнах'}.</p>`);
+    else if (s.shapes && Object.keys(s.shapes).length) P.push(`<p>Есть простая версия — те же аккорды на открытых струнах, без баре.</p>`);
+    if (lines[0]) P.push(`<p>Начинается так: «${esc(lines[0])}…»${lines[1] ? ` Припев: «${esc(lines[1])}…»` : ''}</p>`);
+    P.push(`<p>Полный текст с аккордами над слогами, схемы аккордов со звуком, транспонирование и простая версия — на сайте.</p>`);
+  }
+  P.push(`<p><a href="${url}">${s.tab ? 'Открыть таб со звуком' : 'Аккорды и текст полностью'} на ditrihh.ru →</a></p>`);
+  P.push(`<p>Каждый день играю на гитаре в прямом эфире на Twitch и YouTube — заходи, разберём твою песню.</p>`);
+  const cat = [DZEN_MODE === 'draft' ? 'native-draft' : '', 'format-article', 'index', 'comment-all'].filter(Boolean);
+  const title = s.tab ? `${s.title}${who}: ${s.fingerstyle ? 'фингерстайл таб' : 'таб'} со звуком` : `${s.title}${who}: аккорды для гитары`;
+  return `  <item>
+    <title>${esc(title)}</title>
+    <link>${url}</link>
+    <pdalink>${url}</pdalink>
+    <guid>${url}</guid>
+    <pubDate>${rfc822(dates[s.id])}</pubDate>
+    <media:rating scheme="urn:simple">nonadult</media:rating>
+${cat.map(c => `    <category>${c}</category>`).join('\n')}
+${cover ? `    <enclosure url="${cover}" type="image/jpeg"/>\n` : ''}    <description>${esc(title)}</description>
+    <content:encoded>${cdata(`<h1>${esc(title)}</h1>` + P.join(''))}</content:encoded>
+  </item>`;
+}
+const fresh = songs.filter(s => okId(s.id)).sort((a, b) => dates[b.id].localeCompare(dates[a.id]));
+const cut = Date.now() - 3 * 864e5;
+let feed = fresh.filter(s => Date.parse(dates[s.id]) >= cut);
+if (feed.length < 10) feed = fresh.slice(0, 10);
+fs.writeFileSync(path.join(ROOT, 'dzen.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:georss="http://www.georss.org/georss">
+<channel>
+  <title>ditrihh — аккорды и табы</title>
+  <link>${SITE}</link>
+  <language>ru</language>
+${feed.map(dzenItem).join('\n')}
+</channel>
+</rss>
+`);
+console.log(`Дзен: в ленте ${feed.length} записей (${DZEN_MODE === 'draft' ? 'черновики' : 'публикация сразу'}).`);

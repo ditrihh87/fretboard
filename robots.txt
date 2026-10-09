@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /power-chords.html
 Disallow: /add-song.html
+Disallow: /add-tab.html
 Disallow: /da-connect.html
 
 Sitemap: https://ditrihh.ru/sitemap.xml
