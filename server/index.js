@@ -342,15 +342,70 @@ const nameOf = (a, n) => a === ADMIN_ID ? ADMIN_NAME : n;
 const LINK_RE = /(https?:\/\/|www\.|t\.me\/|@[a-z0-9_]{5,}|\b[a-z0-9-]{2,}\.(ru|com|net|org|io|me|xyz|su|info|biz|cc|top|site|online|shop|store|pro|link|ly|gg|tv|app|club|space|website|ws|to|kz|by|ua)\b|[а-яё0-9-]{2,}\.рф)/i;
 const hasLink = t => LINK_RE.test(String(t).replace(/(https?:\/\/)?(www\.)?ditrihh\.ru\S*/gi, ''));
 const loadBans = token => loadJSON('comments/_bans.json', token, {});
-const pubComment = (c, acc, admin) => ({ pending: !!c.pending, id: c.id, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
+/* ===== Рейтинг: очки за время на сайте и комментарии → звания и ачивки =====
+   stats/<acc>.json — { sec, comments, got: {achId: время}, last }; stats/_ranks.json — { acc: номер звания } для подписи под именем.
+   Очки: 1 за минуту на сайте + 10 за комментарий. Новые ачивки — просто добавить строку в ACH. */
+const RANKS = [[0, 'Новичок'], [60, 'Слушатель'], [300, 'Бренчащий'], [1000, 'Аккордист'], [3000, 'Гитарист'], [8000, 'Мастер баре'], [20000, 'Рок-звезда'], [50000, 'Легенда']];
+const ACH = [
+  { id: 'c1', name: 'Первое слово', desc: 'Первый комментарий', k: 'comments', n: 1, icon: '💬' },
+  { id: 'c10', name: 'Разговорчивый', desc: '10 комментариев', k: 'comments', n: 10, icon: '🗣️' },
+  { id: 'c100', name: 'Душа компании', desc: '100 комментариев', k: 'comments', n: 100, icon: '🎤' },
+  { id: 'c1000', name: 'Голос сцены', desc: '1000 комментариев', k: 'comments', n: 1000, icon: '📣' },
+  { id: 'h1', name: 'Первый час', desc: '1 час на сайте', k: 'sec', n: 3600, icon: '⏱️' },
+  { id: 'h10', name: 'Завсегдатай', desc: '10 часов на сайте', k: 'sec', n: 36000, icon: '🎸' },
+  { id: 'h100', name: 'Живёт здесь', desc: '100 часов на сайте', k: 'sec', n: 360000, icon: '🏠' },
+];
+const PING_SEC = 60;                   // сайт присылает «я тут» раз в минуту, пока вкладка открыта и человек что-то делает
+const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10;
+const rankIdx = p => { let i = 0; RANKS.forEach((r, j) => { if (p >= r[0]) i = j; }); return i; };
+const statKey = acc => `stats/${acc}.json`;
+async function bumpStats(acc, add, token) {
+  const st = await loadJSON(statKey(acc), token, { sec: 0, comments: 0, got: {} });
+  if (add.ping) {   // «я тут» засчитываем не чаще раза в минуту
+    if (st.last && Date.now() - st.last < (PING_SEC - 8) * 1000) return { skip: true, fresh: [], up: null };
+    st.last = Date.now();
+  }
+  const before = rankIdx(statPoints(st));
+  if (add.sec) st.sec = (st.sec || 0) + add.sec;
+  if (add.comments) st.comments = Math.max(0, (st.comments || 0) + add.comments);
+  st.got = st.got || {};
+  const fresh = [];
+  for (const a of ACH) if (!st.got[a.id] && (st[a.k] || 0) >= a.n) { st.got[a.id] = Date.now(); fresh.push(a.id); }
+  await saveList(statKey(acc), st, token);
+  const after = rankIdx(statPoints(st));
+  if (after !== before || fresh.length) {
+    const ranks = await loadJSON('stats/_ranks.json', token, {});
+    if (ranks[acc] !== after) { ranks[acc] = after; await saveList('stats/_ranks.json', ranks, token); }
+  }
+  return { st, fresh, up: after > before ? RANKS[after][1] : null };
+}
+function statView(st) {
+  const p = statPoints(st), i = rankIdx(p), nx = RANKS[i + 1];
+  return { sec: st.sec || 0, comments: st.comments || 0, points: p, rank: RANKS[i][1], level: i + 1,
+    from: RANKS[i][0], next: nx ? { rank: nx[1], at: nx[0] } : null,
+    ach: ACH.map(a => ({ id: a.id, name: a.name, desc: a.desc, icon: a.icon, got: (st.got || {})[a.id] || 0, have: Math.min(st[a.k] || 0, a.n), need: a.n, k: a.k })) };
+}
+const achNames = ids => ids.map(id => { const a = ACH.find(x => x.id === id); return a && { id, name: a.name, icon: a.icon, desc: a.desc }; }).filter(Boolean);
+async function handleStats(body, token) {
+  const u = await commentUser(body, token);
+  if (!u) return reply(401, { error: 'login' });
+  if (body.action === 'ping') {
+    const r = await bumpStats(u.acc, { sec: PING_SEC, ping: true }, token);
+    return reply(200, { ok: !r.skip, fresh: achNames(r.fresh), up: r.up });
+  }
+  const st = await loadJSON(statKey(u.acc), token, { sec: 0, comments: 0, got: {} });
+  return reply(200, statView(st));
+}
+
+const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
-  const [list, u, bans] = await Promise.all([loadJSON(`comments/${body.song}.json`, token, []), commentUser(body, token).catch(() => null), loadBans(token)]);
+  const [list, u, bans, ranks] = await Promise.all([loadJSON(`comments/${body.song}.json`, token, []), commentUser(body, token).catch(() => null), loadBans(token), loadJSON('stats/_ranks.json', token, {})]);
   const acc = u && u.acc, admin = !!acc && adminAccs().includes(acc);
   // на проверке — видят только автор и владелец; забаненных не видит никто, кроме владельца
   const vis = list.filter(c => (admin || !bans[c.acc]) && (!c.pending || admin || c.acc === acc));
-  return reply(200, { comments: vis.map(c => pubComment(c, acc, admin)), me: acc || null, admin, banned: !!(acc && bans[acc]) });
+  return reply(200, { comments: vis.map(c => pubComment(c, acc, admin, ranks)), me: acc || null, admin, banned: !!(acc && bans[acc]) });
 }
 async function handleComment(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
@@ -373,7 +428,10 @@ async function handleComment(body, token) {
   if (!admin && hasLink(text)) c.pending = true;
   list.push(c); list = list.slice(-MAX_COMMENTS);
   await saveList(key, list, token);
-  return reply(200, { comment: pubComment(c, u.acc, admin) });
+  let r = { fresh: [], up: null };
+  if (!c.pending) { try { r = await bumpStats(u.acc, { comments: 1 }, token); } catch (e) { console.error(e); } }
+  const ranks = await loadJSON('stats/_ranks.json', token, {});
+  return reply(200, { comment: pubComment(c, u.acc, admin, ranks), fresh: achNames(r.fresh), up: r.up });
 }
 // владелец: одобрить комментарий со ссылкой / забанить автора (его комментарии под этой песней удаляются, остальные скрываются)
 async function handleCommentMod(body, token) {
@@ -384,12 +442,14 @@ async function handleCommentMod(body, token) {
   let list = await loadJSON(key, token, []);
   const c = list.find(x => x.id === body.id);
   if (!c) return reply(404, { error: 'no comment' });
-  if (body.action === 'comment_ok') { delete c.pending; await saveList(key, list, token); return reply(200, { ok: true }); }
+  if (body.action === 'comment_ok') { delete c.pending; await saveList(key, list, token); await bumpStats(c.acc, { comments: 1 }, token).catch(console.error); return reply(200, { ok: true }); }
   if (adminAccs().includes(c.acc)) return reply(400, { error: 'cannot ban admin' });
   const bans = await loadBans(token);
   bans[c.acc] = { name: c.name, t: Date.now(), song: body.song };
   await saveList('comments/_bans.json', bans, token);
   const gone = list.filter(x => x.acc === c.acc).map(x => x.id);
+  const counted = list.filter(x => x.acc === c.acc && !x.pending).length;
+  if (counted) await bumpStats(c.acc, { comments: -counted }, token).catch(console.error);
   list = list.filter(x => x.acc !== c.acc);
   await saveList(key, list, token);
   return reply(200, { ok: true, removed: gone });
@@ -409,8 +469,9 @@ async function handleCommentDel(body, token) {
   const i = list.findIndex(c => c.id === body.id);
   if (i < 0) return reply(200, { ok: true });
   if (list[i].acc !== u.acc && !adminAccs().includes(u.acc)) return reply(403, { error: 'not yours' });
-  list.splice(i, 1);
+  const [del] = list.splice(i, 1);
   await saveList(key, list, token);
+  if (!del.pending) await bumpStats(del.acc, { comments: -1 }, token).catch(console.error);   // удалённый комментарий не засчитывается
   return reply(200, { ok: true });
 }
 
@@ -609,6 +670,9 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
+  if (body.action === 'ping' || body.action === 'stats') {
+    try { return await handleStats(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
   if (body.action === 'comment_ok' || body.action === 'comment_ban') {
     try { return await handleCommentMod(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
