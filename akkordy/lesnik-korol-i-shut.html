@@ -99,7 +99,8 @@
   .lyrics .cm:first-child{margin-top:4px}
   .lyrics .gap{height:.4em}
   .lyrics .gap+.cm{margin-top:18px}
-  .lyrics .ln{display:flex;flex-wrap:wrap;align-items:flex-end;margin-bottom:.85em;white-space:pre-wrap}
+  .lyrics .ln{display:flex;flex-wrap:nowrap;align-items:flex-end;margin-bottom:.85em;white-space:pre}
+  .lyrics .ln.wrap{flex-wrap:wrap;white-space:pre-wrap}
   .lyrics .sg>.ch{margin-bottom:1px}
   .lyrics .sg{display:inline-flex;flex-direction:column}
   .lyrics i{font-style:italic;color:#CFCCF2}
@@ -206,7 +207,7 @@
   .clogin.flash{animation:cfl 1.2s}
   @keyframes cfl{0%,100%{background:transparent}30%{background:rgba(240,168,48,.18)}}
   @media (max-width:560px){.creplies{margin-left:20px;padding-left:10px}}
-  @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{padding:14px 14px 4px}.chordrow button{width:64px}.pbar{gap:8px}.legend{display:none}}
+  @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scroll-snap-type:x proximity;padding:14px 14px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.chordrow button{flex:none;width:60px;scroll-snap-align:start}.pbar{gap:8px}.legend{display:none}}
 </style>
 <script src="/metrika.js" defer></script>
 </head>
@@ -391,7 +392,7 @@ function playMidi(m,when){
 function strumChord(name){const f=chordShape(name);if(!f)return;ctx();setTimeout(()=>f.forEach((fr,c)=>{if(fr>=0)playMidi(OPENM[c]+fr,c*.11);}),bank.size?0:400);}
 
 /* ===== страница песни ===== */
-let SONG=null;const st={tr:0,fs:prefs.fs||19,scroll:0,raf:0};
+let SONG=null;const st={tr:0,fs:prefs.fs||(innerWidth<=560?16:19),scroll:0,raf:0};
 /* ===== Комментарии под песней: пишут вошедшие через Яндекс ID (и VK ID, когда VK примет домен) =====
    Хранятся на нашем сервере (comments/<id>.json). Свой комментарий можно удалить; владелец (ADMIN_ACC) удаляет любые. */
 const TG_CHAT='https://t.me/+j2O8KYNsBKllM2Iy';
@@ -551,7 +552,23 @@ function drawSong(){
     html+=segs?`<div class="ln ${textOnly?'only':''}">${segs}</div>`:'<div class="gap"></div>';
   });
   $('lyrics').innerHTML=html;
+  fitLyrics();
 }
+/* строка песни не переносится (иначе аккорд уезжает с нужного слога): длинную строку чуть уменьшаем — до 75% размера;
+   если и так не влезает, переносим её по аккордам (аккорд остаётся над своим слогом). Кнопки A−/A+ задают обычный размер. */
+function fitLyrics(){
+  const L=$('lyrics');if(!L)return;
+  L.style.setProperty('--lf',st.fs+'px');
+  const cs=getComputedStyle(L),avail=L.parentElement.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  L.querySelectorAll('.ln').forEach(l=>{
+    l.style.fontSize='';l.classList.remove('wrap');
+    const w=l.scrollWidth;if(w<=avail||avail<=0)return;
+    const k=Math.max(.78,Math.floor(avail/w*100)/100);
+    l.style.fontSize=k+'em';
+    if(l.scrollWidth>avail+1)l.classList.add('wrap');
+  });
+}
+let fitT=0;addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(fitLyrics,150);});
 function stopScroll(){st.scroll=0;cancelAnimationFrame(st.raf);const b=$('scrollBtn');if(b){b.classList.remove('on');b.textContent='▶ Прокрутка';}}
 function toggleScroll(){
   st.scroll=(st.scroll+1)%4;if(!st.scroll){stopScroll();return;}

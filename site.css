@@ -206,6 +206,12 @@
     .hero p{font-size:18px}
     .hero .ctas .btn{flex:1 1 100%}
     .nav .btn{display:none}
+    .nav .wrap{gap:10px}
+    /* на узком экране: плашка стрима — только во время эфира и коротко */
+    .nav .live-dot:not(.on){display:none}
+    .nav .live-dot.on{margin-left:auto;padding:7px 10px}
+    .nav .live-dot.on span{display:none}
+    .nav .live-dot.on::after{content:'LIVE'}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 

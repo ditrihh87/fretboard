@@ -155,6 +155,7 @@
 #authBox .ab-ach span{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(239,236,251,.06);font-size:16px;filter:grayscale(1);opacity:.35;cursor:default}
 #authBox .ab-ach span.on{filter:none;opacity:1;background:rgba(240,168,48,.16);box-shadow:inset 0 0 0 1px rgba(240,168,48,.5)}
 @media (max-width:820px){#authBox{margin-left:auto}.live-dot~#authBox{margin-left:0}}
+@media (max-width:560px){.live-dot:not(.on)~#authBox{margin-left:auto}}
 @media (max-width:560px){#authBox .ab-btn{padding:0 12px}#authBox .ab-pop{position:fixed;left:12px;right:12px;top:72px;min-width:0;width:auto}}`;
     document.head.appendChild(css);
     const box=document.createElement('div');box.id='authBox';
@@ -183,5 +184,32 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     addEventListener('blur',()=>{setTimeout(()=>{if(document.activeElement&&document.activeElement.tagName==='IFRAME')pop.hidden=true;},0);});
     addEventListener('scroll',()=>{if(!pop.hidden&&window.scrollY>200)pop.hidden=true;},{passive:true});
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();
+  /* ===== меню ☰ на телефоне: те же разделы, что в шапке ===== */
+  function burger(){
+    const wrap=document.querySelector('header.nav .wrap'),nav=wrap&&wrap.querySelector('nav');
+    if(!nav||document.getElementById('navBurger'))return;
+    const css=document.createElement('style');
+    css.textContent=`#navBurger{display:none;flex:none;width:40px;height:38px;border:none;border-radius:12px;background:rgba(239,236,251,.1);color:#EFECFB;cursor:pointer;align-items:center;justify-content:center;padding:0}
+#navBurger svg{width:20px;height:20px}
+#navMenu{position:fixed;left:0;right:0;top:64px;z-index:19;background:rgba(12,10,36,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(110,123,255,.25);padding:8px 16px 16px;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#navMenu[hidden]{display:none}
+#navMenu a{display:block;padding:14px 12px;border-radius:12px;color:#EFECFB;font:800 17px Manrope,system-ui,sans-serif;text-decoration:none}
+#navMenu a.on{color:#F0A830}
+#navMenu a:active,#navMenu a:hover{background:rgba(110,123,255,.18)}
+@media (max-width:820px){#navBurger{display:inline-flex}}`;
+    document.head.appendChild(css);
+    const b=document.createElement('button');b.id='navBurger';b.type='button';b.setAttribute('aria-label','Меню');b.setAttribute('aria-expanded','false');
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+    const m=document.createElement('div');m.id='navMenu';m.hidden=true;
+    const fill=()=>{m.innerHTML=[...nav.querySelectorAll('a')].map(a=>`<a href="${esc(a.href)}"${a.classList.contains('on')?' class="on"':''}>${esc(a.textContent)}</a>`).join('');};
+    wrap.appendChild(b);document.body.appendChild(m);
+    const set=o=>{m.hidden=!o;b.setAttribute('aria-expanded',String(o));b.innerHTML=o?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';};
+    b.addEventListener('click',e=>{e.stopPropagation();if(m.hidden)fill();set(m.hidden);});
+    m.addEventListener('click',e=>{if(e.target.closest('a'))set(false);});
+    document.addEventListener('click',e=>{if(!m.hidden&&!m.contains(e.target))set(false);});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')set(false);});
+  }
+  // разделы подсвечиваются скриптом страницы чуть позже — меню строим после него
+  const go=()=>{paint();setTimeout(burger,0);};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
 })();

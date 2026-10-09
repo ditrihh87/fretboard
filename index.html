@@ -254,8 +254,8 @@ function paintSched(){
     else if(!n.live){const h=Math.floor(n.mins/60),m=n.mins%60;$('lbWhen').textContent='сегодня в 00:00';$('lbIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;}
   }
   if(n.soon){$('nextLive').textContent='скоро';$('nextIn').textContent='эфир обычно с 00:00 по Москве';$('navLiveText').textContent='Стрим скоро';$('navLive').style.background='';return;}
-  if(n.live){$('nextLive').textContent='Сейчас идёт';$('nextIn').textContent='обычно с 00:00 до 05:00 по Москве';$('navLiveText').textContent='Сейчас в эфире';$('navLive').style.background='rgba(229,72,77,.18)';}
-  else{const h=Math.floor(n.mins/60),m=n.mins%60;$('nextLive').textContent='сегодня в 00:00';$('nextIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;$('navLiveText').textContent=h?`Стрим через ${h} ч`:`Стрим через ${m} мин`;$('navLive').style.background='';}
+  if(n.live){$('nextLive').textContent='Сейчас идёт';$('nextIn').textContent='обычно с 00:00 до 05:00 по Москве';$('navLiveText').textContent='Сейчас в эфире';$('navLive').style.background='rgba(229,72,77,.18)';$('navLive').classList.add('on');}
+  else{const h=Math.floor(n.mins/60),m=n.mins%60;$('nextLive').textContent='сегодня в 00:00';$('nextIn').textContent=`по Москве · через ${h?h+' ч ':''}${m} мин`;$('navLiveText').textContent=h?`Стрим через ${h} ч`:`Стрим через ${m} мин`;$('navLive').style.background='';$('navLive').classList.remove('on');}
 }
 paintSched();setInterval(paintSched,60e3);
 
