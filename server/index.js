@@ -403,6 +403,7 @@ const ACH = [
 ];
 const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без похожих O/0, I/1/L
 const CODE_RE = /\bDH-([A-Z2-9]{5})\b/gi;
+const OWNER_POINTS = 1000000;        // очки владельца сайта (выше любого статуса)
 const PING_SEC = 60;                   // сайт присылает «я тут» раз в минуту, пока вкладка открыта и человек что-то делает
 const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10 + Math.floor((st.rub || 0) / 10) + (st.bonus || 0);
 const rankIdx = p => { let i = 0; RANKS.forEach((r, j) => { if (p >= r[0]) i = j; }); return i; };
@@ -420,8 +421,8 @@ async function bumpStats(acc, add, token) {
   if (add.comments) st.comments = Math.max(0, (st.comments || 0) + add.comments);
   if (add.rub) st.rub = Math.max(0, (st.rub || 0) + add.rub);
   if (add.reqs) st.reqs = Math.max(0, (st.reqs || 0) + add.reqs);   // заказы подбора аккордов (удалил свой заказ — минус один)
-  // владелец сайта всегда на высшем статусе: добиваем бонусные очки до порога «Гитарного бога»
-  if (adminAccs().includes(acc)) { const top = RANKS[RANKS.length - 1][0], p = statPoints(st); if (p < top) st.bonus = (st.bonus || 0) + top - p; }
+  // владелец сайта: высший статус и не меньше OWNER_POINTS очков
+  if (adminAccs().includes(acc)) { const p = statPoints(st); if (p < OWNER_POINTS) st.bonus = (st.bonus || 0) + OWNER_POINTS - p; }
   st.got = st.got || {};
   const fresh = [];
   if (add.flags) Object.assign(st, add.flags);
