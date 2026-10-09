@@ -40,5 +40,23 @@
     "tab": "tabs/utinye-istorii-duck-tales.gpx",
     "exclusive": true,
     "fingerstyle": true
+  },
+  {
+    "id": "dzhentlmeny-udachi",
+    "title": "Джентльмены удачи",
+    "artist": "Музыка из к/ф «Джентльмены удачи»",
+    "music": "Геннадий Гладков",
+    "aka": [
+      "Джентльмены удачи на гитаре",
+      "Музыка из фильма Джентльмены удачи",
+      "Джентльмены удачи фингерстайл",
+      "Джентльмены удачи табы",
+      "Гладков Джентльмены удачи",
+      "Dzhentlmeny udachi",
+      "Gentlemen of Fortune"
+    ],
+    "tab": "tabs/dzhentlmeny-udachi.gp5",
+    "exclusive": true,
+    "fingerstyle": true
   }
 ]
