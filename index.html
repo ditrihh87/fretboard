@@ -119,10 +119,10 @@
           <a class="dn-btn" href="https://dalink.to/ditrihh" target="_blank" rel="noopener">Задонатить</a>
         </aside>
       </div>
-      <div class="ext"><span>Смотреть в приложении:</span>
-        <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener"><i style="background:#9146FF"></i>Twitch<small>↗</small></a>
+      <div class="ext" id="ext"><span id="extLbl">Смотреть в приложении:</span>
+        <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener" data-p="twitch"><i style="background:#9146FF"></i>Twitch<small>↗</small></a>
         <a href="https://www.youtube.com/@ditrihh/live" target="_blank" rel="noopener"><i style="background:#FF3B30"></i>YouTube<small>↗</small></a>
-        <a href="https://live.vkvideo.ru/ditrihh" target="_blank" rel="noopener"><i style="background:#0077FF"></i>VK Видео Live<small>↗</small></a>
+        <a href="https://live.vkvideo.ru/ditrihh" target="_blank" rel="noopener" data-p="vk"><i style="background:#0077FF"></i>VK Видео Live<small>↗</small></a>
       </div>
     </div>
   </section>
@@ -387,6 +387,21 @@ document.querySelectorAll('.tab[data-p]').forEach(b=>b.addEventListener('click',
   on?start():poster();
 }));
 $('playBtn').onclick=start;
+/* «Смотреть …»: с компьютера — включаем плеер на сайте, с телефона/планшета — открываем приложение */
+(function(){
+  const touch=matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>1; // iPad с iPadOS выдаёт себя за Mac — ловим по тачу
+  if(touch)return;
+  $('extLbl').textContent='Смотреть на сайте:';
+  document.querySelectorAll('#ext a[data-p]').forEach(a=>{
+    if(!P[a.dataset.p])return;
+    a.removeAttribute('target');const sm=a.querySelector('small');if(sm)sm.remove();
+    a.addEventListener('click',e=>{e.preventDefault();
+      const t=document.querySelector(`.tab[data-p="${a.dataset.p}"]`);if(t)t.click();
+      if(!on)start();
+      document.querySelector('#stream .player').scrollIntoView({behavior:'smooth',block:'center'});
+    });
+  });
+})();
 </script>
 </body>
 </html>
