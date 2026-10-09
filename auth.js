@@ -34,7 +34,7 @@
   }
   const name=u=>u?[u.first_name,u.last_name].filter(Boolean).join(' ')||u.username||'Гитарист':'Гитарист';
 
-  /* ===== Рейтинг: время на сайте (раз в минуту, пока вкладка открыта и человек что-то делает), звания, ачивки ===== */
+  /* ===== Рейтинг: время на сайте (раз в минуту, пока вкладка открыта и человек что-то делает), статусы, ачивки ===== */
   const post=b=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)}).then(r=>r.ok?r.json():Promise.reject(r.status));
   const rated=()=>{const l=getLink();return l&&/^(ya|vk|admin)_/.test(String(l.user&&l.user.id))?l:null;};
   let lastAct=Date.now();
@@ -46,7 +46,7 @@
   function toast(fresh,up,rub){
     const items=(fresh||[]).map(a=>`<div class="at-i"><span>${a.icon||'🏆'}</span><div><b>Новая ачивка: ${esc(a.name)}</b><small>${esc(a.desc||'')}</small></div></div>`);
     if(rub)items.unshift(`<div class="at-i"><span>💛</span><div><b>Донат засчитан: +${Math.round(rub)} ₽</b><small>Спасибо за поддержку! +${Math.floor(rub/10)} очков</small></div></div>`);
-    if(up)items.unshift(`<div class="at-i"><span>⭐</span><div><b>Новое звание: ${esc(up)}</b><small>Так держать!</small></div></div>`);
+    if(up)items.unshift(`<div class="at-i"><span>⭐</span><div><b>Новый статус: ${esc(up)}</b><small>Так держать!</small></div></div>`);
     if(!items.length)return;
     let box=document.getElementById('achToast');
     if(!box){box=document.createElement('div');box.id='achToast';document.body.appendChild(box);
@@ -61,7 +61,7 @@
     const pct=r.next?Math.round((r.points-r.from)/(r.next.at-r.from)*100):100;
     el.innerHTML=`<div class="ab-rank"><b class="${l.prov==='admin'?'lvown':'lv'+r.level}">${esc(r.rank)}</b><span>уровень ${r.level}</span></div>
       <div class="ab-bar"><i style="width:${Math.max(3,Math.min(100,pct))}%"></i></div>
-      <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${r.points} очков — высшее звание`}</div>
+      <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${r.points} очков — высший статус`}</div>
       <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span>${r.rub?`<span>💛 ${r.rub.toLocaleString('ru-RU')} ₽</span>`:''}</div>
       ${r.code?`<div class="ab-code"><span>Код для доната</span><b>${esc(r.code)}</b><button type="button" data-copy="${esc(r.code)}" title="Скопировать">⧉</button><button type="button" data-help title="Что это?">?</button><small hidden>Добавь код в сообщение к <a href="https://dalink.to/ditrihh" target="_blank" rel="noopener">донату</a> — сумма попадёт в рейтинг и ачивки.</small></div>`:''}
       <div class="ab-ach">${r.ach.map(a=>`<span class="${a.got?'on':''}" title="${esc(a.name)} — ${esc(a.desc)}${a.got?'':` (${a.k==='sec'?fmtTime(a.have)+' из '+fmtTime(a.need):a.k==='rub'?a.have+' ₽ из '+a.need+' ₽':a.have+' из '+a.need})`}">${a.icon}</span>`).join('')}</div>`;
