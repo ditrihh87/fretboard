@@ -77,5 +77,24 @@
     "tab": "tabs/winnie-the-pooh-tv-theme.gpx",
     "exclusive": true,
     "fingerstyle": true
+  },
+  {
+    "id": "sunny-boney-m",
+    "title": "Sunny",
+    "artist": "Boney M.",
+    "words": "Bobby Hebb",
+    "music": "Bobby Hebb",
+    "aka": [
+      "Boney M Sunny",
+      "Sunny на гитаре",
+      "Sunny фингерстайл",
+      "Sunny табы",
+      "Санни Бони М",
+      "Бони М Санни",
+      "Sunny fingerstyle guitar"
+    ],
+    "tab": "tabs/sunny-boney-m.gpx",
+    "exclusive": true,
+    "fingerstyle": true
   }
 ]
