@@ -50,6 +50,7 @@ const tr = (n, st) => st ? n.split('/').map(p => { const c = parseChord(p); retu
 const EASY = new Set(['C', 'D', 'E', 'G', 'A', 'Am', 'Dm', 'Em', 'A7', 'B7', 'C7', 'D7', 'E7', 'G7', 'Am7', 'Dm7', 'Em7', 'Cmaj7', 'Gmaj7', 'Asus2', 'Asus4', 'Dsus2', 'Dsus4', 'Esus4']);
 function easyOf(s, ch) {
   const f = ch.map(parseChord).find(Boolean); if (!f) return null;
+  if (s.easy === 'same') return { k: 0, same: true, chords: [...new Set(ch.map(c => c.replace(/^([A-H][#b]?)(m)?(maj7|7)(?=\/|$)/, '$1$2')))] };
   let k;
   const ef = s.easyFrom && parseChord(s.easyFrom);
   if (ef) k = (f.pc - ef.pc + 12) % 12;
@@ -77,7 +78,7 @@ function page(s) {
     ? `${s.title}${who}: эксклюзивный ${s.fingerstyle ? 'фингерстайл-таб (fingerstyle guitar, аранжировка для одной гитары)' : 'таб'} от ditrihh со звуком, замедлением и повтором участка.`
     : (() => { const ez = easyOf(s, ch);
         return `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. ` +
-          (ez ? `Простые аккорды для начинающих: ${ez.chords.slice(0, 5).join(', ')}${ez.k ? ` (каподастр на ${ez.k} лад)` : ''}. ` : s.shapes && Object.keys(s.shapes).length ? 'Простые аккорды для начинающих — на открытых струнах, без баре. ' : '') +
+          (ez ? `Простые аккорды для начинающих: ${ez.chords.slice(0, 5).join(', ')}${ez.k ? ` (каподастр на ${ez.k} лад)` : ez.same ? ' — в той же тональности, на открытых струнах' : ''}. ` : s.shapes && Object.keys(s.shapes).length ? 'Простые аккорды для начинающих — на открытых струнах, без баре. ' : '') +
           'Подобраны и проверены на гитаре, схемы со звуком.'; })();
   const aka = Array.isArray(s.aka) ? s.aka.filter(Boolean) : [];
   const descFull = aka.length ? `${desc} Также ищут: ${aka.join(', ')}.` : desc;

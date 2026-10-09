@@ -89,6 +89,7 @@
           <tr><td><code>A 5</code> <span class="mut">(одна строка)</span></td><td>то же, что «Баре: A 5»</td></tr>
           <tr><td><code>Am7 5x5553</code> <span class="mut">посреди песни</span></td><td>с этого места Am7 играется так, пока не напишешь новую (например <code>Am7 x02010</code>)</td></tr>
           <tr><td><code>Баре: Am7 x02010</code></td><td>своя аппликатура: 6 знаков от толстой струны к тонкой, x — не играть. Лады больше 9 — через дефис: <code>x-12-14-12-13-12</code></td></tr>
+          <tr><td><code>Простые: та же тональность</code></td><td>«Простые аккорды» без каподастра: септаккорды убираются (Am7 → Am), баре заменяются открытыми формами (F, Gm, Bm…)</td></tr>
           <tr><td><code>Простые: F</code></td><td>«Простые аккорды» начнутся с F, каподастр посчитается сам</td></tr>
           <tr><td><code>Также ищут: КиШ …, Грохочет гром</code></td><td>другие названия для поисковиков, через запятую</td></tr>
         </table></div>
@@ -212,6 +213,7 @@ function unconvert(song){
   const out=[];
   if(song.shapes&&Object.keys(song.shapes).length)out.push('Баре: '+Object.entries(song.shapes).map(([c,f])=>c+' '+f).join(', '));
   if(song.easyFrom)out.push('Простые: '+song.easyFrom);
+  if(song.easy==='same')out.push('Простые: та же тональность');
   if(song.aka&&song.aka.length)out.push('Также ищут: '+song.aka.join(', '));
   if(out.length)out.push('');
   const L=String(song.text||'').split('\n');
@@ -274,6 +276,8 @@ const BARRE_RE=/^\s*(баре|барре|barre)\s*[:：]\s*(.+)$/i;
 // «Простые: F» / «Простая версия: от F» — в «Простых аккордах» песня начнётся с F
 // «Также ищут: КиШ Дурак и молния, Грохочет гром» — другие названия для поиска (поле aka)
 const AKA_RE=/^\s*также\s+ищут\s*[:：]\s*(.+)$/i;
+// «Простые: та же тональность» (или «открытые») — без септаккордов и каподастра, на открытых струнах
+const EASY_SAME_RE=/^\s*прост\S*(\s+\S+)?\s*[:：]\s*(та\s+же(\s+тональность)?|в\s+той\s+же(\s+тональности)?|открыт\S*|=)\s*$/i;
 const EASY_RE=/^\s*прост\S*(\s+\S+)?\s*[:：]\s*(от\s+)?([A-Ha-h][#b]?m?)\s*$/i;
 // аппликатура целиком: 6 знаков от 6-й струны к 1-й, x — не играть (x02010), лады больше 9 — через дефис (x-12-14-12-13-12)
 const FING_RE=/^(?:[xX\d]{6}|(?:[xX]|\d{1,2})(?:-(?:[xX]|\d{1,2})){5})$/;
@@ -293,6 +297,7 @@ function convert(src,meta){
     let line=L[i].replace(/\s+$/,'');
     if(!line.trim()){if(out.length&&out[out.length-1]!==''&&!/^\{comment:/.test(out[out.length-1]))out.push('');continue;}
     const ak=line.match(AKA_RE);if(ak){meta.aka=(meta.aka||[]).concat(ak[1].split(/[,;]/).map(x=>x.trim()).filter(Boolean));continue;}
+    if(EASY_SAME_RE.test(line)){meta.easy='same';continue;}
     const ez=line.match(EASY_RE);if(ez){meta.easyFrom=fixChord(ez[3]);continue;}
     const br=line.match(BARRE_RE);if(br){const o=parseShapes(br[2]);if(o)meta.shapes=Object.assign(meta.shapes||{},o);continue;}
     // строка только из «аккорд лад» (A 5, C#m 4) — тоже баре, даже без слова «Баре:».
@@ -471,6 +476,7 @@ function build(){
   if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
   if(meta.shapes)ONE.shapes=meta.shapes;else if(old&&old.shapes)ONE.shapes=old.shapes;
   if(meta.easyFrom)ONE.easyFrom=meta.easyFrom;
+  if(meta.easy)ONE.easy=meta.easy;
   if(meta.aka)ONE.aka=meta.aka;else if(old&&old.aka)ONE.aka=old.aka;
   if($('exclusive').checked)ONE.exclusive=true;
   if(ONE.shapes){const s=ONE.shapes;delete ONE.shapes;ONE.shapes=s;}
@@ -500,7 +506,7 @@ function parseBatch(){
       if(au){if(/музык/i.test(au[1]))meta.music=au[2].trim();else meta.words=au[2].trim();body.shift();continue;}
       break;}
     song.text=convert(body.join('\n'),meta);
-    song.words=meta.words||dW;song.music=meta.music||dM;if(meta.shapes)song.shapes=meta.shapes;if(meta.easyFrom)song.easyFrom=meta.easyFrom;if(meta.aka)song.aka=meta.aka;
+    song.words=meta.words||dW;song.music=meta.music||dM;if(meta.shapes)song.shapes=meta.shapes;if(meta.easyFrom)song.easyFrom=meta.easyFrom;if(meta.easy)song.easy=meta.easy;if(meta.aka)song.aka=meta.aka;
     return song;
   });
 }
@@ -524,6 +530,7 @@ function buildBatch(){
     if(sg.tab)o.tab=sg.tab;
     if(sg.shapes)o.shapes=sg.shapes;
     if(sg.easyFrom)o.easyFrom=sg.easyFrom;
+    if(sg.easy)o.easy=sg.easy;
     if(sg.aka||(old&&old.aka))o.aka=sg.aka||old.aka;
     o.text=sg.text;out.push(o);
   }

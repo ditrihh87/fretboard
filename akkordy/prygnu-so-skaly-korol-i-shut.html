@@ -12,8 +12,8 @@
 <meta property="og:image" content="https://ditrihh.ru/brand/ditrihh-logo-dark.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"MusicComposition","name":"Прыгну со скалы","byArtist":{"@type":"MusicGroup","name":"Король и Шут"},"lyricist":{"@type":"Person","name":"Андрей Князев"},"url":"https://ditrihh.ru/akkordy/prygnu-so-skaly-korol-i-shut.html"}</script>
 <script>window.SONG_ID="prygnu-so-skaly-korol-i-shut";</script>
-<meta name="description" content="Правильные аккорды к песне «Прыгну со скалы» (Король и Шут): Dm, Gm7, Am7, F, G, A. Простые аккорды для начинающих: Am, Dm7, Em7, C, D (каподастр на 5 лад). Подобраны и проверены на гитаре, схемы со звуком.">
-<meta property="og:description" content="Правильные аккорды к песне «Прыгну со скалы» (Король и Шут): Dm, Gm7, Am7, F, G, A. Простые аккорды для начинающих: Am, Dm7, Em7, C, D (каподастр на 5 лад). Подобраны и проверены на гитаре, схемы со звуком.">
+<meta name="description" content="Правильные аккорды к песне «Прыгну со скалы» (Король и Шут): Dm, Gm7, Am7, F, G, A. Простые аккорды для начинающих: Dm, Gm, Am, F, G — в той же тональности, на открытых струнах. Подобраны и проверены на гитаре, схемы со звуком.">
+<meta property="og:description" content="Правильные аккорды к песне «Прыгну со скалы» (Король и Шут): Dm, Gm7, Am7, F, G, A. Простые аккорды для начинающих: Dm, Gm, Am, F, G — в той же тональности, на открытых струнах. Подобраны и проверены на гитаре, схемы со звуком.">
 <meta name="theme-color" content="#0C0A24">
 <link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
 <link rel="stylesheet" href="/vendor/fonts/fonts.css">
@@ -359,6 +359,9 @@ function shapeAt(c,q,fr){
   const sh=fr%12===fe%12?B.E:fr%12===fa%12?B.A:null;
   return sh?sh.map(x=>x<0?-1:x+fr):null;
 }
+/* «Простые» в той же тональности ("easy":"same"): без септаккордов, по возможности на открытых струнах */
+const EASY_OPEN={F:'xx3211',Fm:'xx3111',Gm:'310033',Bm:'xx4432',B:'xx4442',Bb:'xx3331','A#':'xx3331',Cm:'x3101x','F#m':'xx4222','F#':'xx4322','C#m':'xx2120',Gb:'xx4322'};
+const simple7=n=>n.replace(/^([A-H][#b]?)(m)?(maj7|7)(?=\/|$)/,'$1$2');
 function chordShape(name){
   // [Am7|5x5553] / [A|5] — аппликатура, заданная в этом месте песни
   const pv=String(name).split('|');name=pv[0];const own=pv[1]!=null?(/^\d{1,2}$/.test(pv[1])?+pv[1]:pv[1]):null;
@@ -552,19 +555,22 @@ const itx=(t,S)=>String(t).split(/(\(\(|\)\))/).map(p=>p==='(('?(S.it=true,''):p
 function drawSong(){
   const t=SONG.text||'';let tr=st.tr;
   const hasSh=SONG.shapes&&Object.keys(SONG.shapes).length;
-  SH={};if(hasSh)for(const [k,v] of Object.entries(SONG.shapes)){if(st.easy&&typeof v!=='string')continue;SH[k]=v;const c=parseChord(k);if(c)SH[SHARP[c.pc]+normQ(c.q)]=v;} // Hm = Bm, A# = Bb
+  const same=SONG.easy==='same'&&st.easy;
+  SH={};if(same)Object.assign(SH,EASY_OPEN);else if(hasSh)for(const [k,v] of Object.entries(SONG.shapes)){if(st.easy&&typeof v!=='string')continue;SH[k]=v;const c=parseChord(k);if(c)SH[SHARP[c.pc]+normQ(c.q)]=v;} // Hm = Bm, A# = Bb
   // "easyFrom": "F" в songs.json — в «Простых аккордах» первый аккорд песни становится F (каподастр считается сам)
   const ef=SONG.easyFrom&&parseChord(SONG.easyFrom),f0=ef&&chordsIn(t).map(parseChord).find(Boolean);
-  const ez=st.easy?(ef&&f0?{k:(f0.pc-ef.pc+12)%12}:!hasSh?easyCapo(chordsIn(t)):null):null;
+  const ez=st.easy&&!same?(ef&&f0?{k:(f0.pc-ef.pc+12)%12}:!hasSh?easyCapo(chordsIn(t)):null):null;
   if(ez)tr=-ez.k;
-  const on=!!ez||(hasSh&&st.easy);
+  if(same)tr=0;
+  const on=!!ez||(hasSh&&st.easy)||same;
   $('easyBtn').setAttribute('aria-pressed',on);$('easyBtn').classList.toggle('on',on);
   $('easyNote').hidden=!on;
-  if(hasSh&&st.easy&&!ez)$('easyNote').textContent='Те же аккорды на открытых струнах — проще, звучит в той же тональности.';
+  if(same)$('easyNote').textContent='Та же тональность, без септаккордов, по возможности на открытых струнах — каподастр не нужен.';
+  else if(hasSh&&st.easy&&!ez)$('easyNote').textContent='Те же аккорды на открытых струнах — проще, звучит в той же тональности.';
   if(ez)$('easyNote').innerHTML=ez.k?`Каподастр на <b>${ez.k} лад</b> — будет звучать как в оригинале. Без каподастра — ${ez.k<=4?'просто чуть ниже':'заметно ниже, но играть можно и так'}.`:'Песня и так в простой тональности — каподастр не нужен.';
   $('trLabel').textContent=ez?(ez.k?'Капо '+ez.k:'Тон'):tr?(tr>0?'+':'')+tr:'Тон';
   $('lyrics').style.setProperty('--lf',st.fs+'px');
-  const vis=c=>st.easy&&/\|\d{1,2}$/.test(c)?c.split('|')[0]:c;
+  const vis=c=>same?simple7(c.split('|')[0]):st.easy&&/\|\d{1,2}$/.test(c)?c.split('|')[0]:c;
   $('chordRow').innerHTML=[...new Set(chordsIn(t).map(c=>vis(transposeChord(c,tr))))].map(c=>`<button data-chord="${esc(c)}" aria-label="Аккорд ${esc(c)}">${chordSVG(c)}</button>`).join('');
   let html='';const S={it:false};
   t.split('\n').forEach(line=>{
