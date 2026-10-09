@@ -284,6 +284,7 @@ $('lbSound').onclick=()=>{twMuted=!twMuted;try{twPlayer.setMuted(twMuted);if(!tw
   sc.onload=()=>{
     try{
       const holder=document.createElement('div');holder.id='twHero';holder.style.cssText='position:absolute;inset:0';$('lbPlayer').appendChild(holder);
+      const sh=document.createElement('div');sh.className='tw-shield';$('lbPlayer').appendChild(sh);
       twPlayer=new Twitch.Player('twHero',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',muted:true,autoplay:true,controls:false}); // без панелей Twitch (подписка, название, кнопки) — звук нашей кнопкой
       twPlayer.addEventListener(Twitch.Player.ONLINE,()=>{if(!ytShown)setLive(true);});
       twPlayer.addEventListener(Twitch.Player.OFFLINE,()=>{if(twLive!==false)setLive(false);});
@@ -383,7 +384,7 @@ function start(){
   }
   // Twitch — через JS-плеер без панелей (подписка, название, кнопки); звук — нашей кнопкой
   if(cur==='twitch'&&window.Twitch&&Twitch.Player){
-    $('screen').innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><button class="lb-sound" id="scSound" type="button">🔇 Выключить звук</button>';
+    $('screen').innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><div class="tw-shield"></div><button class="lb-sound" id="scSound" type="button">🔇 Выключить звук</button>';
     try{
       const pl=new Twitch.Player('twMain',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',autoplay:true,muted:false,controls:false});
       let m=false;
