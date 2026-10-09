@@ -179,6 +179,21 @@
 
   /* табы */
   .tabsec .wrap{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+  /* «Что сыграть сегодня» — случайные песни */
+  .tabsec.rnd .wrap{display:block}
+  .rnd-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+  .rnd-list{margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .rnd-it{display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:18px;background:linear-gradient(160deg,rgba(37,31,94,.7),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.18);color:var(--paper);text-decoration:none;transition:transform .15s,box-shadow .15s}
+  .rnd-it:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(110,123,255,.45),0 12px 30px rgba(110,123,255,.18)}
+  .rnd-it b{font-family:var(--display);font-weight:400;font-size:19px;line-height:1.15;margin-top:4px}
+  .rnd-it small{color:var(--muted);font-weight:700;font-size:14px}
+  .rnd-top{display:flex;gap:6px;flex-wrap:wrap}
+  .rnd-top .t{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.5px;padding:3px 8px;border-radius:999px;text-transform:uppercase}
+  .rnd-top .t.ch{background:rgba(110,123,255,.2);color:#B3BAFF}.rnd-top .t.tb{background:rgba(240,168,48,.18);color:#F3C06A}
+  .rnd-top .t.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
+  .rnd-foot{margin-top:24px;display:flex;flex-wrap:wrap;gap:10px}
+  @media (min-width:900px){.rnd-list{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:560px){.rnd-list{grid-template-columns:1fr 1fr}.rnd-it{padding:14px}.rnd-it b{font-size:16px}}
   .tabview{background:linear-gradient(160deg,#1E1A52,#15123A);border-radius:22px;padding:22px 18px 18px;color:#EFECFB;box-shadow:inset 0 0 0 1px rgba(110,123,255,.3),0 24px 48px rgba(0,0,0,.45),0 0 60px rgba(110,123,255,.28)}
   .tabview .legend{display:flex;gap:10px;justify-content:center;font-weight:800;font-size:12px;color:#9C97D6;margin-bottom:8px}
   .tabview .legend span{display:flex;align-items:center;gap:4px}

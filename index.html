@@ -70,25 +70,17 @@
     </div>
   </section>
 
-  <section id="tabs" class="tabsec">
+  <section id="tabs" class="tabsec rnd">
     <div class="wrap">
-      <div>
-        <div class="kicker">Аккорды и табы</div>
-        <h2>Эксклюзивные табы и правильные аккорды</h2>
-        <p class="lead">Мои аранжировки — таких табов больше нет нигде. Аккорды подбираю сам и проверяю на гитаре: как в оригинале, а не как попало — без ошибок, которыми полны сайты с аккордами.</p>
-        <ul class="ticks">
-          <li><span><b>Правильные аккорды</b> — подобраны по оригиналу и проверены на гитаре</span></li>
-          <li><span><b>«Простые аккорды»</b> в один клик — Am, C, Em, G и подсказка, куда поставить каподастр</span></li>
-          <li><span>Схемы со звуком, смена тональности и автопрокрутка</span></li>
-          <li><span><b>Табы</b> с цветными струнами и настоящим звуком гитары — замедление, повтор участка, метроном</span></li>
-          <li><span>Новые аранжировки — регулярно, по заявкам со стримов</span></li>
-        </ul>
-        <div style="margin-top:30px;display:flex;flex-wrap:wrap;gap:10px"><a class="btn main" href="songs.html?type=tab">★ Все табы</a><a class="btn ghost" href="songs.html?type=chords">Все аккорды</a></div>
+      <div class="rnd-head">
+        <div>
+          <div class="kicker">Аккорды и табы</div>
+          <h2>Что сыграть сегодня?</h2>
+        </div>
+        <button class="btn ghost" id="rndMore" type="button">🎲 Другие песни</button>
       </div>
-      <div class="tabview" aria-hidden="true">
-        <div class="legend"><span><i style="background:#F26B6F"></i>6</span><span><i style="background:#F0A830"></i>5</span><span><i style="background:#E8D44D"></i>4</span><span><i style="background:#6FBF73"></i>3</span><span><i style="background:#7CC4F2"></i>2</span><span><i style="background:#CFA6F7"></i>1</span></div>
-        <svg id="tabsvg" viewBox="0 0 520 156"></svg>
-      </div>
+      <div class="rnd-list" id="rndList"><p class="lead">Загружаю песни…</p></div>
+      <div class="rnd-foot"><a class="btn main" href="songs.html?type=tab">★ Все табы</a><a class="btn ghost" href="songs.html?type=chords">Все аккорды</a></div>
     </div>
   </section>
 
@@ -192,23 +184,23 @@ let ytShown=false;
 let twLive=null; // идёт ли эфир на Twitch (null — пока неизвестно)
 const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7']; // 6 → 1
 
-/* таб-превью */
+/* случайные песни: до 3 табов и до 3 аккордов, каждый раз новая подборка */
 (function(){
-  const s=$('tabsvg'),C=SC; // цвета струн как в таб-плеере (6 → 1)
-  const top=22,gap=20,L=14,R=506;let g='';
-  for(let i=0;i<6;i++)g+=`<line x1="${L}" x2="${R}" y1="${top+i*gap}" y2="${top+i*gap}" stroke="rgba(239,236,251,.18)" stroke-width="1.2"/>`;
-  [L,260,R].forEach(x=>g+=`<line x1="${x}" x2="${x}" y1="${top}" y2="${top+5*gap}" stroke="rgba(239,236,251,.3)" stroke-width="1.5"/>`);
-  g+=`<text x="${L+6}" y="${top+gap*1.2}" font-family="Arial" font-weight="700" font-size="17" fill="#CFCCF2">T</text><text x="${L+6}" y="${top+gap*2.5}" font-family="Arial" font-weight="700" font-size="17" fill="#CFCCF2">A</text><text x="${L+6}" y="${top+gap*3.8}" font-family="Arial" font-weight="700" font-size="17" fill="#CFCCF2">B</text>`;
-  // перебор Am и Dm: [струна 1..6 сверху вниз (0=1-я), лад]
-  const seq=[[4,0],[2,2],[1,1],[2,2],[0,0],[2,2],[1,1],[2,2], [3,0],[2,2],[1,3],[2,2],[0,1],[2,2],[1,3],[2,2]];
-  const xs=i=>i<8?50+i*26:286+(i-8)*27;
-  let cursor=xs(5);
-  seq.forEach(([st,fr],i)=>{const x=xs(i),y=top+st*gap;
-    g+=`<rect x="${x-7}" y="${y-9}" width="14" height="18" fill="#15123A"/><text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Manrope,Arial" font-weight="800" font-size="15" fill="${C[5-st]}">${fr}</text>`;
-    g+=`<line x1="${x}" x2="${x}" y1="${y+10}" y2="148" stroke="rgba(239,236,251,.55)" stroke-width="1.3"/>`;});
-  for(let k=0;k<16;k+=2){g+=`<rect x="${xs(k)}" y="146" width="${xs(k+1)-xs(k)+1}" height="4" fill="rgba(239,236,251,.55)"/>`;}
-  g+=`<rect x="${cursor-1.5}" y="${top-12}" width="3" height="${5*gap+24}" rx="1.5" fill="#F0A830"><animate attributeName="x" values="${xs(0)-1.5};${xs(15)-1.5}" dur="6s" repeatCount="indefinite"/></rect>`;
-  s.innerHTML=g;
+  let all=[];
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const pick=(arr,n)=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.slice(0,n);};
+  function draw(){
+    const tabs=all.filter(x=>x.tab),ch=all.filter(x=>!x.tab);
+    let list=pick(tabs,3).concat(pick(ch,3));
+    if(list.length<6)list=list.concat(pick(all.filter(x=>!list.includes(x)),6-list.length));
+    list=pick(list,list.length);
+    $('rndList').innerHTML=list.length?list.map(x=>`<a class="rnd-it" href="${x.tab?'taby':'akkordy'}/${encodeURIComponent(x.id)}.html">
+      <span class="rnd-top">${x.exclusive?'<i class="t ex">★ Эксклюзив</i>':''}<i class="t ${x.tab?'tb':'ch'}">${x.tab?'Таб':'Аккорды'}</i></span>
+      <b>${esc(x.title)}</b><small>${esc(x.artist||'')}</small></a>`).join(''):'<p class="lead">Песни скоро появятся.</p>';
+    $('rndMore').hidden=all.length<=6;
+  }
+  fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{all=Array.isArray(j)?j:[];draw();}).catch(()=>{$('rndList').innerHTML='<p class="lead">Не удалось загрузить песни.</p>';});
+  $('rndMore').onclick=draw;
 })();
 
 /* расписание: эфир каждый день около 00:00 по Москве (UTC+3) */
