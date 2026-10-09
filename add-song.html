@@ -61,6 +61,14 @@
   .prev .ln{display:flex;flex-wrap:wrap;margin:2px 0 6px}
   .prev .sg{display:inline-flex;flex-direction:column;white-space:pre}
   .prev i{font-style:italic;color:#CFCCF2}
+  .prev .ch.mv{cursor:pointer;border-radius:5px}
+  .prev .ch.mv:hover{background:rgba(240,168,48,.15)}
+  .prev .ch.sel{background:var(--amber);color:#1b1b1b!important;outline:2px solid var(--amber)}
+  .mvbar{position:sticky;top:8px;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;padding:8px 12px;border-radius:12px;background:#2A2470;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+  .mvbar[hidden]{display:none}
+  .mvbar b{color:var(--amber);min-width:40px}
+  .mvbar button{border:none;border-radius:8px;padding:7px 12px;background:rgba(239,236,251,.12);color:var(--paper);font:800 14px var(--body);cursor:pointer}
+  .mvbar small{color:var(--muted);font-weight:600}
   .prev .ch{color:var(--amber);font-weight:800;min-height:1.2em;padding-right:6px}
   .prev .only .ch{margin-right:10px}
 </style>
@@ -113,6 +121,7 @@
         </table>
         <h3>Правка</h3>
         <table>
+          <tr><td>нажать на аккорд в предпросмотре</td><td>двигать стрелками ← → или кнопками ◀ ▶, Delete — удалить. Правка сразу попадает в текст слева</td></tr>
           <tr><td>«Открыть песню с сайта…»</td><td>вернуть песню в редактор; сохранение заменит её</td></tr>
           <tr><td>кнопка «✎ Править»</td><td>на странице песни, видна только тебе</td></tr>
         </table></div>
@@ -140,7 +149,8 @@
 
     <section class="card">
       <h2>2. Как получилось</h2>
-      <div class="prev" id="prev"><p class="lead">Здесь появится песня, как она будет выглядеть на сайте.</p></div>
+      <div class="mvbar" id="mvBar" hidden><b id="mvName"></b><button type="button" data-mv="-1" aria-label="Влево">◀</button><button type="button" data-mv="1" aria-label="Вправо">▶</button><button type="button" data-mv="del">удалить</button><small>или стрелки ← → на клавиатуре</small></div>
+      <div class="prev" id="prev"><p class="lead">Здесь появится песня, как она будет выглядеть на сайте. Нажми на аккорд, чтобы подвинуть его.</p></div>
     </section>
   </div>
 
@@ -394,19 +404,48 @@ const slug=s=>s.toLowerCase().split('').map(c=>TR[c]!==undefined?TR[c]:c).join('
 const itx=(t,S)=>String(t).split(/(\(\(|\)\))/).map(p=>p==='(('?(S.it=true,''):p==='))'?(S.it=false,''):p?(S.it?'<i>'+esc(p)+'</i>':esc(p)):'').join('');
 function preview(t){
   let html='';const S={it:false};
-  t.split('\n').forEach(line=>{
+  t.split('\n').forEach((line,li)=>{
     const cm=line.match(/^\s*\{comment:\s*(.*)\}\s*$/i);
     if(cm){html+=`<span class="cm">${esc(cm[1])}</span>`;return;}
     if(!line.trim()){html+='<div class="ln">&nbsp;</div>';return;}
     const parts=line.split(/(\[[^\]]+\])/),only=parts.filter(p=>!/^\[/.test(p)).join('').trim()==='';
-    let segs='',pend=null;
-    const seg=(ch,tx)=>only?(ch?`<span class="ch">${esc(ch)}</span>`:''):`<span class="sg"><span class="ch">${ch?esc(ch):'&nbsp;'}</span><span>${itx(tx,S)||' '}</span></span>`;
+    let segs='',pend=null,ck=0;
+    const chs=ch=>{const k=ck++;const on=SEL&&SEL.l===li&&SEL.k===k;return `<span class="ch mv${on?' sel':''}" data-l="${li}" data-k="${k}" title="Нажми и двигай стрелками ← →">${esc(ch)}</span>`;};
+    const seg=(ch,tx)=>only?(ch?`<span class="ch">${esc(ch)}</span>`:''):`<span class="sg">${ch?chs(ch):'<span class="ch">&nbsp;</span>'}<span>${itx(tx,S)||' '}</span></span>`;
     parts.forEach(p=>{const m=p.match(/^\[([^\]]+)\]$/);if(m){if(pend!==null)segs+=seg(pend,'');pend=m[1].split('|')[0];return;}if(p===''&&pend===null)return;segs+=seg(pend,p);pend=null;});
     if(pend!==null)segs+=seg(pend,'');
     html+=`<div class="ln ${only?'only':''}">${segs}</div>`;
   });
   return html;
 }
+
+/* ---------- двигаем аккорд в предпросмотре: нажать на аккорд, затем ← → (или кнопки) ---------- */
+let SEL=null;
+function lineParts(line){let txt='',chs=[];line.split(/(\[[^\]]+\])/).forEach(p=>{const m=p.match(/^\[([^\]]+)\]$/);if(m)chs.push({pos:txt.length,c:m[1]});else txt+=p;});return {txt,chs};}
+function lineJoin(txt,chs){let o='',p0=0;chs.forEach(x=>{o+=txt.slice(p0,x.pos)+'['+x.c+']';p0=x.pos;});return o+txt.slice(p0);}
+function editChord(how){
+  if(!SEL||!ONE)return;
+  const all=ONE.text.split('\n'),li=SEL.l,{txt,chs}=lineParts(all[li]||'');const x=chs[SEL.k];if(!x)return;
+  if(how==='del'){chs.splice(SEL.k,1);SEL=null;}
+  else{
+    // шаг — одна буква; двойные пробелы перескакиваем
+    let p=x.pos+how;while(p>0&&p<txt.length&&txt[p]===' '&&txt[p-1]===' ')p+=how;
+    x.pos=Math.max(0,Math.min(txt.length,p));
+    chs.sort((a,b)=>a.pos-b.pos);SEL.k=chs.indexOf(x);
+  }
+  all[li]=lineJoin(txt,chs);ONE.text=all.join('\n');
+  // результат — обратно в поле с текстом (аккорды над строками), чтобы правка не потерялась
+  const y=window.scrollY;$('src').value=unconvert(ONE);build();window.scrollTo(0,y);
+}
+$('prev').addEventListener('click',e=>{const c=e.target.closest('.ch.mv');if(!c){SEL=null;paintSel();return;}
+  SEL={l:+c.dataset.l,k:+c.dataset.k};paintSel();});
+function paintSel(){document.querySelectorAll('#prev .ch.mv').forEach(c=>c.classList.toggle('sel',!!SEL&&+c.dataset.l===SEL.l&&+c.dataset.k===SEL.k));
+  const b=$('mvBar');if(!b)return;b.hidden=!SEL;if(SEL){const c=document.querySelector('#prev .ch.sel');$('mvName').textContent=c?c.textContent:'';}}
+document.addEventListener('keydown',e=>{if(!SEL||MODE!=='one'||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+  if(e.key==='ArrowLeft'){e.preventDefault();editChord(-1);}else if(e.key==='ArrowRight'){e.preventDefault();editChord(1);}
+  else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();editChord('del');}else if(e.key==='Escape'){SEL=null;paintSel();}});
+$('src').addEventListener('input',()=>{SEL=null;paintSel();});
+$('mvBar').addEventListener('click',e=>{const b=e.target.closest('[data-mv]');if(!b)return;editChord(b.dataset.mv==='del'?'del':+b.dataset.mv);});
 
 /* ---------- сборка ---------- */
 let ONE=null;
@@ -417,6 +456,7 @@ function build(){
   if(meta.music&&!$('music').value.trim())$('music').value=meta.music;
   const title=$('title').value.trim(),artist=$('artist').value.trim();
   $('prev').innerHTML=text?preview(text):'<p class="lead">Здесь появится песня, как она будет выглядеть на сайте.</p>';
+  if(SEL&&!document.querySelector('#prev .ch.sel'))SEL=null;paintSel();
   if(!title||!text){ONE=null;$('out').value='';$('msg').className='msg bad';$('msg').textContent=!text?'Вставь текст с аккордами.':'Впиши название песни.';return;}
   const old=EXIST.find(s=>s.title===title&&(s.artist||'')===artist);
   let id=old?old.id:slug(title+(artist?' '+artist:''));
