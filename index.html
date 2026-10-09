@@ -262,6 +262,7 @@ function setLive(on){
   $('liveBox').classList.toggle('on',on);
   $('lbBadge').querySelector('span').textContent=on?'В эфире':'Офлайн';
   $('lbPlayer').hidden=!on&&!ytShown;$('lbOff').hidden=on||ytShown;$('lbSound').hidden=!on;
+  $('lbBadge').style.display=$('lbPlayer').hidden?'':'none'; // у Twitch-плеера своя плашка «В эфире» — наша только когда плеер скрыт
   paintSched();
 }
 const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
