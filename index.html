@@ -277,6 +277,14 @@ const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'nu
 const TW_HOSTS=[...new Set([location.hostname||'localhost','ditrihh.ru','www.ditrihh.ru','ditrihh87.github.io'])];
 const TW_PARENT=TW_HOSTS.map(h=>'parent='+encodeURIComponent(h)).join('&');
 const TW_OK=location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+/* щит над Twitch-плеером: пока видео идёт — прячет панели Twitch; на паузе убирается, чтобы можно было нажать ▶ */
+function twShield(pl,sh){
+  sh.onclick=()=>{try{pl.play();}catch(e){}};
+  try{
+    pl.addEventListener(Twitch.Player.PAUSE,()=>{sh.style.display='none';});
+    pl.addEventListener(Twitch.Player.PLAYING,()=>{sh.style.display='';});
+  }catch(e){}
+}
 let twMuted=true;
 $('lbSound').onclick=()=>{twMuted=!twMuted;try{twPlayer.setMuted(twMuted);if(!twMuted)twPlayer.setVolume(.7);}catch(e){}$('lbSound').textContent=twMuted?'🔊 Включить звук':'🔇 Выключить звук';};
 (function(){
@@ -286,6 +294,7 @@ $('lbSound').onclick=()=>{twMuted=!twMuted;try{twPlayer.setMuted(twMuted);if(!tw
       const holder=document.createElement('div');holder.id='twHero';holder.style.cssText='position:absolute;inset:0';$('lbPlayer').appendChild(holder);
       const sh=document.createElement('div');sh.className='tw-shield';$('lbPlayer').appendChild(sh);
       twPlayer=new Twitch.Player('twHero',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',muted:true,autoplay:true,controls:false}); // без панелей Twitch (подписка, название, кнопки) — звук нашей кнопкой
+      twShield(twPlayer,sh);
       twPlayer.addEventListener(Twitch.Player.ONLINE,()=>{if(!ytShown)setLive(true);});
       twPlayer.addEventListener(Twitch.Player.OFFLINE,()=>{if(twLive!==false)setLive(false);});
     }catch(e){}
@@ -384,10 +393,10 @@ function start(){
   }
   // Twitch — через JS-плеер без панелей (подписка, название, кнопки); звук — нашей кнопкой
   if(cur==='twitch'&&window.Twitch&&Twitch.Player){
-    $('screen').innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><div class="tw-shield"></div><button class="lb-sound" id="scSound" type="button">🔇 Выключить звук</button>';
+    $('screen').innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><div class="tw-shield"></div><button class="lb-sound" id="scSound" type="button">🔊 Включить звук</button>';
     try{
-      const pl=new Twitch.Player('twMain',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',autoplay:true,muted:false,controls:false});
-      let m=false;
+      const pl=new Twitch.Player('twMain',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',autoplay:true,muted:true,controls:false}); // со звуком браузер автозапуск блокирует — стартуем без звука
+      let m=true;twShield(pl,$('screen').querySelector('.tw-shield'));
       $('scSound').onclick=()=>{m=!m;try{pl.setMuted(m);if(!m)pl.setVolume(.7);}catch(e){}$('scSound').textContent=m?'🔊 Включить звук':'🔇 Выключить звук';};
       pl.addEventListener(Twitch.Player.PLAYING,()=>{try{m=pl.getMuted();}catch(e){}$('scSound').textContent=m?'🔊 Включить звук':'🔇 Выключить звук';});
       return;
