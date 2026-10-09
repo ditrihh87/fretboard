@@ -318,7 +318,7 @@ let SONG=null;const st={tr:0,fs:prefs.fs||19,scroll:0,raf:0};
 const TG_CHAT='https://t.me/+j2O8KYNsBKllM2Iy';
 const CAPI='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
 const cpost=b=>fetch(CAPI,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.status),{code:r.status,j});return j;});
-const ses=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.token&&/^(ya|vk)_/.test(String(l.user&&l.user.id))?l:null;}catch(e){return null;}};
+const ses=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.token&&/^(ya|vk|admin)_/.test(String(l.user&&l.user.id))?l:null;}catch(e){return null;}};
 const cWhen=t=>{const d=(Date.now()-t)/1000;if(d<60)return 'только что';if(d<3600)return Math.floor(d/60)+' мин назад';if(d<86400)return Math.floor(d/3600)+' ч назад';
   const x=new Date(t);return x.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:x.getFullYear()===new Date().getFullYear()?undefined:'numeric'});};
 const cPl=n=>n%10===1&&n%100!==11?'комментарий':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'комментария':'комментариев';

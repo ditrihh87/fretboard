@@ -4,7 +4,8 @@
 // VK_CLIENT_ID — ID приложения VK ID, YA_CLIENT_ID — ClientID приложения Яндекс ID,
 // BOT_TOKEN_NEW — токен второго бота (@ditrihh_bot): приложение работает из обоих ботов.
 // DonationAlerts: DA_CLIENT_ID, DA_CLIENT_SECRET (приложение на donationalerts.com/application/clients),
-// ADMIN_ACC — аккаунт владельца для комментариев (напр. ya_123456; можно несколько через запятую): значок автора и удаление любых комментариев.
+// Аккаунт владельца «ditrihh» (admin_ditrihh): вход на login.html?admin по ключу ADMIN_KEY; значок автора и все права.
+// ADMIN_ACC — дополнительные аккаунты с правами владельца (напр. ya_123456; через запятую).
 // ADMIN_KEY — секретный ключ владельца (для подключения DonationAlerts), DA_GOAL — цель «Название|сумма|с какой даты», напр. «Новая гитара|50000|2026-10-01».
 // У функции должен быть сервисный аккаунт с ролью storage.editor.
 
@@ -130,6 +131,12 @@ async function issueSession(user, provider, token) {
   const tok = crypto.randomBytes(32).toString('base64url');
   await saveList(`tokens/${sha(tok)}.json`, { user, acc, t: Date.now() }, token);
   return reply(200, { token: tok, user, tg: meta.tg || null });
+}
+// вход владельца: аккаунт «ditrihh» по секретному ключу ADMIN_KEY
+async function handleLoginAdmin(body, token) {
+  if (!okAdmin(body.key)) { await new Promise(r => setTimeout(r, 1500)); return reply(401, { error: 'bad key' }); }
+  const user = { id: ADMIN_ID, first_name: 'ditrihh', last_name: '', username: 'ditrihh', photo_url: 'https://ditrihh.ru/brand/ditrihh-avatar-640.png', provider: 'admin' };
+  return issueSession(user, 'admin', token);
 }
 async function handleLoginYa(body, token) {
   if (!process.env.YA_CLIENT_ID) return reply(503, { error: 'yandex not configured' });
@@ -326,8 +333,9 @@ async function handleRate(body, token) {
 const MAX_COMMENTS = 500;     // храним последние 500 комментариев у песни
 const COMMENT_LEN = 1000;     // предел длины комментария
 const COMMENT_GAP = 20e3;     // не чаще одного комментария в 20 секунд
-const adminAccs = () => String(process.env.ADMIN_ACC || '').split(',').map(s => s.trim()).filter(Boolean);
-const siteUser = u => u && /^(ya|vk)_/.test(String(u.id)) ? u : null;   // Telegram-вход для комментариев не принимаем
+const ADMIN_ID = 'admin_ditrihh';
+const adminAccs = () => [ADMIN_ID, ...String(process.env.ADMIN_ACC || '').split(',').map(s => s.trim()).filter(Boolean)];
+const siteUser = u => u && /^(ya|vk|admin)_/.test(String(u.id)) ? u : null;   // Telegram-вход для комментариев не принимаем
 const pubComment = (c, acc, admin) => ({ id: c.id, name: c.name, photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin) });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
@@ -562,6 +570,11 @@ module.exports.handler = async (event, context) => {
   if (body.action === 'comments' || body.action === 'comment' || body.action === 'comment_del') {
     try { return body.action === 'comments' ? await handleComments(body, token) : body.action === 'comment' ? await handleComment(body, token) : await handleCommentDel(body, token); }
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
+
+  if (body.action === 'login_admin') {
+    try { return await handleLoginAdmin(body, token); }
+    catch (e) { console.error(e); return reply(502, { error: 'login' }); }
   }
 
   if (body.action === 'login_vk' || body.action === 'login_ya') {

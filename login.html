@@ -17,6 +17,9 @@
   @keyframes s{to{transform:rotate(360deg)}}
   a{display:inline-block;text-decoration:none;font-weight:800;padding:12px 18px;border-radius:14px;background:#F0A830;color:#1b1b1b}
   [hidden]{display:none!important}
+  form{display:flex;flex-direction:column;gap:10px;width:min(320px,90vw)}
+  form input{padding:12px 14px;border-radius:12px;border:none;background:rgba(239,236,251,.1);color:#EFECFB;font:600 15px Manrope,system-ui,sans-serif}
+  form button{padding:12px 18px;border-radius:14px;border:none;background:#F0A830;color:#1b1b1b;font:800 15px Manrope,system-ui,sans-serif;cursor:pointer}
 </style>
 <script src="auth.js"></script>
 </head>
@@ -26,11 +29,23 @@
   <div class="spin" id="spin"></div>
   <p id="msg">Входим…</p>
   <a id="back" href="index.html" hidden>Вернуться на сайт</a>
+  <form id="adm" hidden><input type="password" id="key" placeholder="Ключ владельца" autocomplete="current-password"><button type="submit">Войти как ditrihh</button></form>
 </main>
 <script>
 (async function(){
   const msg=document.getElementById('msg'),back=document.getElementById('back');
   const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
+  // вход владельца: login.html?admin
+  if(q.has('admin')){
+    document.getElementById('spin').hidden=true;msg.textContent='Вход владельца сайта';
+    const f=document.getElementById('adm');f.hidden=false;document.getElementById('key').focus();
+    f.onsubmit=async e=>{e.preventDefault();msg.textContent='Проверяю…';
+      try{const r=await fetch(DAuth.API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({initData:'',action:'login_admin',key:document.getElementById('key').value})});
+        const j=await r.json();if(!r.ok||!j.token)throw 0;
+        localStorage.setItem('dgc_link',JSON.stringify({token:j.token,user:j.user,prov:'admin',tg:null}));location.replace('index.html');}
+      catch(err){msg.textContent='Неверный ключ.';}};
+    return;
+  }
   const code=q.get('code'),tok=h.get('access_token'),err=q.get('error')||h.get('error');
   let st=null;try{st=JSON.parse(sessionStorage.getItem('dgc_oauth')||'null');sessionStorage.removeItem('dgc_oauth');}catch(e){}
   history.replaceState(null,'',location.pathname);

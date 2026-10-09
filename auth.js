@@ -64,7 +64,7 @@
       const u=l.user||{},nm=name(u),ini=nm.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'🎸';
       const photo=u.photo_url&&String(u.photo_url).replace(/"/g,'');
       box.innerHTML=`<button class="ab-btn ab-ava" aria-label="Мой аккаунт" aria-haspopup="true"${photo?` style="background-image:url(&quot;${esc(photo)}&quot;)"`:''}>${photo?'':esc(ini)}</button>
-<div class="ab-pop" hidden><h4>${esc(nm)}</h4><p>Вход через ${({ya:'Яндекс ID',vk:'VK ID',tg:'Telegram'})[l.prov]||'аккаунт'}</p>
+<div class="ab-pop" hidden><h4>${esc(nm)}</h4><p>Вход через ${({ya:'Яндекс ID',vk:'VK ID',tg:'Telegram',admin:'ключ владельца — все права'})[l.prov]||'аккаунт'}</p>
 <button class="ab-go ab-ghost" data-out>Выйти</button></div>`;
     }else{
       box.innerHTML=`<button class="ab-btn" aria-haspopup="true">Войти</button>
