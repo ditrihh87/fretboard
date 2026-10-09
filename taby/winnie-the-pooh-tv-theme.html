@@ -434,7 +434,7 @@ async function renderTabPage(){
     atApi=new alphaTab.AlphaTabApi($('atRender'),{
       core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
       display:{staveProfile:prefs.tabView==='score'?'ScoreTab':'Tab',scale:scale(),layoutMode:horiz()?'Horizontal':'Page',
-        resources:{staffLineColor:'#8A84D6',barSeparatorColor:'#A9A3E6',mainGlyphColor:'#EFECFB',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
+        resources:{engravingSettings:{tabLineSpacing:16},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'#EFECFB',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 14px Manrope, Arial, sans-serif'}},
       notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('atScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
     });
