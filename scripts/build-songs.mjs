@@ -43,11 +43,11 @@ function page(s) {
   const url = `${SITE}${DIRS[kind]}/${s.id}.html`;
   const who = s.artist ? ` (${s.artist})` : '';
   const title = s.tab
-    ? `${s.title}${who} — ${s.fingerstyle ? 'фингерстайл таб' : 'таб'} и аранжировка | ditrihh`
+    ? `${s.title}${who} — ${s.fingerstyle ? 'фингерстайл таб (fingerstyle)' : 'таб и аранжировка'} | ditrihh`
     : `${s.title}${who} — аккорды | ditrihh`;
   const ch = chordsIn(s.text);
   const desc = s.tab
-    ? `${s.title}${who}: эксклюзивный ${s.fingerstyle ? 'фингерстайл-таб (аранжировка для одной гитары)' : 'таб'} от ditrihh со звуком, замедлением и повтором участка.`
+    ? `${s.title}${who}: эксклюзивный ${s.fingerstyle ? 'фингерстайл-таб (fingerstyle guitar, аранжировка для одной гитары)' : 'таб'} от ditrihh со звуком, замедлением и повтором участка.`
     : `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. Подобраны и проверены на гитаре, схемы со звуком, смена тональности.`;
   const aka = Array.isArray(s.aka) ? s.aka.filter(Boolean) : [];
   const descFull = aka.length ? `${desc} Также ищут: ${aka.join(', ')}.` : desc;
