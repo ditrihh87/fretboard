@@ -309,7 +309,7 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
     const g=D&&D.goal,box=$('goalBig');box.hidden=false;
     box.innerHTML=`<form class="gb-form" id="gForm"><div class="gb-k">🎯 ${g?'Изменить сбор':'Новый сбор'} <small>видно только тебе</small></div>
       <label>На что собираем<input id="gT" maxlength="60" value="${esc(g?g.title:'')}" placeholder="Например: новая гитара" required></label>
-      <label>Сколько нужно, ₽<input id="gS" type="number" min="100" step="100" value="${g?g.target:''}" placeholder="50000" required></label>
+      <label>Сколько нужно, ₽<input id="gS" type="number" min="100" step="1" value="${g?g.target:''}" placeholder="50000" required></label>
       <label>Уже собрано, ₽<input id="gR" type="number" min="0" step="1" value="${g?Math.round(g.raised):0}"></label>
       <label>До какого числа<input id="gU" type="date" value="${g&&g.until?new Date(g.until+3*3600e3).toISOString().slice(0,10):''}"></label>
       <p class="gb-note">Если сбор уже идёт в DonationAlerts — впиши, сколько там собрано. Дальше новые донаты прибавятся сами.</p>
