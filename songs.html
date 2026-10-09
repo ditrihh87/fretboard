@@ -62,6 +62,40 @@
   .ask{display:flex;flex-wrap:wrap;align-items:center;gap:18px;justify-content:space-between;background:linear-gradient(90deg,rgba(110,123,255,.18),rgba(255,95,207,.12));border-radius:22px;padding:24px 26px;margin-bottom:80px}
   .ask h3{font-family:var(--display);font-weight:400;font-size:22px}
   .ask p{color:#CFCCF2;margin-top:4px}
+  .ask[hidden]{display:none}
+  /* заявки на аккорды */
+  .req{border-radius:22px;padding:26px;margin-bottom:80px;background:linear-gradient(160deg,rgba(37,31,94,.7),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.22)}
+  .req[hidden]{display:none}
+  .req h2{font-family:var(--display);font-weight:400;font-size:clamp(24px,3.4vw,32px)}
+  .req .rhead p{color:#CFCCF2;font-weight:600;margin-top:6px;max-width:720px}
+  .rform{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .rform input{flex:1 1 220px;min-width:0;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:13px 15px;color:var(--paper);font:600 15px var(--body)}
+  .rform input::placeholder{color:var(--muted)}
+  .rform input:focus{outline:2px solid var(--amber);outline-offset:1px}
+  .rform .btn{flex:none}
+  .rlogin{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px;color:var(--muted);font-weight:700}
+  .btn.cya{background:#FC3F1D;color:#fff}.btn.cvk{background:#0077FF;color:#fff}
+  .rmsg{min-height:1.3em;margin-top:10px;font-weight:700;font-size:14px;color:#8FD493}
+  .rmsg.bad{color:#F26B6F}.rmsg a{color:var(--amber)}
+  .rlist{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:8px}
+  .rlist li,.rdone li{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:rgba(12,10,36,.45)}
+  .rlist .vote{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:56px;height:52px;border:none;border-radius:12px;background:rgba(239,236,251,.08);color:#CFCCF2;font:800 16px var(--body);cursor:pointer;line-height:1.1}
+  .rlist .vote small{font-size:11px;font-weight:700;opacity:.8}
+  .rlist .vote:hover{background:rgba(240,168,48,.18)}
+  .rlist .vote[aria-pressed="true"]{background:var(--amber);color:#1b1b1b}
+  .rlist .rt{flex:1;min-width:0}
+  .rlist .rt b,.rdone b{font-weight:800}
+  .rlist .rt span,.rdone span{color:var(--muted);font-weight:700}
+  .rlist .rt small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;margin-top:2px}
+  .rlist .ra{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+  .rlist .ra button,.rlist .ra select{border:none;border-radius:9px;padding:7px 10px;background:rgba(239,236,251,.1);color:var(--paper);font:800 13px var(--body);cursor:pointer;max-width:220px}
+  .rlist .ra .ok{background:rgba(111,191,115,.25);color:#B6E7B8}
+  .rempty{color:var(--muted);font-weight:700;padding:6px 2px}
+  .rdone{margin-top:16px}.rdone summary{cursor:pointer;color:var(--muted);font-weight:800}
+  .rdone ul{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px}
+  .rdone a{color:var(--amber);font-weight:800;margin-left:auto;white-space:nowrap}
+  .empty .btn{margin-left:10px;padding:9px 14px;font-size:14px}
+  @media (max-width:560px){.req{padding:20px 16px}.rlist li{flex-wrap:wrap}.rlist .ra{width:100%}}
 </style>
 <script src="/metrika.js" defer></script>
 </head>
@@ -98,7 +132,16 @@
     if(l&&l.prov==='admin'){const a=document.getElementById('addSong');if(t==='tab'){a.href='add-tab.html';a.textContent='＋ Добавить таб';}a.hidden=false;}}catch(e){}})();</script>
   <div class="list" id="list"><p class="empty">Загружаю песни…</p></div>
 
-  <div class="ask">
+  <section class="req" id="req" hidden>
+    <div class="rhead"><h2>Заказать <span class="brandtxt">аккорды</span></h2>
+      <p>Нет нужной песни? Предложи — разберу и добавлю. Если её уже предложили, проголосуй: чем больше голосов, тем быстрее сделаю. Когда будет готово — сайт сам скажет.</p></div>
+    <div id="reqForm"></div>
+    <div class="rmsg" id="reqMsg"></div>
+    <ol class="rlist" id="reqList"></ol>
+    <details class="rdone" id="reqDoneBox" hidden><summary>Уже готово по заявкам</summary><ul id="reqDone"></ul></details>
+  </section>
+
+  <div class="ask" id="askBox">
     <div><h3>Нет нужной песни?</h3><p>Напиши название в чате на стриме — разберу и добавлю сюда.</p></div>
     <a class="btn ghost" href="index.html#stream">Когда стрим</a>
   </div>
@@ -154,7 +197,7 @@ function render(){
     .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='fs'?!!s.fingerstyle:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
-  if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).length?SECT.empty:filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
+  if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).length?SECT.empty:filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':(TYPE!=='tab'&&q?`Такой песни пока нет. <button class="btn main" type="button" id="reqFromSearch">🎤 Заказать аккорды</button>`:'Ничего не нашлось. Попробуй другое название.')}</p>`;const rb=$('reqFromSearch');if(rb)rb.onclick=()=>REQ.prefill($('q').value.trim());return;}
   $('list').innerHTML=items.map(s=>{
     const r=RT[s.id],sv=DR.isSaved(s.id);
     return `<article class="item">
@@ -175,6 +218,65 @@ document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('clic
 }));
 fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{SONGS=j;render();})
   .catch(()=>{$('list').innerHTML='<p class="empty">Не удалось загрузить песни. Обнови страницу.</p>';});
+
+/* ===== Заявки на аккорды (только в разделе «Аккорды») ===== */
+const REQ=(()=>{
+  const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+  const ses=()=>{try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');return l&&l.token&&/^(ya|vk|admin)_/.test(String(l.user&&l.user.id))?l:null;}catch(e){return null;}};
+  const norm=t=>String(t||'').toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9]+/g,' ').trim();
+  const call=async b=>{const l=ses();const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(Object.assign({token:l&&l.token},b))});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error==='login'?'Сначала войди':j.error==='banned'?'Ты не можешь оставлять заявки':j.error||('ошибка '+r.status));return j;};
+  let D={open:[],done:[],admin:false},on=false;
+  const msg=(t,bad)=>{$('reqMsg').className='rmsg'+(bad?' bad':'');$('reqMsg').innerHTML=t||'';};
+  const chordSongs=()=>SONGS.filter(s=>!s.tab&&s.text);
+  const onSite=title=>{const n=norm(title);return n.length>2&&chordSongs().find(s=>norm(s.title)===n);};
+  function form(){
+    const f=$('reqForm');
+    if(!ses()){const A=window.DAuth||{};
+      f.innerHTML=`<div class="rlogin"><span>Чтобы заказать или проголосовать, войди:</span>${A.YA?'<button class="btn cya" data-rp="ya">Войти через Яндекс ID</button>':''}${A.VK?'<button class="btn cvk" data-rp="vk">Войти через VK ID</button>':''}</div>`;
+      f.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>window.DAuth&&DAuth.start(b.dataset.rp));
+      if(!window.DAuth)setTimeout(form,400);return;}
+    f.innerHTML=`<form class="rform" id="rf"><input id="rT" maxlength="80" placeholder="Название песни" autocomplete="off" required><input id="rA" maxlength="60" placeholder="Исполнитель" autocomplete="off"><button class="btn main" type="submit" id="rSend">Заказать</button></form>`;
+    $('rT').oninput=()=>{const s=onSite($('rT').value);msg(s?`Эта песня уже есть на сайте: <a href="akkordy/${encodeURIComponent(s.id)}.html">открыть аккорды →</a>`:'');};
+    $('rf').onsubmit=async e=>{e.preventDefault();const title=$('rT').value.trim(),artist=$('rA').value.trim();if(!title)return;
+      const s=onSite(title);if(s&&!confirm(`«${s.title}» уже есть на сайте. Всё равно заказать (например, другую версию)?`))return;
+      $('rSend').disabled=true;
+      try{D=await call({action:'req_add',title,artist});$('rT').value='';$('rA').value='';
+        msg(D.dup?'Эту песню уже заказали — твой голос добавлен 👍':'Заявка принята! Как только аккорды появятся, сайт тебе скажет.');list();}
+      catch(err){msg(err.message,true);}
+      $('rSend').disabled=false;};
+  }
+  const who=r=>r.mine?'твоя заявка':`предложил(а) ${esc(r.name||'гость')}`;
+  function list(){
+    const L=$('reqList');
+    L.innerHTML=D.open.length?D.open.map(r=>`<li data-id="${esc(r.id)}">
+      <button class="vote" type="button" data-rv aria-pressed="${r.voted}" title="${r.voted?'Ты голосовал(а)':'Хочу эту песню'}">▲ ${r.votes}<small>${r.voted?'мой':'хочу'}</small></button>
+      <div class="rt"><b>${esc(r.title)}</b>${r.artist?` <span>— ${esc(r.artist)}</span>`:''}<small>${who(r)}</small></div>
+      <div class="ra">${D.admin?`<button class="ok" type="button" data-rok>✓ Готово</button><button type="button" data-rdel title="Удалить">✕</button>`:r.mine&&r.votes<=1?`<button type="button" data-rdel title="Удалить свою заявку">✕</button>`:''}</div></li>`).join('')
+      :'<li class="rempty">Заявок пока нет — стань первым!</li>';
+    $('reqDoneBox').hidden=!D.done.length;
+    $('reqDone').innerHTML=D.done.map(r=>`<li><b>${esc(r.title)}</b>${r.artist?` <span>— ${esc(r.artist)}</span>`:''}<a href="akkordy/${encodeURIComponent(r.done.song)}.html">играть →</a></li>`).join('');
+  }
+  $('reqList').addEventListener('click',async e=>{
+    const li=e.target.closest('li[data-id]');if(!li)return;const id=li.dataset.id;
+    try{
+      if(e.target.closest('[data-rv]')){if(!ses()){msg('Чтобы проголосовать, войди — кнопки выше.',true);$('req').scrollIntoView({behavior:'smooth'});return;}D=await call({action:'req_vote',id});list();}
+      else if(e.target.closest('[data-rdel]')){if(!confirm('Удалить заявку?'))return;D=await call({action:'req_del',id});list();}
+      else if(e.target.closest('[data-rok]')){   // владелец: какая песня на сайте выполнила заявку
+        const r=D.open.find(x=>x.id===id),guess=onSite(r.title),opts=chordSongs().slice().sort((a,b)=>a.title.localeCompare(b.title,'ru'));
+        li.querySelector('.ra').innerHTML=`<select data-rsel>${guess?'':'<option value="">Какая песня на сайте?</option>'}${opts.map(s=>`<option value="${esc(s.id)}"${guess&&guess.id===s.id?' selected':''}>${esc(s.title)}${s.artist?' — '+esc(s.artist):''}</option>`).join('')}</select><button class="ok" type="button" data-rgo>✓</button>`;}
+      else if(e.target.closest('[data-rgo]')){const song=li.querySelector('[data-rsel]').value;if(!song)return;D=await call({action:'req_done',id,song});list();msg('Готово — заказавшие и проголосовавшие получат уведомление.');}
+    }catch(err){msg(err.message,true);}
+  });
+  async function init(){
+    if(on||TYPE==='tab')return;on=true;
+    $('req').hidden=false;$('askBox').hidden=true;form();
+    try{D=await call({action:'req_list'});}catch(e){}
+    list();
+  }
+  function prefill(t){init();$('req').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{const i=$('rT');if(i){i.value=t;i.dispatchEvent(new Event('input'));$('rA').focus();}},400);}
+  return {init,prefill};
+})();
+REQ.init();
 </script>
 </body>
 </html>

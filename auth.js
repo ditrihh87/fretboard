@@ -41,17 +41,17 @@
   ['mousemove','scroll','keydown','touchstart','click'].forEach(e=>addEventListener(e,()=>{lastAct=Date.now();},{passive:true}));
   setInterval(async()=>{
     const l=rated();if(!l||document.hidden||Date.now()-lastAct>120e3)return;
-    try{const r=await post({action:'ping',token:l.token});toast(r.fresh,r.up,r.rub);}catch(e){}
+    try{const r=await post({action:'ping',token:l.token});toast(r.fresh,r.up,r.rub,r.notes);}catch(e){}
   },60e3);
-  function toast(fresh,up,rub){
-    const items=(fresh||[]).map(a=>`<div class="at-i"><span>${a.icon||'🏆'}</span><div><b>Новая ачивка: ${esc(a.name)}</b><small>${esc(a.desc||'')}</small></div></div>`);
+  function toast(fresh,up,rub,notes){
+    const items=(notes||[]).map(n=>`<a class="at-i" href="${esc(n.href||'#')}"><span>🎸</span><div><b>${esc(n.note)}</b><small>${esc(n.sub||'')}${n.href?' · открыть →':''}</small></div></a>`).concat((fresh||[]).map(a=>`<div class="at-i"><span>${a.icon||'🏆'}</span><div><b>Новая ачивка: ${esc(a.name)}</b><small>${esc(a.desc||'')}</small></div></div>`));
     if(rub)items.unshift(`<div class="at-i"><span>💛</span><div><b>Донат засчитан: +${Math.round(rub)} ₽</b><small>Спасибо за поддержку! +${Math.floor(rub/10)} очков</small></div></div>`);
     if(up)items.unshift(`<div class="at-i"><span>⭐</span><div><b>Новый статус: ${esc(up)}</b><small>Так держать!</small></div></div>`);
     if(!items.length)return;
     let box=document.getElementById('achToast');
     if(!box){box=document.createElement('div');box.id='achToast';document.body.appendChild(box);
-      const css=document.createElement('style');css.textContent='#achToast{position:fixed;right:16px;top:84px;z-index:95;display:flex;flex-direction:column;gap:10px;max-width:min(340px,calc(100vw - 32px))}#achToast .at-i{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:16px;background:#1C1848;border:1px solid rgba(240,168,48,.6);box-shadow:0 14px 34px rgba(0,0,0,.5);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;animation:atin .4s ease-out}#achToast .at-i>span{font-size:28px}#achToast b{display:block;font-size:14px;font-weight:800}#achToast small{display:block;color:#B9B4E6;font-weight:600;font-size:12px;margin-top:2px}@keyframes atin{from{opacity:0;transform:translateY(-10px)}}';document.head.appendChild(css);}
-    items.forEach(h=>{const d=document.createElement('div');d.innerHTML=h;const el=d.firstChild;box.appendChild(el);setTimeout(()=>el.remove(),6000);});
+      const css=document.createElement('style');css.textContent='#achToast{position:fixed;right:16px;top:84px;z-index:95;display:flex;flex-direction:column;gap:10px;max-width:min(340px,calc(100vw - 32px))}#achToast .at-i{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:16px;background:#1C1848;border:1px solid rgba(240,168,48,.6);box-shadow:0 14px 34px rgba(0,0,0,.5);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;animation:atin .4s ease-out}#achToast .at-i>span{font-size:28px}#achToast a.at-i{text-decoration:none}#achToast b{display:block;font-size:14px;font-weight:800}#achToast small{display:block;color:#B9B4E6;font-weight:600;font-size:12px;margin-top:2px}@keyframes atin{from{opacity:0;transform:translateY(-10px)}}';document.head.appendChild(css);}
+    items.forEach(h=>{const d=document.createElement('div');d.innerHTML=h;const el=d.firstChild;box.appendChild(el);setTimeout(()=>el.remove(),el.tagName==='A'?15000:6000);});
   }
   /* бонусы: подключить Twitch (фоллоу/саб) и Telegram (подписка на канал) */
   async function connectTwitch(){

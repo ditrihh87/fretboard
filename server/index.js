@@ -482,8 +482,9 @@ async function handleStats(body, token) {
   if (body.action === 'ping') {
     const r = await bumpStats(u.acc, { sec: PING_SEC, ping: true }, token);
     let fresh = r.fresh.slice(), up = r.up, rub = 0;
-    for (const n of r.inbox || []) { fresh = fresh.concat(n.fresh || []); up = n.up || up; rub += n.rub || 0; }
-    return reply(200, { ok: !r.skip, fresh: achNames(fresh), up, rub });
+    const notes = [];
+    for (const n of r.inbox || []) { if (n.note) { notes.push({ note: n.note, sub: n.sub || '', href: n.href || '' }); continue; } fresh = fresh.concat(n.fresh || []); up = n.up || up; rub += n.rub || 0; }
+    return reply(200, { ok: !r.skip, fresh: achNames(fresh), up, rub, notes });
   }
   if (body.action === 'tw_client') return reply(200, { client_id: process.env.TWITCH_CLIENT_ID || null });
   if (body.action === 'tw_link') return handleTwLink(body, u, token);
@@ -629,7 +630,9 @@ async function handlePublish(body, token) {
   const incoming = (Array.isArray(body.songs) ? body.songs : [body.song]).map(cleanSong);
   if (!incoming.length || incoming.some(x => !x) || incoming.length > 200) return reply(400, { error: 'bad song' });
   if (incoming.some(x => x.tab)) return reply(400, { error: 'табы — через страницу «Добавить таб»' });
-  return mergeSongs(incoming, 'Песня');
+  const res = await mergeSongs(incoming, 'Песня');
+  if (res.statusCode === 200) await autoDoneRequests(incoming, token).catch(console.error);
+  return res;
 }
 // таб: файл Guitar Pro кладём в tabs/<id>.<расширение>, запись — в songs.json
 const TAB_EXT = /^(gp|gp3|gp4|gp5|gpx)$/;
@@ -651,6 +654,78 @@ async function handlePublishTab(body, token) {
     sg.tab = path;
   } else if (typeof sg.tab !== 'string' || !/^tabs\/[a-z0-9-]{1,80}\.(gp|gp3|gp4|gp5|gpx)$/.test(sg.tab)) return reply(400, { error: 'нет файла таба' });
   return mergeSongs([sg], 'Таб', ['video', 'videoV', 'chordsBy']);   // галочки «фингерстайл/эксклюзив» берём как есть
+}
+
+/* ===== Заявки на аккорды: посетители предлагают песни, остальные голосуют, владелец отмечает «готово» ===== */
+const REQ_KEY = 'requests/chords.json';
+const REQ_MAX = 600, REQ_OPEN_PER_USER = 5;
+const normT = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim();
+const reqClean = (v, n) => String(v || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+function pubReq(r, acc, admin) {
+  return { id: r.id, title: r.title, artist: r.artist || '', note: r.note || '', name: r.name, t: r.t, votes: r.votes.length,
+    voted: !!acc && r.votes.includes(acc), mine: !!acc && r.acc === acc, done: r.done || null, ...(admin ? { acc: r.acc } : {}) };
+}
+// весточка человеку: покажется всплывашкой при следующем заходе на сайт
+async function notifyAcc(acc, note, token) {
+  if (!acc || adminAccs().includes(acc)) return;
+  const st = await loadJSON(statKey(acc), token, null);
+  if (!st) return;
+  st.inbox = (st.inbox || []).concat([note]).slice(-10);
+  await saveList(statKey(acc), st, token);
+}
+async function markReqDone(r, songId, token) {
+  r.done = { song: songId, t: Date.now() };
+  const href = `/akkordy/${songId}.html`;
+  for (const acc of new Set([r.acc, ...r.votes])) await notifyAcc(acc, { note: `Аккорды готовы: ${r.title}`, sub: r.acc === acc ? 'Твоя заявка выполнена — играй!' : 'Ты голосовал за эту песню', href }, token).catch(console.error);
+}
+async function handleRequests(body, token) {
+  const u = await commentUser(body, token).catch(() => null);
+  const acc = u && u.acc, admin = !!acc && adminAccs().includes(acc);
+  let list = await loadJSON(REQ_KEY, token, []);
+  const out = () => {
+    const open = list.filter(r => !r.done).sort((a, b) => b.votes.length - a.votes.length || a.t - b.t);
+    const done = list.filter(r => r.done).sort((a, b) => b.done.t - a.done.t).slice(0, 12);
+    return { open: open.map(r => pubReq(r, acc, admin)), done: done.map(r => pubReq(r, acc, admin)), me: acc || null, admin };
+  };
+  if (body.action === 'req_list') return reply(200, out());
+  if (!u) return reply(401, { error: 'login' });
+  if ((await loadBans(token))[acc]) return reply(403, { error: 'banned' });
+  if (body.action === 'req_add') {
+    const title = reqClean(body.title, 80), artist = reqClean(body.artist, 60), note = reqClean(body.note, 200);
+    if (title.length < 2) return reply(400, { error: 'Впиши название песни' });
+    if (!admin && [title, artist, note].some(hasLink)) return reply(400, { error: 'Без ссылок, пожалуйста — просто название и исполнитель' });
+    const twin = list.find(r => !r.done && normT(r.title) === normT(title) && (!artist || !r.artist || normT(r.artist) === normT(artist)));
+    if (twin) { if (!twin.votes.includes(acc)) twin.votes.push(acc); await saveList(REQ_KEY, list, token); return reply(200, Object.assign(out(), { dup: twin.id })); }
+    if (!admin && list.filter(r => !r.done && r.acc === acc).length >= REQ_OPEN_PER_USER) return reply(429, { error: `У тебя уже ${REQ_OPEN_PER_USER} заявок в очереди — дождись, пока их сделают` });
+    if (!admin && list.some(r => r.acc === acc && Date.now() - r.t < 20e3)) return reply(429, { error: 'Не так быстро 🙂' });
+    list.push({ id: crypto.randomBytes(6).toString('base64url'), title, artist, note, acc, name: nameOf(acc, displayName(u)), t: Date.now(), votes: [acc] });
+    // переполнилось — выкидываем самые старые выполненные, потом самые старые без голосов
+    while (list.length > REQ_MAX) { const i = list.findIndex(r => r.done) >= 0 ? list.findIndex(r => r.done) : 0; list.splice(i, 1); }
+    await saveList(REQ_KEY, list, token);
+    return reply(200, out());
+  }
+  const r = typeof body.id === 'string' && list.find(x => x.id === body.id);
+  if (!r) return reply(404, { error: 'Заявка не найдена' });
+  if (body.action === 'req_vote') {
+    if (r.done) return reply(400, { error: 'Уже готово' });
+    const i = r.votes.indexOf(acc); if (i >= 0) { if (r.acc !== acc) r.votes.splice(i, 1); } else r.votes.push(acc);
+  } else if (body.action === 'req_del') {
+    if (!admin && !(r.acc === acc && r.votes.length <= 1 && !r.done)) return reply(403, { error: 'Нельзя' });
+    list = list.filter(x => x !== r);
+  } else if (body.action === 'req_done') {
+    if (!admin) return reply(403, { error: 'admin only' });
+    if (!okSong(body.song)) return reply(400, { error: 'bad song' });
+    await markReqDone(r, body.song, token);
+  } else return reply(400, { error: 'bad action' });
+  await saveList(REQ_KEY, list, token);
+  return reply(200, out());
+}
+// опубликовал песню — заявки с таким же названием закрываются сами
+async function autoDoneRequests(songs, token) {
+  const list = await loadJSON(REQ_KEY, token, []);
+  let hit = false;
+  for (const sg of songs) for (const r of list) if (!r.done && normT(r.title) === normT(sg.title) && (!r.artist || !sg.artist || normT(r.artist) === normT(sg.artist))) { await markReqDone(r, sg.id, token); hit = true; }
+  if (hit) await saveList(REQ_KEY, list, token);
 }
 
 /* ===== DonationAlerts: статистика донатов для сайта и панели Twitch ===== */
@@ -850,6 +925,9 @@ module.exports.handler = async (event, context) => {
     catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
   }
 
+  if (['req_list', 'req_add', 'req_vote', 'req_del', 'req_done'].includes(body.action)) {
+    try { return await handleRequests(body, token); } catch (e) { console.error(e); return reply(502, { error: 'storage' }); }
+  }
   if (body.action === 'publish_tab') {
     try { return await handlePublishTab(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
   }
