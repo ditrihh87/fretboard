@@ -120,7 +120,9 @@ fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=Array.is
 
 /* ---------- распознавание ---------- */
 const CHORD=/^[A-H][#b]?(m|maj|min|dim|aug|sus|add|M)?\d*(sus\d*|add\d*|maj\d*|b\d+|#\d+)*(\/[A-H][#b]?)?$/;
-const isChord=t=>CHORD.test(t);
+// частая опечатка: Fm# вместо F#m, Bmb вместо Bbm, am вместо Am — исправляем сами
+const fixChord=t=>t.replace(/^([A-Ha-h])m([#b])(?=[^a-z]|$)/,(m,n,a)=>n.toUpperCase()+a+'m').replace(/^([a-h])(?=[#b]?(m|maj|min|dim|aug|sus|add|\d|\/|$))/,c=>c.toUpperCase());
+const isChord=t=>CHORD.test(fixChord(t));
 const REPEAT=/^\}?\s*[xх×]\s*(\d+)$/i;           // }x4, x2, ×3
 const isNoise=t=>/^(\||-|–|—|\(|\)|\.\.\.|…)$/.test(t);
 function chordTokens(line){
@@ -137,7 +139,7 @@ function chordTokens(line){
   return n?{rep}:null;
 }
 // аккорды строки вместе с позициями
-function chordsWithPos(line){const out=[];line.replace(/\S+/g,(m,i)=>{const t=m.replace(/^[(]|[)]$/g,'');if(isChord(t))out.push({c:t,i});return m;});return out;}
+function chordsWithPos(line){const out=[];line.replace(/\S+/g,(m,i)=>{const t=m.replace(/^[(]|[)]$/g,'');if(isChord(t))out.push({c:fixChord(t),i});return m;});return out;}
 const repLabel=r=>r>1?' ×'+r:'';
 const headName=s=>s.replace(/[:：]\s*$/,'').trim();
 const H_RE=/^\s*([А-ЯЁA-Z][^:：]{0,40})[:：]\s*(.*)$/;   // «Куплет 1:», «Вступление: Dm Gm A }x4»
