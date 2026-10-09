@@ -13,6 +13,7 @@
 <script src="auth.js" defer></script>
 <style>
   .nav nav a.on{color:var(--paper)}
+  .editbtn{margin-left:4px;font-weight:800;font-size:12px;letter-spacing:.5px;padding:5px 12px;border-radius:999px;background:rgba(240,168,48,.18);color:var(--amber);text-decoration:none}.editbtn:hover{background:rgba(240,168,48,.3)}
   .crumbs{padding:28px 0 0;font-weight:700;font-size:15px}
   .seo{padding:18px 0 70px}.seo h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,4.6vw,52px);line-height:1.05}.seo .by{color:#CFCCF2;font-weight:700;font-size:18px;margin:6px 0}.seo .credits{color:var(--muted);font-weight:600;font-size:14px}.seo h2{color:var(--muted);font-weight:800;font-size:15px;margin:22px 0 6px}.seo p{margin:2px 0;line-height:1.6}.seo b{color:var(--amber);margin-right:4px}
   .crumbs a{font-weight:800;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#9AA4FF;text-shadow:0 0 12px rgba(110,123,255,.8);transition:color .15s,text-shadow .15s}.crumbs a:hover{color:#C9CFFF;text-shadow:0 0 16px rgba(110,123,255,1)}
@@ -767,8 +768,15 @@ async function renderTabPage(){
     if(c){c.href='songs.html?type='+t;c.textContent=SONG.tab?'← Все табы':'← Все аккорды';}
     document.querySelectorAll(`[data-nav="${t}"]`).forEach(a=>a.classList.add('on')); }
   if(SONG.tab)renderTabPage();else renderChordsPage();
-  paintRate();paintYm();paintTalk();
+  paintRate();paintYm();paintTalk();paintEdit();
 })();
+/* владельцу — кнопка «Править» (открывает песню в конвертере) */
+function paintEdit(){
+  let own=false;try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');own=!!(l&&l.prov==='admin');}catch(e){}
+  if(!own||SONG.tab)return;
+  const b=document.querySelector('.shead .badges');if(!b)return;
+  const a=document.createElement('a');a.className='editbtn';a.href='/add-song.html?edit='+encodeURIComponent(SONG.id);a.textContent='✎ Править';b.appendChild(a);
+}
 </script>
 </body>
 </html>

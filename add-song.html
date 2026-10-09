@@ -33,6 +33,10 @@
   .modes{display:inline-flex;gap:4px;background:rgba(28,24,72,.7);border-radius:14px;padding:4px;margin:0 0 18px}
   .mode{border:none;background:transparent;color:var(--muted);font:800 14px var(--body);padding:10px 16px;border-radius:10px;cursor:pointer}
   .mode.on{background:var(--amber);color:#1b1b1b}
+  .openrow{display:flex;gap:8px;margin:0 0 14px}
+  .openrow select{flex:1;min-width:0;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:10px 12px;color:var(--paper);font:700 14px var(--body)}
+  .openrow .btn{padding:10px 16px;font-size:14px}
+  .msg.ok{color:#8FD493}
   .hint{color:#CFCCF2;font-weight:600;font-size:14px;line-height:1.5;margin:0 0 6px}
   .hint code{background:rgba(239,236,251,.1);padding:1px 6px;border-radius:6px;font-size:13px}
   #bsrc{min-height:520px}
@@ -59,6 +63,7 @@
   <div class="grid" id="oneMode">
     <section class="card">
       <h2>1. Песня</h2>
+      <div class="openrow"><select id="openSel" aria-label="Песня с сайта"><option value="">Открыть песню с сайта для правки…</option></select><button class="btn ghost" id="openBtn" type="button">Открыть</button></div>
       <div class="row">
         <div><label for="title">Название</label><input type="text" id="title"></div>
         <div><label for="artist">Исполнитель</label><input type="text" id="artist"></div>
@@ -116,7 +121,48 @@
 const $=id=>document.getElementById(id);
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let EXIST=[];
-fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=Array.isArray(j)?j:[];MODE==='batch'?buildBatch():build();}).catch(()=>MODE==='batch'?buildBatch():build());
+fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{EXIST=Array.isArray(j)?j:[];fillOpen();MODE==='batch'?buildBatch():build();
+  const ed=new URLSearchParams(location.search).get('edit');if(ed)openSong(ed);}).catch(()=>MODE==='batch'?buildBatch():build());
+/* ---------- правка уже опубликованной песни: songs.json → обратно в «аккорды над строками» ---------- */
+function fillOpen(){
+  const list=EXIST.filter(s=>!s.tab&&s.text).slice().sort((a,b)=>(a.artist||'').localeCompare(b.artist||'','ru')||a.title.localeCompare(b.title,'ru'));
+  $('openSel').innerHTML='<option value="">Открыть песню с сайта для правки…</option>'+list.map(s=>`<option value="${esc(s.id)}">${esc(s.title)}${s.artist?' — '+esc(s.artist):''}</option>`).join('');
+}
+// строка [Am]Текст с [F]аккордами → две строки: аккорды над текстом, по тем же буквам
+function unChordLine(line){
+  const parts=line.split(/(\[[^\]]+\])/);let txt='',chs=[],last=-2;
+  for(const p of parts){const m=p.match(/^\[([^\]]+)\]$/);
+    if(m){let col=txt.length;if(col<=last){txt+=' '.repeat(last+1-col);col=txt.length;}chs.push([col,m[1]]);last=col+m[1].length;}
+    else txt+=p;}
+  if(!chs.length)return [line];
+  if(!txt.trim())return [chs.map(c=>c[1]).join('  ')];
+  let cl='';for(const [c,n] of chs){if(cl.length<c)cl=cl.padEnd(c,' ');else if(cl.length>c)cl+=' ';cl+=n;}
+  return [cl,txt];
+}
+function unconvert(song){
+  const out=[];
+  if(song.shapes&&Object.keys(song.shapes).length)out.push('Баре: '+Object.entries(song.shapes).map(([c,f])=>c+' '+f).join(', '),'');
+  const L=String(song.text||'').split('\n');
+  L.forEach((line,i)=>{
+    const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
+    if(cm){out.push(cm[1].trim()+':');return;}
+    const r=unChordLine(line);out.push(...r);
+    // строка из одних аккордов не должна прилипнуть к тексту под ней
+    if(r.length===1&&/\[/.test(line)&&L[i+1]&&L[i+1].trim()&&!/^\s*\{/.test(L[i+1]))out.push('');
+  });
+  return out.join('\n');
+}
+function openSong(id){
+  const sg=EXIST.find(s=>s.id===id);if(!sg)return;
+  if(sg.tab){alert('Это таб — табы правятся файлом в папке tabs/.');return;}
+  if(MODE!=='one')document.querySelector('[data-mode=one]').click();
+  $('title').value=sg.title||'';$('artist').value=sg.artist||'';$('words').value=sg.words||'';$('music').value=sg.music||'';
+  $('yandex').value=sg.yandex||'';$('exclusive').checked=!!sg.exclusive;$('src').value=unconvert(sg);$('openSel').value=id;
+  build();$('msg').className='msg ok';$('msg').textContent=`Открыта «${sg.title}». Исправь и сохрани — песня заменится, адрес страницы и оценки останутся.`;
+  $('src').scrollIntoView({behavior:'smooth',block:'center'});
+}
+$('openBtn').onclick=()=>{const v=$('openSel').value;if(v)openSong(v);};
+$('openSel').onchange=()=>{const v=$('openSel').value;if(v)openSong(v);};
 
 /* ---------- распознавание ---------- */
 const CHORD=/^[A-H][#b]?(m|maj|min|dim|aug|sus|add|M)?\d*(sus\d*|add\d*|maj\d*|b\d+|#\d+)*(\/[A-H][#b]?)?$/;
