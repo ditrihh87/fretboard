@@ -148,7 +148,7 @@ const isHead=(name,rest)=>!rest?PART.test(name.trim()):!!chordTokens(rest);
 
 // «Баре: Am 5, Bm 7, G 3» → {Am:5,Bm:7,G:3}
 const BARRE_RE=/^\s*(баре|барре|barre)\s*[:：]\s*(.+)$/i;
-function parseShapes(v){const o={};String(v).replace(/([A-H][#b]?[^\s,;:\d-]*)\s*[-–—]?\s*(\d{1,2})/g,(m,c,f)=>{if(isChord(c))o[c]=+f;return m;});return Object.keys(o).length?o:null;}
+function parseShapes(v){const o={};String(v).replace(/([A-Ha-h][#b]?[^\s,;:]*?[^\s,;:\d]?[^\s,;:]*)\s*[-–—]?\s*(\d{1,2})(?=[\s,;]|$)/g,(m,c,f)=>{c=c[0].toUpperCase()+c.slice(1);if(isChord(c)&&+f>=1&&+f<=15)o[c]=+f;return m;});return Object.keys(o).length?o:null;}
 function convert(src,meta){
   const L=src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
   const out=[];

@@ -319,7 +319,7 @@ const itx=(t,S)=>String(t).split(/(\(\(|\)\))/).map(p=>p==='(('?(S.it=true,''):p
 function drawSong(){
   const t=SONG.text||'';let tr=st.tr;
   const hasSh=SONG.shapes&&Object.keys(SONG.shapes).length;
-  SH=hasSh&&!st.easy?SONG.shapes:{};
+  SH={};if(hasSh&&!st.easy)for(const [k,v] of Object.entries(SONG.shapes)){SH[k]=v;const c=parseChord(k);if(c)SH[SHARP[c.pc]+normQ(c.q)]=v;} // Hm = Bm, A# = Bb
   const ez=st.easy&&!hasSh?easyCapo(chordsIn(t)):null;
   if(ez)tr=-ez.k;
   const on=!!ez||(hasSh&&st.easy);
