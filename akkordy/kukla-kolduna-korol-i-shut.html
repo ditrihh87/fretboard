@@ -69,8 +69,9 @@
   .ib:disabled{opacity:.4;cursor:default}
   .ib{display:inline-flex;align-items:center;gap:6px}
   .ib .ic{flex:none;display:block}
-  /* на узких экранах только значки, подсказка — во всплывающем title */
-  @media (max-width:900px),(max-height:520px) and (orientation:landscape){.bar .ib .lbl,.pbar .ib .lbl{display:none}.bar .ib.solo,.pbar .ib.solo{padding:8px 10px}}
+  /* на кнопках плеера только значки, подсказка — во всплывающем title */
+  .bar .ib .lbl,.pbar .ib .lbl{display:none}
+  .bar .ib.solo,.pbar .ib.solo{padding:8px 10px}
   .ib:disabled{opacity:.35;cursor:default}
   .sp{flex:1}
   /* аккорды и текст */
