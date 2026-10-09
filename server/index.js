@@ -420,6 +420,8 @@ async function bumpStats(acc, add, token) {
   if (add.comments) st.comments = Math.max(0, (st.comments || 0) + add.comments);
   if (add.rub) st.rub = Math.max(0, (st.rub || 0) + add.rub);
   if (add.reqs) st.reqs = Math.max(0, (st.reqs || 0) + add.reqs);   // заказы подбора аккордов (удалил свой заказ — минус один)
+  // владелец сайта всегда на высшем статусе: добиваем бонусные очки до порога «Гитарного бога»
+  if (adminAccs().includes(acc)) { const top = RANKS[RANKS.length - 1][0], p = statPoints(st); if (p < top) st.bonus = (st.bonus || 0) + top - p; }
   st.got = st.got || {};
   const fresh = [];
   if (add.flags) Object.assign(st, add.flags);
