@@ -169,16 +169,14 @@
   .cbody{min-width:0;flex:1}
   .cmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:14px}
   .cmeta span{color:var(--muted);font-weight:600;font-size:13px}
-  .cmeta .cbadge{background:var(--amber);color:#1b1b1b;font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
+  .cmeta .cbadge{background:#FF8000;color:#1b1b1b;font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
   .cacts{margin-left:auto;display:inline-flex;gap:12px}
   .cdel,.cok{border:none;background:none;color:var(--muted);font:700 12px var(--body);cursor:pointer;padding:0}
   .cok{color:#8FD493}
   .cmeta .crank{color:#B3AEE8;font-weight:700;font-size:12px}
-  .cmeta b{color:var(--paper)}.cmeta b.cown{color:var(--amber)}
-  /* цвет ника по званию: Новичок → Легенда */
-  .cmeta .lv1{color:#EFECFB}.cmeta .lv2{color:#A8E6A1}.cmeta .lv3{color:#7FD3F7}.cmeta .lv4{color:#8C9BFF}
-  .cmeta .lv5{color:#C38BFF}.cmeta .lv6{color:#FF7AC6}.cmeta .lv7{color:#FF6B6B}
-  .cmeta .lv8{background:linear-gradient(90deg,#FF6B6B,#FFD86B,#A8E6A1,#7FD3F7,#C38BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cmeta b{color:var(--paper)}.cmeta b.cown{color:#FF8000;text-shadow:0 0 8px rgba(255,128,0,.55)}
+  /* цвет ника по званию — как качество вещей в World of Warcraft: серый, белый, зелёный, синий, фиолетовый, бирюзовый (наследие), золотой (артефакт); оранжевый (легендарный) — только у владельца */
+  .cmeta .lv1{color:#9D9D9D}.cmeta .lv2{color:#FFFFFF}.cmeta .lv3{color:#1EFF00}.cmeta .lv4{color:#2A8CFF}.cmeta .lv5{color:#A335EE}.cmeta .lv6{color:#00CCFF}.cmeta .lv7{color:#E6CC80}.cmeta .lv8{color:#E6CC80;text-shadow:0 0 6px rgba(230,204,128,.75)}
   .cmeta .crank{opacity:.75}
   .cmeta .cpend{background:rgba(240,168,48,.15);color:var(--amber);font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
   .cbans{margin-top:18px;color:var(--muted);font-weight:700;font-size:14px}

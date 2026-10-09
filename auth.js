@@ -59,7 +59,7 @@
     el.innerHTML='<p class="ab-st-muted">Загружаю рейтинг…</p>';
     let r;try{r=await post({action:'stats',token:l.token});}catch(e){el.innerHTML='';return;}
     const pct=r.next?Math.round((r.points-r.from)/(r.next.at-r.from)*100):100;
-    el.innerHTML=`<div class="ab-rank"><b class="lv${r.level}">${esc(r.rank)}</b><span>уровень ${r.level}</span></div>
+    el.innerHTML=`<div class="ab-rank"><b class="${l.prov==='admin'?'lvown':'lv'+r.level}">${esc(r.rank)}</b><span>уровень ${r.level}</span></div>
       <div class="ab-bar"><i style="width:${Math.max(3,Math.min(100,pct))}%"></i></div>
       <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${r.points} очков — высшее звание`}</div>
       <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span>${r.rub?`<span>💛 ${r.rub.toLocaleString('ru-RU')} ₽</span>`:''}</div>
@@ -94,8 +94,9 @@
 #authBox .ab-st-muted{margin:0;color:#B9B4E6;font-size:13px}
 #authBox .ab-rank{display:flex;justify-content:space-between;align-items:baseline}
 #authBox .ab-rank b{font-size:16px;font-weight:800}
-#authBox .lv1{color:#EFECFB}#authBox .lv2{color:#A8E6A1}#authBox .lv3{color:#7FD3F7}#authBox .lv4{color:#8C9BFF}#authBox .lv5{color:#C38BFF}#authBox .lv6{color:#FF7AC6}#authBox .lv7{color:#FF6B6B}
-#authBox .lv8{background:linear-gradient(90deg,#FF6B6B,#FFD86B,#A8E6A1,#7FD3F7,#C38BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+#authBox .lv1{color:#9D9D9D}#authBox .lv2{color:#FFFFFF}#authBox .lv3{color:#1EFF00}#authBox .lv4{color:#2A8CFF}#authBox .lv5{color:#A335EE}#authBox .lv6{color:#00CCFF}#authBox .lv7{color:#E6CC80}#authBox .lv8{color:#E6CC80;text-shadow:0 0 6px rgba(230,204,128,.75)}
+#authBox .lvown{color:#FF8000;text-shadow:0 0 8px rgba(255,128,0,.55)}
+
 #authBox .ab-rank span{color:#B9B4E6;font-size:12px;font-weight:700}
 #authBox .ab-bar{height:8px;border-radius:5px;background:rgba(239,236,251,.1);margin:8px 0 6px;overflow:hidden}
 #authBox .ab-bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#6E7BFF,#F0A830)}
