@@ -58,6 +58,10 @@
   .ib:hover{background:rgba(110,123,255,.18)}
   .ib.solo{background:rgba(37,31,94,.8);border-radius:12px}
   .ib.on{background:var(--amber);color:#1b1b1b}
+  .ib{display:inline-flex;align-items:center;gap:6px}
+  .ib .ic{flex:none;display:block}
+  /* на узких экранах только значки, подсказка — во всплывающем title */
+  @media (max-width:900px),(max-height:520px) and (orientation:landscape){.bar .ib .lbl,.pbar .ib .lbl{display:none}.bar .ib.solo,.pbar .ib.solo{padding:8px 10px}}
   .ib:disabled{opacity:.35;cursor:default}
   .sp{flex:1}
   /* аккорды и текст */
@@ -354,6 +358,19 @@ async function paintRate(){
 }
 
 /* ===== таб-плеер (alphaTab, MPL-2.0) ===== */
+const IC=(d,vb='0 0 24 24')=>`<svg class="ic" viewBox="${vb}" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICONS={
+  restart:IC('<path d="M6 5v14"/><path d="M19 5 9 12l10 7z" fill="currentColor"/>'),
+  loop:IC('<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>'),
+  metro:IC('<path d="M9 3h6l4 18H5z"/><path d="M12 17l5-11"/><path d="M8 17h8"/>'),
+  count:IC('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M10 2h4"/>'),
+  color:IC('<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1.1.2-2.2 1.4-2.2H17a4 4 0 0 0 4-4c0-5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/>'),
+  wrap:IC('<path d="M4 6h16"/><path d="M4 12h13a3 3 0 0 1 0 6h-4"/><path d="M15 16l-2 2 2 2"/><path d="M4 18h5"/>'),
+  line:IC('<path d="M3 12h16"/><path d="M16 8l4 4-4 4"/>'),
+  tab:IC('<path d="M3 6h18M3 10h18M3 14h18M3 18h18" stroke-width="1.4"/><text x="7" y="12.2" font-size="6" font-weight="800" fill="currentColor" stroke="none">3</text><text x="14" y="16.2" font-size="6" font-weight="800" fill="currentColor" stroke="none">5</text>'),
+  score:IC('<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5" fill="currentColor"/><circle cx="17.5" cy="16" r="2.5" fill="currentColor"/>')
+};
+const btnHTML=(icon,label)=>`${ICONS[icon]}<span class="lbl">${label}</span>`;
 /* строй и каподастр из файла — показываем, только если они не стандартные */
 function tuneInfo(score){
   const el=$('tInfo');if(!el)return;
@@ -395,9 +412,9 @@ function paintTabUI(){
   $('tLoop').classList.toggle('on',!!(atApi&&atApi.isLooping));
   $('tMetro').classList.toggle('on',!!(atApi&&atApi.metronomeVolume>0));
   $('tCount').classList.toggle('on',!!(atApi&&atApi.countInVolume>0));
-  $('tColor').textContent=colored()?'🎨 Цвет':'◻ Обычный';
-  $('tLayout').textContent=horiz()?'⟶ Строка':'↵ Перенос';
-  $('tView').textContent=prefs.tabView==='score'?'Ноты + таб':'Таб';
+  $('tColor').innerHTML=btnHTML('color',colored()?'Цвет':'Обычный');$('tColor').classList.toggle('on',colored());
+  $('tLayout').innerHTML=horiz()?btnHTML('line','Строка'):btnHTML('wrap','Перенос');$('tLayout').title=horiz()?'Одной строкой':'Перенос строк';
+  $('tView').innerHTML=prefs.tabView==='score'?btnHTML('score','Ноты + таб'):btnHTML('tab','Таб');$('tView').title=prefs.tabView==='score'?'Показаны ноты и таб':'Показан только таб';
   $('legend').style.visibility=colored()?'':'hidden';
   $('tZo').disabled=zoom()<=.6+1e-6;$('tZi').disabled=zoom()>=1.5-1e-6;
 }
@@ -413,21 +430,21 @@ async function renderTabPage(){
         <select class="tracks" id="tTracks" hidden aria-label="Партия"></select>
         <div class="sp"></div>
         <div class="grp"><button class="ib" id="tZo" aria-label="Мельче">−</button><button class="ib" id="tZi" aria-label="Крупнее">+</button></div>
-        <button class="ib solo" id="tColor"></button>
-        <button class="ib solo" id="tLayout"></button>
-        <button class="ib solo" id="tView"></button>
+        <button class="ib solo" id="tColor" title="Цветные струны" aria-label="Цветные струны"></button>
+        <button class="ib solo" id="tLayout" title="Перенос строк" aria-label="Перенос строк"></button>
+        <button class="ib solo" id="tView" title="Таб или ноты" aria-label="Таб или ноты"></button>
       </div>
       <div class="atwrap">
         <div id="atScroll"><div id="atRender"></div></div>
         <div class="loading" id="tLoading"><span class="spin"></span><span id="tLoadText">Загружаю таб…</span></div>
       </div>
       <div class="pbar">
-        <button class="play" id="tPlay" disabled aria-label="Играть">▶</button>
+        <button class="play" id="tPlay" disabled aria-label="Играть">▶</button><button class="ib solo rs" id="tRestart" title="Сначала" aria-label="Сначала">${ICONS.restart}</button>
         <span class="t" id="tCur">0:00</span><div class="prog" id="tProg"><i id="tFill"></i></div><span class="t" id="tEnd">0:00</span>
-        <button class="ib solo" id="tSpeed" aria-label="Темп">100%</button>
-        <button class="ib solo" id="tLoop" aria-label="Повтор">⟲ Повтор</button>
-        <button class="ib solo" id="tMetro" aria-label="Метроном">♩ Метроном</button>
-        <button class="ib solo" id="tCount" aria-label="Отсчёт">1-2 Отсчёт</button>
+        <button class="ib solo" id="tSpeed" title="Темп" aria-label="Темп">100%</button>
+        <button class="ib solo" id="tLoop" title="Повтор (выдели такты мышкой или пальцем)" aria-label="Повтор">${btnHTML('loop','Повтор')}</button>
+        <button class="ib solo" id="tMetro" title="Метроном" aria-label="Метроном">${btnHTML('metro','Метроном')}</button>
+        <button class="ib solo" id="tCount" title="Отсчёт перед началом" aria-label="Отсчёт">${btnHTML('count','Отсчёт')}</button>
       </div>
       <div class="hint">Пробел — играть/пауза · выдели такты мышью, чтобы повторять участок</div>
     </div>`;
@@ -455,6 +472,7 @@ async function renderTabPage(){
     else atApi.load(new URL(src,document.baseURI).href);
   }catch(e){$('tLoadText').textContent='Не удалось загрузить плеер. Проверь интернет и обнови страницу.';}
   $('tPlay').onclick=()=>atApi&&atApi.playPause();
+  $('tRestart').onclick=()=>{if(!atApi)return;const playing=atApi.playerState===1;atApi.stop();$('atScroll').scrollTo(0,0);if(playing)setTimeout(()=>atApi.play(),60);};
   $('tSpeed').onclick=()=>{if(!atApi)return;tp.speedI=(tp.speedI+1)%SPEEDS.length;atApi.playbackSpeed=SPEEDS[tp.speedI];paintTabUI();};
   $('tLoop').onclick=()=>{if(!atApi)return;atApi.isLooping=!atApi.isLooping;paintTabUI();};
   $('tMetro').onclick=()=>{if(!atApi)return;atApi.metronomeVolume=atApi.metronomeVolume>0?0:1;paintTabUI();};
