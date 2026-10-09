@@ -365,7 +365,12 @@ function shapeAt(c,q,fr){
 function chordShape(name){
   const c=parseChord(name.split('/')[0]);if(!c)return null;
   const q=normQ(c.q),key=SHARP[c.pc]+q;
-  const ov=SH[name]??SH[key];if(ov!=null){const f=shapeAt(c,q,ov);if(f)return f;}
+  const ov=SH[name]??SH[key];
+  if(typeof ov==='string'){ // своя аппликатура: "x02010" или "x-12-14-12-13-12"
+    const p=ov.includes('-')?ov.split('-'):ov.split('');
+    if(p.length===6)return p.map(v=>/^x$/i.test(v)?-1:+v);
+  }
+  if(ov!=null){const f=shapeAt(c,q,ov);if(f)return f;}
   if(OPEN[key])return OPEN[key];
   if(q==='5'){ // квинтаккорд: только от 6-й или 5-й струны; открытая — только толстая ми (E5)
     const f6=(c.pc-4+12)%12,f5=(c.pc-9+12)%12||12;
@@ -548,7 +553,7 @@ const itx=(t,S)=>String(t).split(/(\(\(|\)\))/).map(p=>p==='(('?(S.it=true,''):p
 function drawSong(){
   const t=SONG.text||'';let tr=st.tr;
   const hasSh=SONG.shapes&&Object.keys(SONG.shapes).length;
-  SH={};if(hasSh&&!st.easy)for(const [k,v] of Object.entries(SONG.shapes)){SH[k]=v;const c=parseChord(k);if(c)SH[SHARP[c.pc]+normQ(c.q)]=v;} // Hm = Bm, A# = Bb
+  SH={};if(hasSh)for(const [k,v] of Object.entries(SONG.shapes)){if(st.easy&&typeof v!=='string')continue;SH[k]=v;const c=parseChord(k);if(c)SH[SHARP[c.pc]+normQ(c.q)]=v;} // Hm = Bm, A# = Bb
   // "easyFrom": "F" в songs.json — в «Простых аккордах» первый аккорд песни становится F (каподастр считается сам)
   const ef=SONG.easyFrom&&parseChord(SONG.easyFrom),f0=ef&&chordsIn(t).map(parseChord).find(Boolean);
   const ez=st.easy?(ef&&f0?{k:(f0.pc-ef.pc+12)%12}:!hasSh?easyCapo(chordsIn(t)):null):null;

@@ -79,6 +79,7 @@
           <tr><td><code>Музыка: Король и Шут</code></td><td>автор музыки</td></tr>
           <tr><td><code>Баре: Am 5, C#m 4, A5 0</code></td><td>с какого лада играть аккорд: баре или квинта. Струна сама: 6-я или 5-я</td></tr>
           <tr><td><code>A 5</code> <span class="mut">(одна строка)</span></td><td>то же, что «Баре: A 5»</td></tr>
+          <tr><td><code>Баре: Am7 x02010</code></td><td>своя аппликатура: 6 знаков от толстой струны к тонкой, x — не играть. Лады больше 9 — через дефис: <code>x-12-14-12-13-12</code></td></tr>
           <tr><td><code>Простые: F</code></td><td>«Простые аккорды» начнутся с F, каподастр посчитается сам</td></tr>
           <tr><td><code>Также ищут: КиШ …, Грохочет гром</code></td><td>другие названия для поисковиков, через запятую</td></tr>
         </table></div>
@@ -258,7 +259,14 @@ const BARRE_RE=/^\s*(баре|барре|barre)\s*[:：]\s*(.+)$/i;
 // «Также ищут: КиШ Дурак и молния, Грохочет гром» — другие названия для поиска (поле aka)
 const AKA_RE=/^\s*также\s+ищут\s*[:：]\s*(.+)$/i;
 const EASY_RE=/^\s*прост\S*(\s+\S+)?\s*[:：]\s*(от\s+)?([A-Ha-h][#b]?m?)\s*$/i;
-function parseShapes(v){const o={};String(v).replace(/(?:^|[\s,;])([A-Ha-h][#b]?[^\s,;:]*?)(?:\s+|\s*[-–—]\s*)(\d{1,2})(?=[\s,;]|$)/g,(m,c,f)=>{c=c[0].toUpperCase()+c.slice(1);if(isChord(c)&&+f<=15)o[c]=+f;return m;});return Object.keys(o).length?o:null;}
+// аппликатура целиком: 6 знаков от 6-й струны к 1-й, x — не играть (x02010), лады больше 9 — через дефис (x-12-14-12-13-12)
+const FING_RE=/^(?:[xX\d]{6}|(?:[xX]|\d{1,2})(?:-(?:[xX]|\d{1,2})){5})$/;
+const isFing=t=>FING_RE.test(t);
+function parseShapes(v){const o={};
+  // «Am7 x02010» — своя аппликатура
+  String(v).replace(/(?:^|[\s,;])([A-Ha-h][#b]?[^\s,;:]*?)\s+((?:[xX\d]{6}|(?:[xX]|\d{1,2})(?:-(?:[xX]|\d{1,2})){5}))(?=[\s,;]|$)/g,(m,c,f)=>{c=fixChord(c);if(isChord(c))o[c]=f.toLowerCase();return m;});
+  String(v).replace(/(?:^|[\s,;])([A-Ha-h][#b]?[^\s,;:]*?)(?:\s+|\s*[-–—]\s*)(\d{1,2})(?=[\s,;]|$)/g,(m,c,f)=>{c=fixChord(c);if(isChord(c)&&+f<=15&&!(c in o))o[c]=+f;return m;});
+  return Object.keys(o).length?o:null;}
 function convert(src,meta){
   const L=src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
   const out=[];
@@ -270,11 +278,12 @@ function convert(src,meta){
     const br=line.match(BARRE_RE);if(br){const o=parseShapes(br[2]);if(o)meta.shapes=Object.assign(meta.shapes||{},o);continue;}
     // строка только из «аккорд лад» (A 5, C#m 4) — тоже баре, даже без слова «Баре:».
     // Если под ней текст — это ещё и строка аккордов: аккорд встаёт над текстом, а лад запоминается для схемы.
-    const tk=line.trim().split(/[\s,;–—-]+/).filter(Boolean);
-    if(tk.some(t=>/^\d{1,2}$/.test(t))&&tk.every((t,j)=>/^\d{1,2}$/.test(t)?(j>0&&!/^\d{1,2}$/.test(tk[j-1])&&isChord(tk[j-1])):isChord(t))){const o=parseShapes(line);if(o){meta.shapes=Object.assign(meta.shapes||{},o);
+    const tk=line.trim().split(/[\s,;–—]+|(?<=[^\s\dxX])-(?=\d)/).filter(Boolean);
+    const isVal=t=>/^\d{1,2}$/.test(t)||isFing(t);
+    if(tk.some(isVal)&&tk.every((t,j)=>isVal(t)?(j>0&&!isVal(tk[j-1])&&isChord(tk[j-1])):isChord(t))){const o=parseShapes(line);if(o){meta.shapes=Object.assign(meta.shapes||{},o);
       const nx=(L[i+1]||'').trim();
       if(!nx||chordTokens(nx)||H_RE.test(nx))continue;
-      line=line.replace(/(\S)(\s*[-–—]?\s+)(\d{1,2})(?=[\s,;]|$)/g,(m,a,b,c)=>a+b.replace(/[-–—]/g,' ')+' '.repeat(c.length));}}
+      line=line.replace(/(\S)(\s+)((?:[xX\d]{6}|(?:[xX]|\d{1,2})(?:-(?:[xX]|\d{1,2})){5}))(?=[\s,;]|$)/g,(m,a,b,c)=>a+b+' '.repeat(c.length)).replace(/(\S)(\s*[-–—]?\s+)(\d{1,2})(?=[\s,;]|$)/g,(m,a,b,c)=>a+b.replace(/[-–—]/g,' ')+' '.repeat(c.length));}}
     // «Автор текста:» / «Слова:» / «Музыка:» — в поля, не в текст
     const au=line.match(/^\s*(автор\s+текста|слова|автор\s+музыки|музыка|автор)\s*[:：]\s*(.*)$/i);
     if(au){let v=au[2].trim();if(!v){while(i+1<L.length&&!L[i+1].trim())i++;if(i+1<L.length)v=L[++i].trim();}
