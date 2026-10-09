@@ -35,7 +35,7 @@
 Написать: «Продолжаем проект ditrihh: репозиторий ditrihh87/fretboard, прочитай STATUS.md».
 
 ## Запуск сайта — открыт 2026-10-09
-Сайт открыт всем и для поисковиков. Закрытой осталась только power-chords.html: заставка (gate.js), noindex и Disallow в robots.txt.
+Сайт открыт всем и для поисковиков. Закрыты: power-chords.html (заставка gate.js, noindex, Disallow в robots.txt) и служебные add-song.html, da-connect.html (noindex, Disallow).
 Чтобы открыть и её: в gate.js `SITE_OPEN=true`, убрать noindex из power-chords.html, убрать строку Disallow из robots.txt.
 Осталось: добавить сайт в Яндекс Вебмастер и Google Search Console, указать sitemap.xml.
 
