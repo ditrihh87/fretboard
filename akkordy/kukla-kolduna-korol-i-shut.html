@@ -563,12 +563,14 @@ function drawSong(){
   const t=SONG.text||'';let tr=st.tr;
   const hasSh=SONG.shapes&&Object.keys(SONG.shapes).length;
   SH={};if(hasSh&&!st.easy)for(const [k,v] of Object.entries(SONG.shapes)){SH[k]=v;const c=parseChord(k);if(c)SH[SHARP[c.pc]+normQ(c.q)]=v;} // Hm = Bm, A# = Bb
-  const ez=st.easy&&!hasSh?easyCapo(chordsIn(t)):null;
+  // "easyFrom": "F" в songs.json — в «Простых аккордах» первый аккорд песни становится F (каподастр считается сам)
+  const ef=SONG.easyFrom&&parseChord(SONG.easyFrom),f0=ef&&chordsIn(t).map(parseChord).find(Boolean);
+  const ez=st.easy?(ef&&f0?{k:(f0.pc-ef.pc+12)%12}:!hasSh?easyCapo(chordsIn(t)):null):null;
   if(ez)tr=-ez.k;
   const on=!!ez||(hasSh&&st.easy);
   $('easyBtn').setAttribute('aria-pressed',on);$('easyBtn').classList.toggle('on',on);
   $('easyNote').hidden=!on;
-  if(hasSh&&st.easy)$('easyNote').textContent='Те же аккорды на открытых струнах — проще, звучит в той же тональности.';
+  if(hasSh&&st.easy&&!ez)$('easyNote').textContent='Те же аккорды на открытых струнах — проще, звучит в той же тональности.';
   if(ez)$('easyNote').innerHTML=ez.k?`Каподастр на <b>${ez.k} лад</b> — будет звучать как в оригинале. Без каподастра — ${ez.k<=4?'просто чуть ниже':'заметно ниже, но играть можно и так'}.`:'Песня и так в простой тональности — каподастр не нужен.';
   $('trLabel').textContent=ez?(ez.k?'Капо '+ez.k:'Тон'):tr?(tr>0?'+':'')+tr:'Тон';
   $('lyrics').style.setProperty('--lf',st.fs+'px');
