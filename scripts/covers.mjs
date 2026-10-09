@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const DIR = path.join(ROOT, 'covers');
-const VERSION = 1;   // поменять, если поменялся дизайн обложки — перерисуются все
+const VERSION = 2;   // поменять, если поменялся дизайн обложки — перерисуются все
 const songs = JSON.parse(fs.readFileSync(path.join(ROOT, 'songs.json'), 'utf8')).filter(s => /^[a-z0-9-]{1,80}$/.test(s.id || ''));
 const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].split('|')[0].trim()).filter(Boolean))];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -30,7 +30,7 @@ const font = f => 'file://' + path.join(ROOT, 'vendor/fonts', f);
 const logo = fs.readFileSync(path.join(ROOT, 'brand/ditrihh-logo-white.svg'), 'utf8');
 function html(s) {
   const i = info(s);
-  const badges = [i.tab ? 'Таб со звуком' : 'Аккорды', i.fs ? 'Фингерстайл' : '', i.ex ? '★ Эксклюзив' : ''].filter(Boolean);
+  const badges = [i.tab ? 'Таб со звуком' : 'Аккорды', i.fs ? 'Fingerstyle' : '', i.ex ? '★ Эксклюзив' : ''].filter(Boolean);
   const len = i.title.length, size = len > 34 ? 64 : len > 24 ? 78 : len > 16 ? 92 : 108;
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face{font-family:'Russo One';src:url(${font('russo-one-cyrillic-400-normal.woff2')});unicode-range:U+0400-045F}

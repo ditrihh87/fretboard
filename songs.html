@@ -190,7 +190,13 @@ if(TYPE!=='all'){
 const F0=(()=>{const f=new URLSearchParams(location.search).get('f');return SECT.filters.some(x=>x[0]===f)?f:'all';})();
 $('filters').innerHTML=SECT.filters.map(([f,t])=>`<button data-f="${f}" aria-pressed="${f===F0}">${t}</button>`).join('');
 let SONGS=[],filter=F0,RT={},VW={};
-if(F0==='fs'&&TYPE==='tab'){$('ttl').innerHTML='Фингерстайл<br><em>от ditrihh</em>';$('lead').textContent='Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.';document.title='Фингерстайл табы и аранжировки — ditrihh';}
+/* шапка «Fingerstyle» — только когда выбран фильтр Fingerstyle; остальные фильтры — обычная шапка раздела */
+function applyHead(){
+  const fs=filter==='fs'&&TYPE==='tab';
+  if(TYPE!=='all'){$('ttl').innerHTML=fs?'Fingerstyle<br><em>от ditrihh</em>':SECT.h1;$('lead').textContent=fs?'Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.':SECT.lead;document.title=fs?'Fingerstyle табы и аранжировки — ditrihh':SECT.title;}
+  try{const u=new URL(location.href);if(filter==='all')u.searchParams.delete('f');else u.searchParams.set('f',filter);history.replaceState(null,'',u);}catch(e){}
+}
+applyHead();
 /* поиск: название, исполнитель, «также ищут» и слова песни (по любой строчке) */
 const HAY=new Map();
 const hay=s=>{if(!HAY.has(s.id))HAY.set(s.id,(s.title+' '+(s.artist||'')+' '+(s.aka||[]).join(' ')+' '+String(s.text||'').replace(/\{[^}]*\}|\[[^\]]*\]|\(\(|\)\)/g,'')).toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9#]+/g,' '));return HAY.get(s.id);};
@@ -218,7 +224,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-save]');if
 DR.ratings().then(r=>{RT=r;if(SONGS.length)render();});
 DR.views().then(v=>{VW=v;if(SONGS.length)render();});
 document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
-  filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));render();
+  filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));applyHead();render();
   try{const u=new URL(location.href);filter==='all'?u.searchParams.delete('f'):u.searchParams.set('f',filter);history.replaceState(null,'',u);}catch(e){}
 }));
 fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{SONGS=j;render();})

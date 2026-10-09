@@ -190,7 +190,7 @@ function dzenItem(s) {
   const P = [];
   if (cover) P.push(`<figure><img src="${cover}"><figcaption>${esc(s.title)}${esc(who)}</figcaption></figure>`);
   if (s.tab) {
-    P.push(`<p>${s.fingerstyle ? 'Фингерстайл-аранжировка' : 'Таб'} «${esc(s.title)}»${esc(who)} для одной гитары: мелодия, бас и аккомпанемент сразу.${s.exclusive ? ' Моя аранжировка — такого таба больше нигде нет.' : ''}</p>`);
+    P.push(`<p>${s.fingerstyle ? 'Fingerstyle-аранжировка' : 'Таб'} «${esc(s.title)}»${esc(who)} для одной гитары: мелодия, бас и аккомпанемент сразу.${s.exclusive ? ' Моя аранжировка — такого таба больше нигде нет.' : ''}</p>`);
     P.push(`<p>Таб со звуком: можно слушать, замедлять до 50%, повторять трудное место по кругу и играть вместе с ним. Есть метроном и отсчёт перед началом.</p>`);
   } else {
     const ch = chordsIn(s.text), ez = easyOf(s, ch), lines = firstLines(s.text);
