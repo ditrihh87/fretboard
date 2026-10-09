@@ -49,10 +49,13 @@ function page(s) {
   const desc = s.tab
     ? `${s.title}${who}: эксклюзивный ${s.fingerstyle ? 'фингерстайл-таб (аранжировка для одной гитары)' : 'таб'} от ditrihh со звуком, замедлением и повтором участка.`
     : `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. Подобраны и проверены на гитаре, схемы со звуком, смена тональности.`;
+  const aka = Array.isArray(s.aka) ? s.aka.filter(Boolean) : [];
+  const descFull = aka.length ? `${desc} Также ищут: ${aka.join(', ')}.` : desc;
   const ld = {
     '@context': 'https://schema.org', '@type': 'MusicComposition', name: s.title,
     ...(s.artist ? { byArtist: { '@type': 'MusicGroup', name: s.artist } } : {}),
     ...(s.words ? { lyricist: { '@type': 'Person', name: s.words } } : {}),
+    ...(aka.length ? { alternateName: aka } : {}),
     url,
   };
   const pre = `<div class="crumbs"><a href="songs.html?type=${kind}">${s.tab ? '← Все табы' : '← Все аккорды'}</a></div>
@@ -65,7 +68,7 @@ ${s.tab ? '<p>Таб со звуком: слушай, замедляй и игр
   // все относительные адреса (стили, скрипты, songs.json, табы) — от корня сайта
   swap(/<head>/, `<head>\n<base href="../">`);
   swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${SITE}brand/ditrihh-logo-dark.png">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};</script>`);
-  swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">\n<meta property="og:description" content="${esc(desc)}">`);
+  swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(descFull)}">${aka.length ? `\n<meta name="keywords" content="${esc([s.title, s.artist, ...aka].filter(Boolean).join(', '))}">` : ''}\n<meta property="og:description" content="${esc(desc)}">`);
   swap(/<div id="content">[\s\S]*?<\/div>\n/, `<div id="content">${pre}</div>\n`);
   return { file: path.join(ROOT, DIRS[kind], s.id + '.html'), url, html };
 }

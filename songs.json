@@ -16,5 +16,21 @@
     "tab": "tabs/rozovoe-vino-eldzhey-feduk.gpx",
     "exclusive": true,
     "fingerstyle": true
+  },
+  {
+    "id": "utinye-istorii-duck-tales",
+    "title": "Утиные истории",
+    "artist": "DuckTales — TV Theme",
+    "aka": [
+      "Duck Tales",
+      "DuckTales",
+      "Утиные истории заставка",
+      "Утиные истории на гитаре",
+      "Duck Tales fingerstyle",
+      "Дак Тейлс"
+    ],
+    "tab": "tabs/utinye-istorii-duck-tales.gpx",
+    "exclusive": true,
+    "fingerstyle": true
   }
 ]

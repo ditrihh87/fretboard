@@ -137,7 +137,7 @@ let SONGS=[],filter=F0,RT={};
 if(F0==='fs'&&TYPE==='tab'){$('ttl').innerHTML='Фингерстайл<br><em>от ditrihh</em>';$('lead').textContent='Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.';document.title='Фингерстайл табы и аранжировки — ditrihh';}
 function render(){
   const q=$('q').value.toLowerCase().trim();
-  const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||(s.title+' '+(s.artist||'')).toLowerCase().includes(q))
+  const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||(s.title+' '+(s.artist||'')+' '+(s.aka||[]).join(' ')).toLowerCase().includes(q))
     .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='fs'?!!s.fingerstyle:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
