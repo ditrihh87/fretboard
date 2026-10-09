@@ -159,6 +159,11 @@
     .pbar .t{font-size:12px;min-width:32px}
     .hint{display:none}
   }
+  .talk{margin:28px 0 0;padding:22px;border-radius:22px;background:rgba(28,24,72,.55);box-shadow:inset 0 0 0 1px rgba(110,123,255,.18)}
+  .talkhead{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  .talk h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 4px}
+  .talk p{margin:0;color:var(--muted);font-weight:600;line-height:1.45;max-width:560px}
+  #tgDisc iframe{margin-top:14px}
   @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{padding:14px 14px 4px}.chordrow button{width:64px}.pbar{gap:8px}.legend{display:none}}
 </style>
 </head>
@@ -234,6 +239,7 @@
     <div><b style="color:var(--paper)">ditrihh</b> · © <span id="yr">2026</span></div>
     <div class="soc">
       <a href="https://t.me/ditrihh" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://t.me/+j2O8KYNsBKllM2Iy" target="_blank" rel="noopener">Чат</a>
       <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">Twitch</a>
       <a href="https://www.youtube.com/@ditrihh" target="_blank" rel="noopener">YouTube</a>
       <a href="https://www.tiktok.com/@ditrihh" target="_blank" rel="noopener">TikTok</a>
@@ -342,6 +348,21 @@ function strumChord(name){const f=chordShape(name);if(!f)return;ctx();setTimeout
 
 /* ===== страница песни ===== */
 let SONG=null;const st={tr:0,fs:prefs.fs||19,scroll:0,raf:0};
+/* ===== Обсуждение: комментарии из канала t.me/ditrihh (виджет Telegram) + чат =====
+   Комментарии появляются, когда в канал выложена ссылка на страницу песни, а к каналу привязана группа-обсуждение.
+   Писать можно прямо с сайта — вход через Telegram делает сам виджет. */
+const TG_CHANNEL='ditrihh',TG_CHAT='https://t.me/+j2O8KYNsBKllM2Iy';
+function paintTalk(){
+  const c=document.querySelector('link[rel=canonical]');
+  const url=c?c.href:'https://ditrihh.ru/'+(SONG.tab?'taby/':'akkordy/')+SONG.id+'.html';
+  const sec=document.createElement('section');sec.className='talk';
+  sec.innerHTML=`<div class="talkhead"><div><h2>Обсуждение</h2><p>Вопросы по песне, свой вариант боя, просьбы разобрать — пиши. Войти можно через Telegram.</p></div><a class="btn ghost" href="${TG_CHAT}" target="_blank" rel="noopener">💬 Чат гитаристов</a></div><div id="tgDisc"></div>`;
+  $('main').appendChild(sec);
+  const s=document.createElement('script');s.async=true;s.src='https://telegram.org/js/telegram-widget.js?22';
+  s.setAttribute('data-telegram-discussion',TG_CHANNEL);s.setAttribute('data-page-url',url);
+  s.setAttribute('data-comments-limit','10');s.setAttribute('data-colorful','1');s.setAttribute('data-dark','1');s.setAttribute('data-color','F0A830');
+  $('tgDisc').appendChild(s);
+}
 function renderChordsPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
@@ -637,7 +658,7 @@ async function renderTabPage(){
     if(c){c.href='songs.html?type='+t;c.textContent=SONG.tab?'← Все табы':'← Все аккорды';}
     document.querySelectorAll(`[data-nav="${t}"]`).forEach(a=>a.classList.add('on')); }
   if(SONG.tab)renderTabPage();else renderChordsPage();
-  paintRate();paintYm();
+  paintRate();paintYm();paintTalk();
 })();
 </script>
 </body>
