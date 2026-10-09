@@ -3,7 +3,7 @@
 Гитарный клуб в Telegram: уроки, тренажёры, лиги и песенник (ноты на грифе, аккорды, интервалы, тренажёр слуха) — Mini App [@ditrihh_bot](https://t.me/ditrihh_bot?startapp).
 
 - `index.html` — главная страница сайта (из Telegram сразу открывает приложение)
-- `app.html` — приложение: школа, тренажёры, песенник, таб-плеер (GitHub Pages: https://ditrihh87.github.io/fretboard/)
+- `school/index.html` (адрес ditrihh.ru/school/; `app.html` — переадресация для старых ссылок и Telegram) — приложение: школа, тренажёры, песенник, таб-плеер (GitHub Pages: https://ditrihh87.github.io/fretboard/)
 - `songs.json` — песни для песенника (как добавлять: SONGS.md)
 - `samples/` — звуки гитары
 - `server/index.js` — сервер рейтинга недели (Yandex Cloud Functions)
