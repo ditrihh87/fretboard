@@ -68,7 +68,6 @@
             <a class="btn ghost" href="https://t.me/ditrihh" target="_blank" rel="noopener">Анонсы в Telegram</a>
           </div>
         </div>
-        <button class="lb-sound" id="lbSound" hidden>🔊 Включить звук</button>
       </div>
     </div>
   </section>
@@ -261,7 +260,7 @@ function setLive(on){
   twLive=on;
   $('liveBox').classList.toggle('on',on);
   $('lbBadge').querySelector('span').textContent=on?'В эфире':'Офлайн';
-  $('lbPlayer').hidden=!on&&!ytShown;$('lbOff').hidden=on||ytShown;$('lbSound').hidden=!on;
+  $('lbPlayer').hidden=!on&&!ytShown;$('lbOff').hidden=on||ytShown;
   $('lbBadge').style.display=$('lbPlayer').hidden?'':'none'; // у Twitch-плеера своя плашка «В эфире» — наша только когда плеер скрыт
   paintSched();
 }
@@ -277,7 +276,6 @@ const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'nu
 const TW_HOSTS=[...new Set([location.hostname||'localhost','ditrihh.ru','www.ditrihh.ru','ditrihh87.github.io'])];
 const TW_PARENT=TW_HOSTS.map(h=>'parent='+encodeURIComponent(h)).join('&');
 const TW_OK=location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-$('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}catch(e){}$('lbSound').hidden=true;};
 (function(){
   const sc=document.createElement('script');sc.src='https://player.twitch.tv/js/embed/v1.js';sc.async=true;
   sc.onload=()=>{
