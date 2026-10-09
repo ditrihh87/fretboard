@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <base href="../">
+<script src="auth.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>ditrihh</title>
 <link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
@@ -735,8 +736,8 @@ if(window.SCHOOL_CLOSED)throw new Error("школа закрыта на пере
 /* ===== настрой под себя ===== */
 const BOT_LINK='https://t.me/ditrihh_bot?startapp'; // ссылка на Mini App
 /* вход на сайт: ID приложений VK ID (id.vk.com) и Яндекс ID (oauth.yandex.ru). Пусто — кнопка не показывается */
-const VK_APP_ID=''; // 54812686 — включить, когда VK ID примет домен ditrihh.ru (сейчас считает его «вредоносным»)
-const YA_CLIENT_ID='5bd936c6b76b4d91918fe1848e72189d';
+const VK_APP_ID=window.DAuth?DAuth.VK:''; // ID входа — в auth.js (общий вход на весь сайт)
+const YA_CLIENT_ID=window.DAuth?DAuth.YA:'';
 /* привязка Telegram на сайте: токен от сервера хранится в браузере */
 const LINK_KEY='dgc_link';
 let link=null;try{link=JSON.parse(localStorage.getItem(LINK_KEY)||'null');}catch(e){}
@@ -1281,22 +1282,12 @@ const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,
 const rnd=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return b64u(a);};
 const REDIR=()=>location.origin+location.pathname.replace(/index\.html$/,'');
 const VK_REDIR=REDIR;
-async function startOAuth(prov){
-  const st={prov,state:rnd(24),t:Date.now()};
-  if(prov==='vk'){
-    st.verifier=rnd(48);
-    const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(st.verifier)));
-    try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
-    const vkUrl='https://id.vk.ru/authorize?'+new URLSearchParams({response_type:'code',client_id:VK_APP_ID,redirect_uri:VK_REDIR(),state:st.state,code_challenge:ch,code_challenge_method:'S256',scope:'vkid.personal_info'});
-    location.href=vkUrl;
-  }else{
-    try{sessionStorage.setItem('dgc_oauth',JSON.stringify(st));}catch(e){}
-    location.href='https://oauth.yandex.ru/authorize?'+new URLSearchParams({response_type:'token',client_id:YA_CLIENT_ID,redirect_uri:REDIR(),state:st.state,force_confirm:'no'});
-  }
-}
-// вернулись с VK/Яндекса: забираем код или токен из адреса и входим
+function startOAuth(prov){DAuth.start(prov);} // возврат — через общий login.html
 async function finishOAuth(){
   if(inTg)return false;
+  // только что вошли через общий login.html — сводим прогресс браузера и аккаунта
+  let jl=null;try{jl=sessionStorage.getItem('dgc_justlogin');sessionStorage.removeItem('dgc_justlogin');}catch(e){}
+  if(jl&&linked()){await finishLink({token:link.token,user:link.user,prov:link.prov,tg:link.tg});return true;}
   const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
   const code=q.get('code'),tok=h.get('access_token'),err=q.get('error')||h.get('error');
   if(!code&&!tok&&!err)return false;

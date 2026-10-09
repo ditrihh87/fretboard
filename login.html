@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Вход — ditrihh</title>
+<link rel="icon" type="image/svg+xml" href="brand/ditrihh-icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#0C0A24;color:#EFECFB;font-family:Manrope,system-ui,sans-serif}
+  main{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;box-sizing:border-box;text-align:center;
+    background:radial-gradient(700px 420px at 20% 0%,rgba(110,123,255,.25),transparent 60%),radial-gradient(600px 400px at 100% 100%,rgba(255,95,207,.15),transparent 60%)}
+  img{width:min(200px,60vw)}
+  p{margin:0;font-weight:600;color:#B9B4E6;max-width:420px;line-height:1.5}
+  .spin{width:34px;height:34px;border-radius:50%;border:4px solid rgba(239,236,251,.15);border-top-color:#F0A830;animation:s 1s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  a{display:inline-block;text-decoration:none;font-weight:800;padding:12px 18px;border-radius:14px;background:#F0A830;color:#1b1b1b}
+  [hidden]{display:none!important}
+</style>
+<script src="auth.js"></script>
+</head>
+<body>
+<main>
+  <img src="brand/ditrihh-logo.svg" alt="ditrihh">
+  <div class="spin" id="spin"></div>
+  <p id="msg">Входим…</p>
+  <a id="back" href="index.html" hidden>Вернуться на сайт</a>
+</main>
+<script>
+(async function(){
+  const msg=document.getElementById('msg'),back=document.getElementById('back');
+  const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
+  const code=q.get('code'),tok=h.get('access_token'),err=q.get('error')||h.get('error');
+  let st=null;try{st=JSON.parse(sessionStorage.getItem('dgc_oauth')||'null');sessionStorage.removeItem('dgc_oauth');}catch(e){}
+  history.replaceState(null,'',location.pathname);
+  const ret=st&&st.ret&&st.ret.indexOf(location.origin)===0?st.ret:'index.html';
+  back.href=ret;
+  function fail(t){document.getElementById('spin').hidden=true;msg.textContent=t;back.hidden=false;}
+  if(err){if(err==='access_denied'){location.replace(ret);return;}fail('Не получилось войти. Попробуй ещё раз.');return;}
+  if(!code&&!tok){location.replace(ret);return;}
+  const state=q.get('state')||h.get('state');
+  if(!st||st.state!==state){fail('Вход устарел — нажми «Войти» ещё раз.');return;}
+  const body=st.prov==='vk'
+    ?{action:'login_vk',code,code_verifier:st.verifier,device_id:q.get('device_id')||'',state,redirect_uri:DAuth.CB}
+    :{action:'login_ya',access_token:tok};
+  try{
+    const r=await fetch(DAuth.API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(Object.assign({initData:''},body))});
+    const j=await r.json();
+    if(!r.ok||!j.token)throw new Error(j.error||r.status);
+    localStorage.setItem('dgc_link',JSON.stringify({token:j.token,user:j.user,prov:st.prov,tg:j.tg||null}));
+    try{sessionStorage.setItem('dgc_justlogin','1');}catch(e){}
+    location.replace(ret);
+  }catch(e){console.error(e);fail('Не получилось войти. Попробуй ещё раз чуть позже.');}
+})();
+</script>
+</body>
+</html>
