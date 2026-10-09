@@ -91,7 +91,7 @@
   .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:-1px}
   .tracks{background:rgba(37,31,94,.8);color:var(--paper);border:none;border-radius:12px;padding:9px 10px;font:700 14px var(--body)}
   .atwrap{position:relative;background:#0C0A24}
-  #atScroll{height:min(68vh,640px);overflow:auto;position:relative;padding:12px 6px 0}
+  #atScroll{height:min(68vh,640px);overflow:auto;position:relative;padding:12px 6px 0;isolation:isolate}
   .loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0C0A24;z-index:3;font-weight:700;color:#CFCCF2;text-align:center;padding:20px}
   .spin{width:34px;height:34px;border-radius:50%;border:4px solid #2E2870;border-top-color:var(--amber);animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -109,6 +109,21 @@
   .notfound{padding:80px 0;text-align:center}
   .notfound h1{font-family:var(--display);font-weight:400;font-size:34px;margin-bottom:12px}
 
+  /* низкий экран (телефон горизонтально): шапка уезжает, панели в одну тонкую строку, таб на весь остаток экрана */
+  @media (max-height:520px) and (orientation:landscape){
+    header.nav{position:static}
+    .bar{top:0;padding:6px 10px;gap:6px;flex-wrap:nowrap;overflow-x:auto;border-radius:16px 16px 0 0}
+    .bar .legend{display:none}
+    .ib{font-size:13px;padding:6px 9px}
+    .grp{padding:2px}
+    #atScroll{height:calc(100vh - 112px);height:calc(100dvh - 112px);min-height:170px;padding-top:6px}
+    .pbar{flex-wrap:nowrap;gap:8px;padding:6px 12px;overflow-x:auto}
+    .pbar .ib{font-size:13px;padding:6px 9px;flex:none}
+    .play{width:40px;height:40px;font-size:16px;box-shadow:0 3px 0 var(--amber-d);flex:none}
+    .prog{flex:1 1 120px;min-width:80px}
+    .pbar .t{font-size:12px;min-width:32px}
+    .hint{display:none}
+  }
   @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{padding:14px 14px 4px}.chordrow button{width:64px}.pbar{gap:8px}.legend{display:none}}
 </style>
 </head>
