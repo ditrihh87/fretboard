@@ -243,7 +243,7 @@ $('pubBtn').onclick=async()=>{
     if(!r.ok)throw new Error(r.status===403?'нужно войти как владелец':j.error||('ошибка '+r.status));
     const one=(j.songs||[])[0]||sg;
     m.className='msg';
-    m.innerHTML=`✅ Таб «${esc(one.title)}» ${one.upd?'обновлён':'опубликован'}. Страница будет готова через 1–2 минуты: <a href="taby/${encodeURIComponent(one.id)}.html" target="_blank" rel="noopener">открыть</a>`;
+    m.innerHTML=`✅ Таб «${esc(one.title)}» ${one.upd?'обновлён':'опубликован'}. Страница будет готова через 1–2 минуты: <a href="taby/${encodeURIComponent(one.id)}.html" target="_blank" rel="noopener">открыть</a> · <a href="vk-posts.html" target="_blank" rel="noopener">пост для ВК</a>`;
     if(FILE)sg.tab=`tabs/${sg.id}.${FILE.ext}`;
     const i=EXIST.findIndex(x=>x.id===sg.id);if(i>=0)EXIST[i]=sg;else EXIST.push(sg);
     fillOpen();EDIT=sg;FILE=null;$('file').value='';$('fname').textContent=sg.tab.split('/').pop()+' — на сайте.';

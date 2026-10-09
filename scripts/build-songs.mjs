@@ -237,3 +237,34 @@ ${feed.map(dzenItem).join('\n')}
 </rss>
 `);
 console.log(`Дзен: в ленте ${feed.length} записей, в очереди ${queued} (${DZEN_MODE === 'draft' ? 'черновики' : 'публикация по расписанию'}).`);
+
+/* ===== Посты для ВК: vk-posts.json → страница vk-posts.html (видна владельцу) =====
+   ВК не принимает RSS и не даёт постить на стену сообщества по API без особого доступа,
+   поэтому готовим текст и обложку — останется вставить и поставить отложенную запись. */
+const tagOf = t => '#' + String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, '');
+function vkText(s) {
+  const url = `${SITE}${s.tab ? DIRS.tab : DIRS.chords}/${s.id}.html`, who = s.artist ? ` — ${s.artist}` : '';
+  const L = [];
+  if (s.tab) {
+    L.push(`🎸 ${s.title}${who}: ${s.fingerstyle ? 'фингерстайл таб' : 'таб'} со звуком`, '');
+    L.push(`${s.fingerstyle ? 'Аранжировка для одной гитары: мелодия, бас и аккомпанемент сразу.' : 'Таб для гитары.'}${s.exclusive ? ' Моя аранжировка — такого таба больше нигде нет.' : ''}`);
+    L.push('Таб можно слушать, замедлять до 50% и повторять трудное место по кругу.', '');
+    L.push('Открыть таб 👇', url);
+  } else {
+    const ch = chordsIn(s.text), ez = easyOf(s, ch), lines = firstLines(s.text);
+    L.push(`🎸 ${s.title}${who}: аккорды для гитары`, '');
+    if (ch.length) L.push(`Аккорды: ${ch.join(', ')}`);
+    if (ez) L.push(`🔰 Простые аккорды для начинающих: ${ez.chords.join(', ')}${ez.k ? ` — с каподастром на ${ez.k} ладу` : ' — без баре'}`);
+    else if (s.shapes && Object.keys(s.shapes).length) L.push('🔰 Есть простая версия — на открытых струнах, без баре');
+    if (lines[0]) L.push('', `Начинается так: «${lines[0]}…»`);
+    if (lines[1]) L.push(`Припев: «${lines[1]}…»`);
+    L.push('', 'Полный текст с аккордами над слогами, схемы со звуком и простая версия 👇', url);
+  }
+  L.push('', [s.tab ? '#табы' : '#аккорды', '#гитара', s.artist && s.artist.length <= 24 && !/[()]/.test(s.artist) ? tagOf(s.artist) : '', s.fingerstyle ? '#фингерстайл' : '', '#ditrihh'].filter(t => t && t.length > 2).join(' '));
+  return L.join('\n');
+}
+const vk = songs.filter(s => okId(s.id)).sort((a, b) => dates[b.id].localeCompare(dates[a.id])).slice(0, 80).map(s => ({
+  id: s.id, title: s.title, artist: s.artist || '', tab: !!s.tab, at: dates[s.id],
+  url: `${SITE}${s.tab ? DIRS.tab : DIRS.chords}/${s.id}.html`, cover: coverOf(s) ? `covers/${s.id}.jpg` : '', text: vkText(s),
+}));
+fs.writeFileSync(path.join(ROOT, 'vk-posts.json'), JSON.stringify(vk, null, 1) + '\n');

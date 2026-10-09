@@ -36,7 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A akkordy taby sitemap.xml covers dzen.xml feed-dates.json
+          git add -A akkordy taby sitemap.xml covers dzen.xml feed-dates.json vk-posts.json
           if git diff --cached --quiet; then echo "Без изменений"; exit 0; fi
           git commit -m "Страницы песен, обложки и лента Дзена: пересборка"
           git pull --rebase origin main

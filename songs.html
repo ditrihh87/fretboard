@@ -129,7 +129,8 @@
   </div>
   <script>/* кнопка «Добавить песню» / «Добавить таб» — только владельцу (вход «Тот Самый»), на телефоне скрыта */
   (function(){try{var l=JSON.parse(localStorage.getItem('dgc_link')||'null');var t=new URLSearchParams(location.search).get('type');
-    if(l&&l.prov==='admin'){const a=document.getElementById('addSong');if(t==='tab'){a.href='add-tab.html';a.textContent='＋ Добавить таб';}a.hidden=false;}}catch(e){}})();</script>
+    if(l&&l.prov==='admin'){const a=document.getElementById('addSong');if(t==='tab'){a.href='add-tab.html';a.textContent='＋ Добавить таб';}a.hidden=false;
+      const v=document.createElement('a');v.className='btn ghost addsong';v.href='vk-posts.html';v.textContent='Посты для ВК';a.after(v);}}catch(e){}})();</script>
   <div class="list" id="list"><p class="empty">Загружаю песни…</p></div>
 
   <section class="req" id="req" hidden>
