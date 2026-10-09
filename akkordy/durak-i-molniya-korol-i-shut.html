@@ -57,7 +57,7 @@
   .svid.r45{aspect-ratio:4/5;width:min(300px,100%)}
   .sidecol{display:contents}
   /* окно прижато к правому краю области сайта, а не экрана — на широких мониторах не уезжает в угол */
-  .vfloat{display:none;position:fixed;right:max(20px,calc((100vw - var(--wrap,1120px)) / 2 + 20px));bottom:20px;z-index:60;width:260px}
+  .vfloat{display:none;position:fixed;right:max(20px,calc((100vw - var(--wrap,1120px)) / 2 + 34px));bottom:20px;z-index:60;width:260px}
   .vfloat .svid{width:100%;margin:0;box-shadow:0 18px 44px rgba(0,0,0,.6)}
   .vfloat .svid.v{width:200px;margin-left:auto}
   .vfloat .vx{position:absolute;top:-12px;right:-12px;z-index:2;width:30px;height:30px;border-radius:50%;border:none;background:#1C1848;color:#EFECFB;font:800 16px/1 var(--body);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.5),inset 0 0 0 1px rgba(110,123,255,.4)}
@@ -581,7 +581,11 @@ function floatVid(){
   box.innerHTML=`<button class="vx" type="button" aria-label="Свернуть видео">×</button>${min?'':h}<button class="vopen" type="button">▶ Видео</button>`;
   document.body.appendChild(box);
   box.querySelector('.vx').onclick=()=>{box.classList.add('min');const v=box.querySelector('.svid');if(v)v.remove();prefs.vmin=true;savePrefs();};
-  box.querySelector('.vopen').onclick=()=>{box.classList.remove('min');box.querySelector('.vx').insertAdjacentHTML('afterend',h);prefs.vmin=false;savePrefs();};
+  box.querySelector('.vopen').onclick=()=>{box.classList.remove('min');box.querySelector('.vx').insertAdjacentHTML('afterend',h);prefs.vmin=false;savePrefs();place();};
+  // в конце песни окно не заезжает на комментарии и подвал — упирается в низ блока с аккордами и уезжает вверх вместе с ним
+  const place=()=>{const g=document.querySelector('.songgrid');if(!g)return;const lim=g.getBoundingClientRect().bottom;
+    box.style.bottom=Math.max(20,innerHeight-lim+14)+'px';};
+  addEventListener('scroll',place,{passive:true});addEventListener('resize',place);place();
 }
 function setTr(d){if(st.easy){st.easy=false;(prefs.easy||{})[SONG.id]=false;}st.tr=Math.max(-11,Math.min(11,st.tr+d));prefs.tr=prefs.tr||{};prefs.tr[SONG.id]=st.tr;savePrefs();drawSong();}
 // ((текст)) — курсив (бэк-вокал, пометки); может тянуться через аккорды и строки
