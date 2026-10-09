@@ -25,7 +25,7 @@
 
 ## Что осталось / ждёт решения
 1. **HTTPS для ditrihh.ru**: GitHub → Settings → Pages → дождаться «DNS check successful» → включить **Enforce HTTPS**. После этого в BotFather поменять адрес мини-приложения на `https://ditrihh.ru/` и сделать `/setname` → `ditrihh guitar club` (или просто ditrihh), `/setuserpic` → `brand/ditrihh-avatar-640.png`.
-2. **Вход на сайт через VK ID и Яндекс ID** — включён (Oct 9, 2026). Яндекс ClientID `5bd936c6b76b4d91918fe1848e72189d`, VK ID приложения `54812686`. VK не принял новый домен ditrihh.ru («вредоносный»), поэтому VK-приложение зарегистрировано на `ditrihh87.github.io`, redirect `https://ditrihh87.github.io/fretboard/app.html` (GitHub перекидывает на ditrihh.ru) — см. `VK_REDIR` в app.html. В функции нужны переменные `VK_CLIENT_ID` / `YA_CLIENT_ID`.
+2. **Вход на сайт через VK ID и Яндекс ID** — включён (Oct 9, 2026). Яндекс ClientID `5bd936c6b76b4d91918fe1848e72189d`, VK ID приложения `54812686`. VK-приложение: базовый домен `ditrihh.ru`, redirect `https://ditrihh.ru/app.html`. В функции нужны переменные `VK_CLIENT_ID` / `YA_CLIENT_ID`.
 3. **Продажа эксклюзивных табов**: пока нет статуса самозанятого — коды доступа через Boosty и/или Telegram Stars в боте; карты (Prodamus/ЮKassa) — когда появится статус.
 4. **Курс «Первая песня уверенно за 10 дней»** для акустики (сталь) — план предложен, ждёт решения по песне и видеоурокам.
 5. Эксклюзивы: залиты все 7 фингерстайл-аранжировок Дениса (Розовое вино, Утиные истории, Джентльмены удачи, Винни-Пух Disney, Sunny, Гриффины, Чёрный Плащ) — раздел `songs.html?type=tab&f=fs`, поля `fingerstyle` и `aka` (поисковые синонимы) в songs.json. Новые — так же: файл в `tabs/` + блок в songs.json.
