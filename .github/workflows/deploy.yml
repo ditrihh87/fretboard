@@ -1,0 +1,54 @@
+# Сборка и выкладка сайта ditrihh.ru в Yandex Object Storage (бакет ditrihh.ru).
+# Запускается при каждом изменении в main: пересобирает страницы песен (akkordy/, taby/, sitemap.xml),
+# сохраняет их в репозиторий и заливает сайт в бакет.
+# Секреты репозитория: YC_KEY_ID, YC_SECRET_KEY — статический ключ сервисного аккаунта с ролью storage.editor.
+name: Выкладка сайта
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEYS: ${{ secrets.YC_KEY_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Страницы песен
+        run: node scripts/build-songs.mjs
+      - name: Сохранить пересобранные страницы
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A akkordy taby sitemap.xml
+          if git diff --cached --quiet; then echo "Без изменений"; exit 0; fi
+          git commit -m "Страницы песен: пересборка"
+          git pull --rebase origin main
+          git push
+      - name: Залить в Yandex Object Storage
+        if: env.HAS_KEYS == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.YC_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ru-central1
+        run: |
+          EXCL=(--exclude ".git/*" --exclude ".github/*" --exclude "server/*" --exclude "scripts/*" --exclude "twitch-ext/*"
+                --exclude "*.md" --exclude "CNAME" --exclude ".nojekyll")
+          S3="aws s3 --endpoint-url=https://storage.yandexcloud.net"
+          # страницы и данные — без долгого кэша, чтобы правки были видны сразу
+          $S3 sync . s3://ditrihh.ru --delete "${EXCL[@]}" --cache-control "no-cache"
+          # тяжёлая статика (звуки, библиотеки, картинки, табы) — кэш на сутки
+          for d in samples vendor brand tabs; do
+            if [ -d "$d" ]; then
+              $S3 cp "$d" "s3://ditrihh.ru/$d" --recursive --cache-control "public, max-age=86400" --metadata-directive REPLACE
+            fi
+          done
+          echo "Готово: https://ditrihh.ru"
