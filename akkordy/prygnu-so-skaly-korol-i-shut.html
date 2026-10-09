@@ -577,12 +577,22 @@ function floatVid(){
   box.className='vfloat'+(min?' min':'');
   box.innerHTML=`<button class="vx" type="button" aria-label="Свернуть видео">×</button>${min?'':h}<button class="vopen" type="button">▶ Видео</button>`;
   document.body.appendChild(box);
-  box.querySelector('.vx').onclick=()=>{box.classList.add('min');const v=box.querySelector('.svid');if(v)v.remove();prefs.vmin=true;savePrefs();};
+  box.querySelector('.vx').onclick=()=>{box.classList.add('min');const v=box.querySelector('.svid');if(v)v.remove();prefs.vmin=true;savePrefs();place();};
   box.querySelector('.vopen').onclick=()=>{box.classList.remove('min');box.querySelector('.vx').insertAdjacentHTML('afterend',h);prefs.vmin=false;savePrefs();place();};
   // в конце песни окно не заезжает на комментарии и подвал — упирается в низ блока с аккордами и уезжает вверх вместе с ним
+  // по ширине — ровно по колонке схем аккордов
   const place=()=>{const g=document.querySelector('.songgrid');if(!g)return;const lim=g.getBoundingClientRect().bottom;
-    box.style.bottom=Math.max(20,innerHeight-lim+14)+'px';};
+    box.style.bottom=Math.max(20,innerHeight-lim+14)+'px';
+    const cr=document.getElementById('chordRow'),btn=[...(cr?cr.children:[])];
+    if(btn.length&&!box.classList.contains('min')){const L=Math.min(...btn.map(b=>b.getBoundingClientRect().left)),R=Math.max(...btn.map(b=>b.getBoundingClientRect().right));
+      if(R-L>120){box.style.left=L+'px';box.style.right='auto';box.style.width=(R-L)+'px';}}
+    else{box.style.left='';box.style.right='';box.style.width='';}
+    // схемы не прячутся под видео: колонка схем заканчивается над окном и прокручивается сама
+    const sc=document.querySelector('.songgrid .sidecol');
+    if(sc){if(box.classList.contains('min')||getComputedStyle(box).display==='none')sc.style.maxHeight='';
+      else sc.style.maxHeight=Math.max(160,box.getBoundingClientRect().top-sc.getBoundingClientRect().top-12)+'px';}};
   addEventListener('scroll',place,{passive:true});addEventListener('resize',place);place();
+  const cr0=document.getElementById('chordRow');if(cr0)new MutationObserver(place).observe(cr0,{childList:true});   // сменили тон — схем стало больше/меньше
 }
 function setTr(d){if(st.easy){st.easy=false;(prefs.easy||{})[SONG.id]=false;}st.tr=Math.max(-11,Math.min(11,st.tr+d));prefs.tr=prefs.tr||{};prefs.tr[SONG.id]=st.tr;savePrefs();drawSong();}
 // ((текст)) — курсив (бэк-вокал, пометки); может тянуться через аккорды и строки
