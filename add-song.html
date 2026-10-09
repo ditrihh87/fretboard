@@ -33,6 +33,17 @@
   .modes{display:inline-flex;gap:4px;background:rgba(28,24,72,.7);border-radius:14px;padding:4px;margin:0 0 18px}
   .mode{border:none;background:transparent;color:var(--muted);font:800 14px var(--body);padding:10px 16px;border-radius:10px;cursor:pointer}
   .mode.on{background:var(--amber);color:#1b1b1b}
+  .cheat{margin:-8px 0 22px;border-radius:16px;background:rgba(28,24,72,.7);box-shadow:inset 0 0 0 1px rgba(110,123,255,.2)}
+  .cheat summary{cursor:pointer;padding:14px 18px;font-weight:800;color:#CFCCF2}
+  .cheat .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;padding:0 18px 18px}
+  @media (max-width:860px){.cheat .cgrid{grid-template-columns:1fr}}
+  .cheat h3{font-family:var(--display);font-weight:400;font-size:16px;margin:14px 0 6px;color:var(--amber)}
+  .cheat p{color:var(--muted);font-weight:600;font-size:13px;margin:0 0 6px}
+  .cheat table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .cheat td{padding:6px 8px 6px 0;vertical-align:top;border-top:1px solid rgba(110,123,255,.12);color:#CFCCF2;font-weight:600;line-height:1.4}
+  .cheat td:first-child{width:48%;color:var(--paper)}
+  .cheat code{background:rgba(239,236,251,.1);padding:1px 6px;border-radius:6px;font-size:12.5px;white-space:nowrap}
+  .cheat .mut{color:var(--muted);font-size:12px}
   .openrow{display:flex;gap:8px;margin:0 0 14px}
   .openrow select{flex:1;min-width:0;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:10px 12px;color:var(--paper);font:700 14px var(--body)}
   .openrow .btn{padding:10px 16px;font-size:14px}
@@ -59,6 +70,51 @@
   <h1>Добавить песню</h1>
   <div class="modes" role="tablist"><button class="mode on" data-mode="one">Одна песня</button><button class="mode" data-mode="batch">Пакетом — много песен сразу</button></div>
   <p class="lead">Служебная страница. Вставь песню как обычно пишешь — аккорды над строками, «Куплет 1:», «Припев:», «Вступление: Dm Gm A }x4». Страница расставит аккорды по слогам и соберёт готовый файл песенника.</p>
+  <details class="cheat" id="cheat">
+    <summary>📋 Шпаргалка: команды конвертера</summary>
+    <div class="cgrid">
+      <div class="cblk"><h3>Служебные строки</h3><p>В начале песни, каждая с новой строки. В текст песни не попадают.</p>
+        <table>
+          <tr><td><code>Слова: Андрей Князев</code></td><td>автор слов</td></tr>
+          <tr><td><code>Музыка: Король и Шут</code></td><td>автор музыки</td></tr>
+          <tr><td><code>Баре: Am 5, C#m 4, A5 0</code></td><td>с какого лада играть аккорд: баре или квинта. Струна сама: 6-я или 5-я</td></tr>
+          <tr><td><code>A 5</code> <span class="mut">(одна строка)</span></td><td>то же, что «Баре: A 5»</td></tr>
+          <tr><td><code>Простые: F</code></td><td>«Простые аккорды» начнутся с F, каподастр посчитается сам</td></tr>
+          <tr><td><code>Также ищут: КиШ …, Грохочет гром</code></td><td>другие названия для поисковиков, через запятую</td></tr>
+        </table></div>
+      <div class="cblk"><h3>Части песни</h3>
+        <table>
+          <tr><td><code>Куплет 1:</code> <code>Припев:</code></td><td>заголовок части. Понимает: куплет, припев, вступление, проигрыш, бридж, соло, кода, интро, финал…</td></tr>
+          <tr><td><code>Вступление: Dm Gm A }x4</code></td><td>заголовок + аккорды + повтор «×4»</td></tr>
+          <tr><td><code>x4</code> <span class="mut">(отдельной строкой)</span></td><td>повтор к последней части</td></tr>
+          <tr><td>строка с «:» в конце</td><td>если это не название части — остаётся текстом песни</td></tr>
+        </table></div>
+      <div class="cblk"><h3>Аккорды</h3>
+        <table>
+          <tr><td>аккорды над строкой</td><td>встают над тем слогом, над которым стоят</td></tr>
+          <tr><td><code>A 5   G#</code> <span class="mut">над текстом</span></td><td>аккорд A на месте + запомнить лад 5 для схемы</td></tr>
+          <tr><td><code>Am  F  C  G</code> <span class="mut">без текста</span></td><td>проигрыш — строка из одних аккордов</td></tr>
+          <tr><td><code>A5</code> <code>Am7</code> <code>D/F#</code> <code>Hm</code></td><td>цифры слитно — часть аккорда (A5 — квинта). H = B</td></tr>
+          <tr><td><code>Fm#</code> → <code>F#m</code>, <code>am</code> → <code>Am</code></td><td>опечатки исправляются сами</td></tr>
+        </table></div>
+      <div class="cblk"><h3>Текст</h3>
+        <table>
+          <tr><td><code>((бэк-вокал))</code></td><td>курсивом, можно через несколько строк</td></tr>
+          <tr><td>пустая строка</td><td>разделяет куплеты</td></tr>
+        </table>
+        <h3>Пакетом</h3>
+        <table>
+          <tr><td><code>=== Название | Исполнитель</code></td><td>начало каждой песни</td></tr>
+          <tr><td>ссылка на Яндекс Музыку</td><td>сразу под названием</td></tr>
+          <tr><td><code>Эксклюзив</code></td><td>значок «★ Эксклюзив»</td></tr>
+        </table>
+        <h3>Правка</h3>
+        <table>
+          <tr><td>«Открыть песню с сайта…»</td><td>вернуть песню в редактор; сохранение заменит её</td></tr>
+          <tr><td>кнопка «✎ Править»</td><td>на странице песни, видна только тебе</td></tr>
+        </table></div>
+    </div>
+  </details>
 
   <div class="grid" id="oneMode">
     <section class="card">
@@ -386,6 +442,9 @@ document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{
 // поля по умолчанию запоминаются
 try{const d=JSON.parse(localStorage.getItem('dgc_bdef')||'null');if(d){['bArtist','bWords','bMusic'].forEach(k=>{if(k in d)$(k).value=d[k];});}}catch(e){}
 ['bArtist','bWords','bMusic'].forEach(k=>$(k).addEventListener('input',()=>{try{localStorage.setItem('dgc_bdef',JSON.stringify({bArtist:$('bArtist').value,bWords:$('bWords').value,bMusic:$('bMusic').value}));}catch(e){}}));
+// шпаргалка помнит, открыта ли
+try{if(localStorage.getItem('dgc_cheat')==='1')$('cheat').open=true;}catch(e){}
+$('cheat').addEventListener('toggle',()=>{try{localStorage.setItem('dgc_cheat',$('cheat').open?'1':'0');}catch(e){}});
 try{if(localStorage.getItem('dgc_addmode')==='batch')setTimeout(()=>document.querySelector('[data-mode=batch]').click(),0);}catch(e){}
 const plural=n=>n%10===1&&n%100!==11?'песня':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'песни':'песен';
 ['title','artist','words','music','chordsBy','yandex','src'].forEach(id=>$(id).addEventListener('input',build));
