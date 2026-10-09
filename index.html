@@ -64,8 +64,8 @@
           <p id="lbAbout">Денис на гитаре, Ксюша на вокале. Споём любую песню на русском — даже ту, которую слышим впервые.</p>
           <script>(function(){var t=["Денис на гитаре, Ксюша на вокале. Споём любую песню на русском — даже ту, которую слышим впервые.", "Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.", "Гитарист, который играет всё с ходу, и вокалистка с потрясающим голосом. Любая песня на русском — прямо в эфире.", "Приём ведут доктор гитары Денис и доктор вокала Ксюша. Лечим любой песней на русском, даже незнакомой.", "Назови песню на русском — Денис подберёт её на гитаре, а Ксюша споёт. Даже если мы её ни разу не слышали.", "Добро пожаловать в музыкальную клинику! Живая гитара, живой вокал и любые песни на русском по твоему заказу.", "Денис и Ксюша: импровизация на гитаре и прекрасный вокал. Не знаем песню? Споём всё равно!", "Каждый вечер в музыкальной клинике: любая русская песня по заявке из чата — с ходу, вживую, вдвоём.", "Пиши в чат любую песню на русском — Денис сыграет, Ксюша споёт. Ждём на приём именно тебя!", "Гитара Дениса, голос Ксюши и твой заказ из чата. Споём любую песню на русском, даже если впервые её слышим."];var i=Math.floor(Math.random()*t.length);window.ABOUT={t:t,i:i};document.getElementById("lbAbout").textContent=t[i];})();</script>
           <div class="lb-btns">
-            <button class="btn main" id="lbLast">▶ Запись последнего стрима</button>
-            <a class="btn ghost" href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">Twitch</a>
+            <a class="btn main" href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">💜 Подписаться на Twitch</a>
+            <a class="btn ghost" href="https://t.me/ditrihh" target="_blank" rel="noopener">Анонсы в Telegram</a>
           </div>
         </div>
         <button class="lb-sound" id="lbSound" hidden>🔊 Включить звук</button>
@@ -277,17 +277,6 @@ const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'nu
 const TW_HOSTS=[...new Set([location.hostname||'localhost','ditrihh.ru','www.ditrihh.ru','ditrihh87.github.io'])];
 const TW_PARENT=TW_HOSTS.map(h=>'parent='+encodeURIComponent(h)).join('&');
 const TW_OK=location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-$('lbLast').onclick=async()=>{
-  const btn=$('lbLast');btn.disabled=true;btn.textContent='Загружаю…';
-  let v=null;
-  try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'twitch'})});const j=await r.json();v=j.video;}catch(e){}
-  btn.disabled=false;btn.textContent='▶ Запись последнего стрима';
-  if(!v){window.open('https://www.twitch.tv/ditrihh/videos','_blank');return;}
-  ytShown=true;
-  $('lbPlayer').innerHTML=`<iframe src="https://player.twitch.tv/?video=v${encodeURIComponent(v.id)}&${TW_PARENT}&autoplay=true" allow="autoplay; fullscreen" allowfullscreen title="Запись стрима ditrihh"></iframe>`;
-  $('lbPlayer').hidden=false;$('lbOff').hidden=true;$('liveBox').classList.add('yt');
-  $('lbBadge').querySelector('span').textContent='Запись стрима'+(v.created_at?' · '+fmtDate(v.created_at):'');
-};
 $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}catch(e){}$('lbSound').hidden=true;};
 (function(){
   const sc=document.createElement('script');sc.src='https://player.twitch.tv/js/embed/v1.js';sc.async=true;
