@@ -442,7 +442,7 @@ const cPl=n=>n%10===1&&n%100!==11?'комментарий':n%10>=2&&n%10<=4&&(n%
 let COMM=[],CADMIN=false,CBANNED=false;
 function paintTalk(){
   const sec=document.createElement('section');sec.className='talk';sec.id='comments';
-  sec.innerHTML=`<div class="talkhead"><div><h2>Комментарии <span id="cCount"></span></h2><p>Вопросы по песне, свой вариант боя, просьбы разобрать — пиши.</p></div><a class="btn ghost" href="${TG_CHAT}" target="_blank" rel="noopener"><i class="bi" style="--ic:url(/brand/icons/telegram.svg)"></i>Чат гитаристов</a></div>
+  sec.innerHTML=`<div class="talkhead"><div><h2>Комментарии <span id="cCount"></span></h2><p>Вопросы по песне, свой вариант боя, просьбы разобрать — пиши.</p></div><a class="btn ghost" href="${TG_CHAT}" target="_blank" rel="noopener"><i class="bi" style="--ic:url(/brand/icons/telegram.svg)"></i>Чат в Telegram</a></div>
     <div id="cForm"></div><div class="clist" id="cList"><p class="cmuted">Загружаю…</p></div>`;
   $('main').appendChild(sec);
   paintForm();loadComments();
