@@ -173,6 +173,7 @@
   .cacts{margin-left:auto;display:inline-flex;gap:12px}
   .cdel,.cok{border:none;background:none;color:var(--muted);font:700 12px var(--body);cursor:pointer;padding:0}
   .cok{color:#8FD493}
+  .cmeta b{color:var(--paper)}.cmeta b.cown{color:var(--amber)}
   .cmeta .cpend{background:rgba(240,168,48,.15);color:var(--amber);font-weight:800;font-size:11px;padding:2px 7px;border-radius:6px}
   .cbans{margin-top:18px;color:var(--muted);font-weight:700;font-size:14px}
   .cbans summary{cursor:pointer}
@@ -384,7 +385,7 @@ let OPEN_RE=null; // на какой комментарий сейчас отк�
 const cAva=(photo,name)=>`<div class="cava" ${photo?`style="background-image:url(&quot;${esc(String(photo).replace(/"/g,''))}&quot;)"`:''}>${photo?'':esc((name||'?')[0])}</div>`;
 function cItem(c){
   return `<div class="cm1" id="c-${esc(c.id)}">${cAva(c.photo,c.name)}
-    <div class="cbody"><div class="cmeta"><b>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.pending?'<span class="cpend">на проверке</span>':''}<span class="cacts">${CADMIN&&c.pending?`<button class="cok" data-ok="${esc(c.id)}">одобрить</button>`:''}${CADMIN&&!c.admin?`<button class="cdel" data-ban="${esc(c.id)}">бан</button>`:''}${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</span></div>
+    <div class="cbody"><div class="cmeta"><b${c.admin?' class="cown"':''}>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.pending?'<span class="cpend">на проверке</span>':''}<span class="cacts">${CADMIN&&c.pending?`<button class="cok" data-ok="${esc(c.id)}">одобрить</button>`:''}${CADMIN&&!c.admin?`<button class="cdel" data-ban="${esc(c.id)}">бан</button>`:''}${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</span></div>
     <div class="ctext">${c.to&&c.re?`<span class="cto">${esc(c.to)},</span> `:''}${esc(c.text)}</div>
     <button class="crep" data-re="${esc(c.id)}">Ответить</button>
     ${OPEN_RE===c.id?replyBox(c):''}</div></div>`;
