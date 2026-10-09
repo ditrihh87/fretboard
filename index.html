@@ -100,7 +100,6 @@
       </div>
       <div class="tabs" role="tablist" aria-label="Площадка">
         <button class="tab" role="tab" aria-selected="true" data-p="twitch"><span class="pl" style="background:#9146FF"></span>Twitch</button>
-        <button class="tab" role="tab" aria-selected="false" data-p="youtube"><span class="pl" style="background:#FF3B30"></span>YouTube</button>
         <button class="tab" role="tab" aria-selected="false" data-p="vk"><span class="pl" style="background:#0077FF"></span>VK Видео Live</button>
       </div>
       <div class="player">
@@ -366,7 +365,7 @@ $('lbSound').onclick=()=>{try{twPlayer.setMuted(false);twPlayer.setVolume(.7);}c
 const VK_CHANNEL='ditrihh'; // имя канала на VK Видео Live (live.vkvideo.ru/ИМЯ)
 const P={
   twitch:{video:`https://player.twitch.tv/?channel=ditrihh&${TW_PARENT}&autoplay=true`,chat:`https://www.twitch.tv/embed/ditrihh/chat?${TW_PARENT}&darkpopout`,text:'Нажми, чтобы включить трансляцию на Twitch.'},
-  youtube:{video:'https://www.youtube.com/embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1',chat:null,text:'Нажми, чтобы включить трансляцию на YouTube.',noChat:'Чат YouTube смотри на самом YouTube — встроить его можно только во время эфира.'},
+  // YouTube-плеер временно убран (в РФ встроенный плеер падает с ошибкой); вернуть: вкладка data-p="youtube" + embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1
   vk:{video:`https://live.vkvideo.ru/app/embed/${VK_CHANNEL}?autoplay=true`,chat:null,text:'Нажми, чтобы включить трансляцию на VK Видео Live.',noChat:`Чат VK Видео Live — на <a href="https://live.vkvideo.ru/${VK_CHANNEL}" target="_blank" rel="noopener">странице канала</a>.`}
 };
 let cur='twitch',on=false;
