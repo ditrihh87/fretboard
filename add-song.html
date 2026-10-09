@@ -157,6 +157,8 @@ function convert(src,meta){
     const line=L[i].replace(/\s+$/,'');
     if(!line.trim()){if(out.length&&out[out.length-1]!==''&&!/^\{comment:/.test(out[out.length-1]))out.push('');continue;}
     const br=line.match(BARRE_RE);if(br){const o=parseShapes(br[2]);if(o)meta.shapes=Object.assign(meta.shapes||{},o);continue;}
+    // строка только из «аккорд лад» (A 5, C#m 4) — тоже баре, даже без слова «Баре:»
+    if(/^\s*([A-Ha-h][#b]?[^\s,;:]*\s*[-–—]?\s+\d{1,2}[\s,;]*)+$/.test(line)){const o=parseShapes(line);if(o){meta.shapes=Object.assign(meta.shapes||{},o);continue;}}
     // «Автор текста:» / «Слова:» / «Музыка:» — в поля, не в текст
     const au=line.match(/^\s*(автор\s+текста|слова|автор\s+музыки|музыка|автор)\s*[:：]\s*(.*)$/i);
     if(au){let v=au[2].trim();if(!v){while(i+1<L.length&&!L[i+1].trim())i++;if(i+1<L.length)v=L[++i].trim();}
