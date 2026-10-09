@@ -403,7 +403,8 @@ const ACH = [
 ];
 const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // без похожих O/0, I/1/L
 const CODE_RE = /\bDH-([A-Z2-9]{5})\b/gi;
-const OWNER_POINTS = 1000000;        // очки владельца сайта (выше любого статуса)
+const OWNER_POINTS = 1000000;
+const OWNER_RANK = 'Хозяин грифа';   // личный статус владельца сайта («Тот Самый»), вместо обычных званий        // очки владельца сайта (выше любого статуса)
 const PING_SEC = 60;                   // сайт присылает «я тут» раз в минуту, пока вкладка открыта и человек что-то делает
 const statPoints = st => Math.floor((st.sec || 0) / 60) + (st.comments || 0) * 10 + Math.floor((st.rub || 0) / 10) + (st.bonus || 0);
 const rankIdx = p => { let i = 0; RANKS.forEach((r, j) => { if (p >= r[0]) i = j; }); return i; };
@@ -509,9 +510,9 @@ async function creditDonations(raw, token) {
     if (acc && rub > 0) await bumpStats(acc, { rub, notify: true }, token).catch(console.error);
   }
 }
-function statView(st) {
-  const p = statPoints(st), i = rankIdx(p), nx = RANKS[i + 1];
-  return { sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, twitch: st.twitch || null, tgLinked: !!st.tgId, rank: RANKS[i][1], level: i + 1,
+function statView(st, acc) {
+  const p = statPoints(st), i = rankIdx(p), own = adminAccs().includes(acc), nx = own ? null : RANKS[i + 1];
+  return { owner: own, sec: st.sec || 0, comments: st.comments || 0, rub: st.rub || 0, code: st.code || null, points: p, twitch: st.twitch || null, tgLinked: !!st.tgId, rank: own ? OWNER_RANK : RANKS[i][1], level: i + 1,
     from: RANKS[i][0], next: nx ? { rank: nx[1], at: nx[0] } : null,
     ach: ACH.map(a => ({ id: a.id, name: a.name, desc: a.desc, icon: a.icon, got: (st.got || {})[a.id] || 0, have: Math.min(st[a.k] || 0, a.n), need: a.n, k: a.k })) };
 }
@@ -540,10 +541,10 @@ async function handleStats(body, token) {
   }
   const st = await loadJSON(statKey(u.acc), token, { sec: 0, comments: 0, got: {} });
   await ensureCode(u.acc, st, token);
-  return reply(200, statView(st));
+  return reply(200, statView(st, u.acc));
 }
 
-const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], lvl: (ranks && ranks[c.acc] || 0) + 1, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
+const pubComment = (c, acc, admin, ranks) => ({ pending: !!c.pending, id: c.id, rank: c.admin || adminAccs().includes(c.acc) ? OWNER_RANK : ranks && ranks[c.acc] != null ? RANKS[ranks[c.acc]][1] : RANKS[0][1], lvl: (ranks && ranks[c.acc] || 0) + 1, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });

@@ -90,7 +90,7 @@
     el.innerHTML='<p class="ab-st-muted">Загружаю рейтинг…</p>';
     let r;try{r=await post({action:'stats',token:l.token});}catch(e){el.innerHTML='';return;}
     const pct=r.next?Math.round((r.points-r.from)/(r.next.at-r.from)*100):100;
-    el.innerHTML=`<div class="ab-rank"><b class="${l.prov==='admin'?'lvown':'lv'+r.level}">${esc(r.rank)}</b><span>уровень ${r.level}</span></div>
+    el.innerHTML=`<div class="ab-rank"><b class="${l.prov==='admin'||r.owner?'lvown':'lv'+r.level}">${esc(r.rank)}</b><span>${r.owner?'Тот Самый · основатель':'уровень '+r.level}</span></div>
       <div class="ab-bar"><i style="width:${Math.max(3,Math.min(100,pct))}%"></i></div>
       <div class="ab-next">${r.next?`${r.points} / ${r.next.at} очков до «${esc(r.next.rank)}»`:`${Number(r.points).toLocaleString("ru-RU")} очков — высший статус`}</div>
       <div class="ab-nums"><span>⏱️ ${fmtTime(r.sec)}</span><span>💬 ${r.comments}</span>${r.rub?`<span>💛 ${r.rub.toLocaleString('ru-RU')} ₽</span>`:''}</div>
