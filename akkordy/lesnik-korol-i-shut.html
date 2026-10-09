@@ -182,6 +182,19 @@
   .cdel:hover{color:#F26B6F}
   .ctext{margin-top:3px;white-space:pre-wrap;word-wrap:break-word;line-height:1.5}
   .cmuted{color:var(--muted);font-weight:600;margin:0}
+  .cthread{display:flex;flex-direction:column;gap:12px}
+  .creplies{display:flex;flex-direction:column;gap:12px;margin-left:52px;padding-left:14px;border-left:2px solid rgba(110,123,255,.25)}
+  .creplies .cava{width:32px;height:32px;font-size:14px}
+  .crep{border:none;background:none;color:var(--amber);font:800 13px var(--body);cursor:pointer;padding:4px 0 0}
+  .crep:hover{text-decoration:underline}
+  .cto{color:var(--amber);font-weight:800}
+  .crform{margin-top:8px}
+  .crform textarea{width:100%;box-sizing:border-box;resize:vertical;background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:12px;padding:10px 12px;color:var(--paper);font:600 15px/1.45 var(--body)}
+  .crform textarea:focus{outline:none;box-shadow:inset 0 0 0 2px var(--amber)}
+  .crform .btn{padding:8px 14px;font-size:14px}
+  .clogin.flash{animation:cfl 1.2s}
+  @keyframes cfl{0%,100%{background:transparent}30%{background:rgba(240,168,48,.18)}}
+  @media (max-width:560px){.creplies{margin-left:20px;padding-left:10px}}
   @media (max-width:560px){.lyrics{padding:12px 14px 30px}.chordrow{padding:14px 14px 4px}.chordrow button{width:64px}.pbar{gap:8px}.legend{display:none}}
 </style>
 </head>
@@ -396,27 +409,56 @@ function paintForm(){
   f.innerHTML=`<form class="cform"><div class="cava" ${u.photo_url?`style="background-image:url(&quot;${esc(String(u.photo_url).replace(/"/g,''))}&quot;)"`:''}>${u.photo_url?'':esc(nm[0]||'🎸')}</div>
     <div class="cbox"><textarea id="cText" maxlength="1000" rows="3" placeholder="Напиши комментарий…"></textarea>
     <div class="crow"><small id="cMsg">Пишешь как ${esc(nm)}</small><button class="btn main" type="submit" id="cSend">Отправить</button></div></div></form>`;
-  f.querySelector('form').onsubmit=async e=>{
-    e.preventDefault();const t=$('cText').value.trim();if(!t)return;
-    $('cSend').disabled=true;$('cMsg').textContent='Отправляю…';
-    try{const r=await cpost({action:'comment',song:SONG.id,text:t,token:l.token});COMM.push(r.comment);$('cText').value='';$('cMsg').textContent='Готово!';drawComments();}
-    catch(err){$('cMsg').textContent=err.code===429?'Чуть помедленнее — подожди несколько секунд.':err.code===401?'Вход устарел — выйди и войди снова.':'Не получилось отправить, попробуй ещё раз.';}
-    $('cSend').disabled=false;
-  };
+  f.querySelector('form').onsubmit=e=>{e.preventDefault();sendComment($('cText'),null,$('cMsg'),$('cSend'));};
+}
+async function sendComment(ta,re,msg,btn){
+  const l=ses(),t=ta.value.trim();if(!t||!l)return false;
+  btn.disabled=true;msg.textContent='Отправляю…';
+  try{const r=await cpost({action:'comment',song:SONG.id,text:t,token:l.token,re:re||undefined});COMM.push(r.comment);ta.value='';msg.textContent='Готово!';OPEN_RE=null;drawComments();return true;}
+  catch(err){msg.textContent=err.code===429?'Чуть помедленнее — подожди несколько секунд.':err.code===401?'Вход устарел — выйди и войди снова.':'Не получилось отправить, попробуй ещё раз.';}
+  btn.disabled=false;return false;
 }
 async function loadComments(){
   const l=ses();
   try{const r=await cpost({action:'comments',song:SONG.id,token:l?l.token:undefined});COMM=r.comments||[];drawComments();}
   catch(e){$('cList').innerHTML='<p class="cmuted">Комментарии сейчас не загрузились.</p>';}
 }
+let OPEN_RE=null; // на какой комментарий сейчас открыт ответ
+const cAva=(photo,name)=>`<div class="cava" ${photo?`style="background-image:url(&quot;${esc(String(photo).replace(/"/g,''))}&quot;)"`:''}>${photo?'':esc((name||'?')[0])}</div>`;
+function cItem(c){
+  return `<div class="cm1" id="c-${esc(c.id)}">${cAva(c.photo,c.name)}
+    <div class="cbody"><div class="cmeta"><b>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</div>
+    <div class="ctext">${c.to&&c.re?`<span class="cto">${esc(c.to)},</span> `:''}${esc(c.text)}</div>
+    <button class="crep" data-re="${esc(c.id)}">Ответить</button>
+    ${OPEN_RE===c.id?replyBox(c):''}</div></div>`;
+}
+function replyBox(c){
+  return `<form class="crform" data-for="${esc(c.id)}"><textarea maxlength="1000" rows="2" placeholder="Твой ответ…"></textarea>
+    <div class="crow"><small>Отвечаешь: ${esc(c.name)}</small><span><button type="button" class="btn ghost" data-cancel>Отмена</button> <button class="btn main" type="submit">Ответить</button></span></div></form>`;
+}
 function drawComments(){
   $('cCount').textContent=COMM.length?`· ${COMM.length}`:'';
   if(!COMM.length){$('cList').innerHTML='<p class="cmuted">Пока никто не написал — будь первым.</p>';return;}
-  $('cList').innerHTML=COMM.slice().reverse().map(c=>`<div class="cm1"><div class="cava" ${c.photo?`style="background-image:url(&quot;${esc(String(c.photo).replace(/"/g,''))}&quot;)"`:''}>${c.photo?'':esc((c.name||'?')[0])}</div>
-    <div class="cbody"><div class="cmeta"><b>${esc(c.name)}</b>${c.admin?'<span class="cbadge">ditrihh</span>':''}<span>${cWhen(c.t)}</span>${c.can?`<button class="cdel" data-del="${esc(c.id)}">удалить</button>`:''}</div><div class="ctext">${esc(c.text)}</div></div></div>`).join('');
-  $('cList').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+  const ids=new Set(COMM.map(c=>c.id));
+  const roots=COMM.filter(c=>!c.re||!ids.has(c.re)).sort((a,b)=>b.t-a.t);  // новые сверху; ответы без родителя — как обычные
+  $('cList').innerHTML=roots.map(r=>{
+    const reps=COMM.filter(c=>c.re===r.id).sort((a,b)=>a.t-b.t);
+    return `<div class="cthread">${cItem(r)}${reps.length?`<div class="creplies">${reps.map(cItem).join('')}</div>`:''}</div>`;
+  }).join('');
+  const L=$('cList');
+  L.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
     if(!confirm('Удалить комментарий?'))return;const l=ses();
     try{await cpost({action:'comment_del',song:SONG.id,id:b.dataset.del,token:l&&l.token});COMM=COMM.filter(c=>c.id!==b.dataset.del);drawComments();}catch(e){alert('Не получилось удалить.');}
+  });
+  L.querySelectorAll('[data-re]').forEach(b=>b.onclick=()=>{
+    if(!ses()){$('cForm').scrollIntoView({behavior:'smooth',block:'center'});const x=$('cForm').querySelector('.clogin');if(x){x.classList.add('flash');setTimeout(()=>x.classList.remove('flash'),1200);}return;}
+    OPEN_RE=OPEN_RE===b.dataset.re?null:b.dataset.re;drawComments();
+    const ta=L.querySelector('.crform textarea');if(ta)ta.focus();
+  });
+  L.querySelectorAll('.crform').forEach(f=>{
+    f.querySelector('[data-cancel]').onclick=()=>{OPEN_RE=null;drawComments();};
+    f.onsubmit=e=>{e.preventDefault();sendComment(f.querySelector('textarea'),f.dataset.for,f.querySelector('small'),f.querySelector('[type=submit]'));};
+    f.querySelector('textarea').onkeydown=e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))f.requestSubmit();};
   });
 }
 function renderChordsPage(){

@@ -332,11 +332,11 @@ async function handleRate(body, token) {
 /* ===== Комментарии под песнями: писать могут вошедшие на сайт через Яндекс ID или VK ID ===== */
 const MAX_COMMENTS = 500;     // храним последние 500 комментариев у песни
 const COMMENT_LEN = 1000;     // предел длины комментария
-const COMMENT_GAP = 20e3;     // не чаще одного комментария в 20 секунд
+const COMMENT_GAP = 10e3;     // не чаще одного комментария в 10 секунд
 const ADMIN_ID = 'admin_ditrihh';
 const adminAccs = () => [ADMIN_ID, ...String(process.env.ADMIN_ACC || '').split(',').map(s => s.trim()).filter(Boolean)];
 const siteUser = u => u && /^(ya|vk|admin)_/.test(String(u.id)) ? u : null;   // Telegram-вход для комментариев не принимаем
-const pubComment = (c, acc, admin) => ({ id: c.id, name: c.name, photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin) });
+const pubComment = (c, acc, admin) => ({ id: c.id, name: c.name, photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to || null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
@@ -355,6 +355,12 @@ async function handleComment(body, token) {
   if (list.some(c => c.acc === u.acc && Date.now() - c.t < COMMENT_GAP)) return reply(429, { error: 'too fast' });
   const admin = adminAccs().includes(u.acc);
   const c = { id: crypto.randomBytes(9).toString('base64url'), acc: u.acc, name: displayName(u), photo: u.photo_url || '', text, t: Date.now(), admin };
+  // ответ: ветка всегда одна — к первому комментарию; to — кому отвечают (имя)
+  if (body.re != null) {
+    const p = typeof body.re === 'string' && list.find(x => x.id === body.re);
+    if (!p) return reply(400, { error: 'no parent' });
+    c.re = p.re || p.id; if (p.acc !== u.acc) c.to = p.name;   // себе отвечаем без обращения
+  }
   list.push(c); list = list.slice(-MAX_COMMENTS);
   await saveList(key, list, token);
   return reply(200, { comment: pubComment(c, u.acc, admin) });
