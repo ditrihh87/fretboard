@@ -28,9 +28,12 @@
   "title": "Название",
   "artist": "Исполнитель",
   "tab": "tabs/moya-aranzhirovka.gp",
-  "exclusive": true
+  "exclusive": true,
+  "fingerstyle": true
 }
 ```
+
+`"fingerstyle": true` — аранжировка в стиле фингерстайл: значок «Фингерстайл» и раздел табов `songs.html?type=tab&f=fs`.
 
 Через минуту после сохранения songs.json GitHub сам создаст постоянную страницу песни: `ditrihh.ru/akkordy/<id>.html` (аккорды) или `ditrihh.ru/taby/<id>.html` (табы) — она же попадёт в sitemap.xml для поисковиков.
 - Блоки разделяются запятыми, весь список в квадратных скобках `[ ... ]`.

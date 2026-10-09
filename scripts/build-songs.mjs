@@ -43,11 +43,11 @@ function page(s) {
   const url = `${SITE}${DIRS[kind]}/${s.id}.html`;
   const who = s.artist ? ` (${s.artist})` : '';
   const title = s.tab
-    ? `${s.title}${who} — таб и аранжировка | ditrihh`
+    ? `${s.title}${who} — ${s.fingerstyle ? 'фингерстайл таб' : 'таб'} и аранжировка | ditrihh`
     : `${s.title}${who} — аккорды | ditrihh`;
   const ch = chordsIn(s.text);
   const desc = s.tab
-    ? `${s.title}${who}: эксклюзивный таб от ditrihh со звуком, замедлением и повтором участка.`
+    ? `${s.title}${who}: эксклюзивный ${s.fingerstyle ? 'фингерстайл-таб (аранжировка для одной гитары)' : 'таб'} от ditrihh со звуком, замедлением и повтором участка.`
     : `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. Подобраны и проверены на гитаре, схемы со звуком, смена тональности.`;
   const ld = {
     '@context': 'https://schema.org', '@type': 'MusicComposition', name: s.title,
@@ -85,7 +85,7 @@ for (const s of songs) {
 
 // sitemap.xml
 const today = new Date().toISOString().slice(0, 10);
-const urls = [SITE, `${SITE}songs.html?type=chords`, `${SITE}songs.html?type=tab`, ...pages];
+const urls = [SITE, `${SITE}songs.html?type=chords`, `${SITE}songs.html?type=tab`, `${SITE}songs.html?type=tab&f=fs`, ...pages];
 fs.writeFileSync(path.join(ROOT, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
   urls.map(u => `  <url><loc>${esc(u)}</loc><lastmod>${today}</lastmod></url>`).join('\n') + `\n</urlset>\n`);

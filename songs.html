@@ -35,11 +35,13 @@
   .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:80px}
   .item{display:flex;flex-direction:column;gap:8px;padding:20px 20px 18px;border-radius:20px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.18);transition:transform .15s,box-shadow .15s}
   .item:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(110,123,255,.45),0 12px 30px rgba(110,123,255,.18)}
-  .item .top{display:flex;align-items:center;gap:8px}
+  .item .top{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px}
+  .item .top .type,.ver{white-space:nowrap}
   .type{font-weight:800;font-size:12px;letter-spacing:.5px;padding:4px 9px;border-radius:999px;text-transform:uppercase}
   .type.ch{background:rgba(110,123,255,.2);color:#B3BAFF}
   .type.tb{background:rgba(240,168,48,.18);color:#F3C06A}
   .type.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
+  .type.fs{background:rgba(255,95,207,.16);color:#FF9BE2}
   .ver{margin-left:auto;font-weight:800;font-size:12px;color:#8FD493;display:flex;align-items:center;gap:5px}
   .item h3{font-family:var(--display);font-weight:400;font-size:21px;line-height:1.15}
   .item .by{color:var(--muted);font-weight:700;font-size:14px}
@@ -119,8 +121,8 @@ const SECT={
     filters:[['all','Все песни'],['saved','♥ Сохранённые']],cross:['Нужна точная партия? Эксклюзивные табы →','songs.html?type=tab'],empty:'Аккорды к песням скоро появятся здесь — следи за стримами.'},
   tab:{kicker:'Табы',h1:'Эксклюзивные табы<br><em>от ditrihh</em>',lead:'Мои аранжировки — таких табов больше нет нигде. Табы со звуком: слушай, замедляй и играй вместе с ними.',
     title:'Эксклюзивные табы и аранжировки — ditrihh',desc:'Эксклюзивные табы и аранжировки от ditrihh — таких нет нигде. Табы со звуком, замедлением и повтором участка, цветные струны.',
-    filters:[['all','Все табы'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],cross:['Хочешь просто подобрать под голос? Аккорды →','songs.html?type=chords'],empty:'Первые табы скоро появятся здесь — следи за стримами.'},
-  all:{filters:[['all','Все'],['chords','Аккорды'],['tab','Табы'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],empty:'Песни скоро появятся здесь — следи за стримами.'}
+    filters:[['all','Все табы'],['fs','Фингерстайл'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],cross:['Хочешь просто подобрать под голос? Аккорды →','songs.html?type=chords'],empty:'Первые табы скоро появятся здесь — следи за стримами.'},
+  all:{filters:[['all','Все'],['chords','Аккорды'],['tab','Табы'],['fs','Фингерстайл'],['ex','★ Эксклюзив'],['saved','♥ Сохранённые']],empty:'Песни скоро появятся здесь — следи за стримами.'}
 }[TYPE];
 if(TYPE!=='all'){
   $('kicker').textContent=SECT.kicker;$('ttl').innerHTML=SECT.h1;$('lead').textContent=SECT.lead;document.title=SECT.title;
@@ -129,19 +131,21 @@ if(TYPE!=='all'){
   $('cross').textContent=SECT.cross[0];$('cross').href=SECT.cross[1];$('cross').hidden=false;
   document.querySelectorAll(`[data-nav="${TYPE}"]`).forEach(a=>{a.classList.add('on');a.setAttribute('aria-current','page');});
 }
-$('filters').innerHTML=SECT.filters.map(([f,t],i)=>`<button data-f="${f}" aria-pressed="${!i}">${t}</button>`).join('');
-let SONGS=[],filter='all',RT={};
+const F0=(()=>{const f=new URLSearchParams(location.search).get('f');return SECT.filters.some(x=>x[0]===f)?f:'all';})();
+$('filters').innerHTML=SECT.filters.map(([f,t])=>`<button data-f="${f}" aria-pressed="${f===F0}">${t}</button>`).join('');
+let SONGS=[],filter=F0,RT={};
+if(F0==='fs'&&TYPE==='tab'){$('ttl').innerHTML='Фингерстайл<br><em>от ditrihh</em>';$('lead').textContent='Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.';document.title='Фингерстайл табы и аранжировки — ditrihh';}
 function render(){
   const q=$('q').value.toLowerCase().trim();
   const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||(s.title+' '+(s.artist||'')).toLowerCase().includes(q))
-    .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='tab'?!!s.tab:!s.tab));
+    .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='fs'?!!s.fingerstyle:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
   if(!items.length){$('list').innerHTML=`<p class="empty">${!SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).length?SECT.empty:filter==='saved'&&!q?'Здесь будут песни, которые ты сохранишь. Нажми «♡ Сохранить» на карточке.':filter==='ex'&&!q?'Первые эксклюзивные аранжировки скоро появятся здесь — следи за стримами.':'Ничего не нашлось. Попробуй другое название.'}</p>`;return;}
   $('list').innerHTML=items.map(s=>{
     const r=RT[s.id],sv=DR.isSaved(s.id);
     return `<article class="item">
-      <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
+      <div class="top">${s.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${s.fingerstyle?'<span class="type fs">Фингерстайл</span>':''}<span class="type ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Аккорды'}</span><span class="ver">✓ ditrihh</span></div>
       <h3><a class="go" href="${s.tab?'taby':'akkordy'}/${encodeURIComponent(s.id)}.html">${esc(s.title)}</a></h3><div class="by">${esc(s.artist||'')}</div>
       <div class="meta">
         <span class="rt ${r?'':'none'}" title="${r?`Рейтинг ${r.avg} из 5`:'Пока без оценок'}">${r?`<b>★ ${r.avg.toFixed(1)}</b> <small>${r.n} ${DR.plural(r.n)}</small>`:'<small>Пока без оценок</small>'}</span>
@@ -154,6 +158,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-save]');if
 DR.ratings().then(r=>{RT=r;if(SONGS.length)render();});
 document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
   filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));render();
+  try{const u=new URL(location.href);filter==='all'?u.searchParams.delete('f'):u.searchParams.set('f',filter);history.replaceState(null,'',u);}catch(e){}
 }));
 fetch('songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{SONGS=j;render();})
   .catch(()=>{$('list').innerHTML='<p class="empty">Не удалось загрузить песни. Обнови страницу.</p>';});

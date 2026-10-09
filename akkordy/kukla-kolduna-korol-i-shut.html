@@ -31,6 +31,7 @@
   .type{font-weight:800;font-size:12px;letter-spacing:.5px;padding:5px 10px;border-radius:999px;text-transform:uppercase}
   .type.ch{background:rgba(110,123,255,.2);color:#B3BAFF}.type.tb{background:rgba(240,168,48,.18);color:#F3C06A}
   .type.ex{background:linear-gradient(90deg,#F0A830,#FF5FCF);color:#1b1b1b}
+  .type.fs{background:rgba(255,95,207,.16);color:#FF9BE2}
   .type.ver{background:rgba(111,191,115,.16);color:#8FD493}
   .panel{background:linear-gradient(160deg,rgba(37,31,94,.6),rgba(20,17,55,.85));box-shadow:inset 0 0 0 1px rgba(110,123,255,.2);border-radius:22px;margin-bottom:70px}
   /* панель инструментов */
@@ -448,7 +449,7 @@ function relayout(){if(!atApi)return;const d=atApi.settings.display;d.layoutMode
 async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
-      <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
+      <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Фингерстайл</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
       <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div></div>
     <div class="panel">
       <div class="bar">

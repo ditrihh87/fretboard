@@ -11,9 +11,10 @@
   },
   {
     "id": "rozovoe-vino-eldzhey-feduk",
-    "title": "Розовое вино, фингерстайл",
+    "title": "Розовое вино",
     "artist": "Элджей & Feduk",
     "tab": "tabs/rozovoe-vino-eldzhey-feduk.gpx",
-    "exclusive": true
+    "exclusive": true,
+    "fingerstyle": true
   }
 ]
