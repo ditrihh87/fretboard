@@ -135,7 +135,7 @@ async function issueSession(user, provider, token) {
 // вход владельца: аккаунт «ditrihh» по секретному ключу ADMIN_KEY
 async function handleLoginAdmin(body, token) {
   if (!okAdmin(body.key)) { await new Promise(r => setTimeout(r, 1500)); return reply(401, { error: 'bad key' }); }
-  const user = { id: ADMIN_ID, first_name: 'ditrihh', last_name: '', username: 'ditrihh', photo_url: 'https://ditrihh.ru/brand/ditrihh-avatar-640.png', provider: 'admin' };
+  const user = { id: ADMIN_ID, first_name: ADMIN_NAME, last_name: '', username: 'ditrihh', photo_url: 'https://ditrihh.ru/brand/ditrihh-avatar-640.png', provider: 'admin' };
   return issueSession(user, 'admin', token);
 }
 async function handleLoginYa(body, token) {
@@ -334,9 +334,11 @@ const MAX_COMMENTS = 500;     // храним последние 500 комме�
 const COMMENT_LEN = 1000;     // предел длины комментария
 const COMMENT_GAP = 10e3;     // не чаще одного комментария в 10 секунд
 const ADMIN_ID = 'admin_ditrihh';
+const ADMIN_NAME = 'Тот Самый';   // имя владельца в комментариях (рядом значок ditrihh)
 const adminAccs = () => [ADMIN_ID, ...String(process.env.ADMIN_ACC || '').split(',').map(s => s.trim()).filter(Boolean)];
 const siteUser = u => u && /^(ya|vk|admin)_/.test(String(u.id)) ? u : null;   // Telegram-вход для комментариев не принимаем
-const pubComment = (c, acc, admin) => ({ id: c.id, name: c.name, photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to || null });
+const nameOf = (a, n) => a === ADMIN_ID ? ADMIN_NAME : n;
+const pubComment = (c, acc, admin) => ({ id: c.id, name: nameOf(c.acc, c.name), photo: c.photo || '', text: c.text, t: c.t, admin: !!c.admin, can: !!acc && (c.acc === acc || admin), re: c.re || null, to: c.to ? nameOf(c.toAcc, c.to) : null });
 async function commentUser(body, token) { return body.token ? siteUser(await userFromToken(body.token, token)) : null; }
 async function handleComments(body, token) {
   if (!okSong(body.song)) return reply(400, { error: 'bad song' });
@@ -354,12 +356,12 @@ async function handleComment(body, token) {
   let list = await loadJSON(key, token, []);
   if (list.some(c => c.acc === u.acc && Date.now() - c.t < COMMENT_GAP)) return reply(429, { error: 'too fast' });
   const admin = adminAccs().includes(u.acc);
-  const c = { id: crypto.randomBytes(9).toString('base64url'), acc: u.acc, name: displayName(u), photo: u.photo_url || '', text, t: Date.now(), admin };
+  const c = { id: crypto.randomBytes(9).toString('base64url'), acc: u.acc, name: nameOf(u.acc, displayName(u)), photo: u.photo_url || '', text, t: Date.now(), admin };
   // ответ: ветка всегда одна — к первому комментарию; to — кому отвечают (имя)
   if (body.re != null) {
     const p = typeof body.re === 'string' && list.find(x => x.id === body.re);
     if (!p) return reply(400, { error: 'no parent' });
-    c.re = p.re || p.id; if (p.acc !== u.acc) c.to = p.name;   // себе отвечаем без обращения
+    c.re = p.re || p.id; if (p.acc !== u.acc) { c.to = nameOf(p.acc, p.name); c.toAcc = p.acc; }   // себе отвечаем без обращения
   }
   list.push(c); list = list.slice(-MAX_COMMENTS);
   await saveList(key, list, token);
