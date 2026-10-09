@@ -88,7 +88,7 @@
   <div class="grid" id="batchMode" hidden>
     <section class="card">
       <h2>1. Песни</h2>
-      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, <code>Баре: Am 5, Bm 7, A5 0</code> (аккорд, пробел, лад: с какого лада играть; струна 6-я или 5-я — где на этом ладу корень; в «Простых аккордах» будут открытые), <code>Простые: F</code> (с какого аккорда начать «Простые аккорды»), ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
+      <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, <code>Баре: Am 5, Bm 7, A5 0</code> (аккорд, пробел, лад: с какого лада играть; струна 6-я или 5-я — где на этом ладу корень; в «Простых аккордах» будут открытые), <code>Простые: F</code> (с какого аккорда начать «Простые аккорды»), <code>Также ищут: КиШ, первая строчка</code> (другие названия для поиска), ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
       <div class="row">
         <div><label for="bArtist">Исполнитель по умолчанию</label><input type="text" id="bArtist" value="Король и Шут"></div>
         <div><label for="bWords">Слова по умолчанию</label><input type="text" id="bWords" placeholder="например, Андрей Князев"></div>
@@ -143,6 +143,7 @@ function unconvert(song){
   const out=[];
   if(song.shapes&&Object.keys(song.shapes).length)out.push('Баре: '+Object.entries(song.shapes).map(([c,f])=>c+' '+f).join(', '));
   if(song.easyFrom)out.push('Простые: '+song.easyFrom);
+  if(song.aka&&song.aka.length)out.push('Также ищут: '+song.aka.join(', '));
   if(out.length)out.push('');
   const L=String(song.text||'').split('\n');
   L.forEach((line,i)=>{
@@ -198,6 +199,8 @@ const isHead=(name,rest)=>!rest?PART.test(name.trim()):!!chordTokens(rest);
 // «Баре: Am 5, Bm 7, A5 0» → {Am:5,Bm:7,A5:0}: цифры слитно — часть аккорда (A5, Am7), через пробел — лад
 const BARRE_RE=/^\s*(баре|барре|barre)\s*[:：]\s*(.+)$/i;
 // «Простые: F» / «Простая версия: от F» — в «Простых аккордах» песня начнётся с F
+// «Также ищут: КиШ Дурак и молния, Грохочет гром» — другие названия для поиска (поле aka)
+const AKA_RE=/^\s*также\s+ищут\s*[:：]\s*(.+)$/i;
 const EASY_RE=/^\s*прост\S*(\s+\S+)?\s*[:：]\s*(от\s+)?([A-Ha-h][#b]?m?)\s*$/i;
 function parseShapes(v){const o={};String(v).replace(/(?:^|[\s,;])([A-Ha-h][#b]?[^\s,;:]*?)(?:\s+|\s*[-–—]\s*)(\d{1,2})(?=[\s,;]|$)/g,(m,c,f)=>{c=c[0].toUpperCase()+c.slice(1);if(isChord(c)&&+f<=15)o[c]=+f;return m;});return Object.keys(o).length?o:null;}
 function convert(src,meta){
@@ -206,6 +209,7 @@ function convert(src,meta){
   for(let i=0;i<L.length;i++){
     let line=L[i].replace(/\s+$/,'');
     if(!line.trim()){if(out.length&&out[out.length-1]!==''&&!/^\{comment:/.test(out[out.length-1]))out.push('');continue;}
+    const ak=line.match(AKA_RE);if(ak){meta.aka=(meta.aka||[]).concat(ak[1].split(/[,;]/).map(x=>x.trim()).filter(Boolean));continue;}
     const ez=line.match(EASY_RE);if(ez){meta.easyFrom=fixChord(ez[3]);continue;}
     const br=line.match(BARRE_RE);if(br){const o=parseShapes(br[2]);if(o)meta.shapes=Object.assign(meta.shapes||{},o);continue;}
     // строка только из «аккорд лад» (A 5, C#m 4) — тоже баре, даже без слова «Баре:».
@@ -305,6 +309,7 @@ function build(){
   if($('chordsBy').value.trim())ONE.chordsBy=$('chordsBy').value.trim();
   if(meta.shapes)ONE.shapes=meta.shapes;else if(old&&old.shapes)ONE.shapes=old.shapes;
   if(meta.easyFrom)ONE.easyFrom=meta.easyFrom;
+  if(meta.aka)ONE.aka=meta.aka;else if(old&&old.aka)ONE.aka=old.aka;
   if($('exclusive').checked)ONE.exclusive=true;
   if(ONE.shapes){const s=ONE.shapes;delete ONE.shapes;ONE.shapes=s;}
   ONE.text=text;
@@ -333,7 +338,7 @@ function parseBatch(){
       if(au){if(/музык/i.test(au[1]))meta.music=au[2].trim();else meta.words=au[2].trim();body.shift();continue;}
       break;}
     song.text=convert(body.join('\n'),meta);
-    song.words=meta.words||dW;song.music=meta.music||dM;if(meta.shapes)song.shapes=meta.shapes;if(meta.easyFrom)song.easyFrom=meta.easyFrom;
+    song.words=meta.words||dW;song.music=meta.music||dM;if(meta.shapes)song.shapes=meta.shapes;if(meta.easyFrom)song.easyFrom=meta.easyFrom;if(meta.aka)song.aka=meta.aka;
     return song;
   });
 }
@@ -357,6 +362,7 @@ function buildBatch(){
     if(sg.tab)o.tab=sg.tab;
     if(sg.shapes)o.shapes=sg.shapes;
     if(sg.easyFrom)o.easyFrom=sg.easyFrom;
+    if(sg.aka||(old&&old.aka))o.aka=sg.aka||old.aka;
     o.text=sg.text;out.push(o);
   }
   $('blist').innerHTML=BATCH.map((sg,i)=>{

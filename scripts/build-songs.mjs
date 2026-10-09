@@ -41,6 +41,29 @@ function staticBody(s) {
   return body;
 }
 
+/* «Простые аккорды» — так же, как на странице песни: easyFrom из songs.json или перенос в Am/Em/C/G с каподастром.
+   Попадают в описание для поисковиков («… простые аккорды», «аккорды для начинающих»). */
+const PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11, H: 11 };
+const SHARP = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
+const parseChord = n => { const m = String(n).trim().match(/^([A-H])([#b]?)(.*)$/); return m ? { pc: (PC[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + 12) % 12, q: m[3] } : null; };
+const tr = (n, st) => st ? n.split('/').map(p => { const c = parseChord(p); return c ? SHARP[(c.pc + st + 120) % 12] + c.q : p; }).join('/') : n;
+const EASY = new Set(['C', 'D', 'E', 'G', 'A', 'Am', 'Dm', 'Em', 'A7', 'B7', 'C7', 'D7', 'E7', 'G7', 'Am7', 'Dm7', 'Em7', 'Cmaj7', 'Gmaj7', 'Asus2', 'Asus4', 'Dsus2', 'Dsus4', 'Esus4']);
+function easyOf(s, ch) {
+  const f = ch.map(parseChord).find(Boolean); if (!f) return null;
+  let k;
+  const ef = s.easyFrom && parseChord(s.easyFrom);
+  if (ef) k = (f.pc - ef.pc + 12) % 12;
+  else {
+    const minor = /^m(?!aj)/.test(f.q); let best = null;
+    (minor ? [9, 4] : [0, 7]).forEach(tg => { const kk = (f.pc - tg + 12) % 12;
+      const hard = ch.filter(c => !EASY.has(tr(c.split('/')[0], -kk).replace(/^Bb/, 'A#'))).length;
+      if (!best || hard < best.hard || (hard === best.hard && kk < best.k)) best = { k: kk, hard }; });
+    k = best.k;
+  }
+  const easy = [...new Set(ch.map(c => tr(c, -k)))];
+  return easy.join() === ch.join() ? null : { k, chords: easy };
+}
+
 function page(s) {
   const kind = s.tab ? 'tab' : 'chords';
   const url = `${SITE}${DIRS[kind]}/${s.id}.html`;
@@ -52,7 +75,10 @@ function page(s) {
   const ch = chordsIn(s.text);
   const desc = s.tab
     ? `${s.title}${who}: эксклюзивный ${s.fingerstyle ? 'фингерстайл-таб (fingerstyle guitar, аранжировка для одной гитары)' : 'таб'} от ditrihh со звуком, замедлением и повтором участка.`
-    : `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. Подобраны и проверены на гитаре, схемы со звуком, смена тональности.`;
+    : (() => { const ez = easyOf(s, ch);
+        return `Правильные аккорды к песне «${s.title}»${who}${ch.length ? ': ' + ch.slice(0, 6).join(', ') : ''}. ` +
+          (ez ? `Простые аккорды для начинающих: ${ez.chords.slice(0, 5).join(', ')}${ez.k ? ` (каподастр на ${ez.k} лад)` : ''}. ` : s.shapes && Object.keys(s.shapes).length ? 'Простые аккорды для начинающих — на открытых струнах, без баре. ' : '') +
+          'Подобраны и проверены на гитаре, схемы со звуком.'; })();
   const aka = Array.isArray(s.aka) ? s.aka.filter(Boolean) : [];
   const descFull = aka.length ? `${desc} Также ищут: ${aka.join(', ')}.` : desc;
   const ld = {
