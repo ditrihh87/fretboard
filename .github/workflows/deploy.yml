@@ -34,7 +34,8 @@ jobs:
           git pull --rebase origin main
           git push
       - name: Залить в Yandex Object Storage
-        if: env.HAS_KEYS == 'true'
+        # выключено: остаёмся на GitHub Pages. Включить — переменная репозитория DEPLOY_YC=1 (Settings → Variables → Actions)
+        if: env.HAS_KEYS == 'true' && vars.DEPLOY_YC == '1'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.YC_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_KEY }}
