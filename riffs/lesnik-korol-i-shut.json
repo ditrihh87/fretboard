@@ -3,7 +3,10 @@
     {
       "type": "Вступление",
       "where": "Вступление",
-      "src": "riffs/lesnik-korol-i-shut-1.gp"
+      "src": "riffs/lesnik-korol-i-shut-1.gp",
+      "labels": {
+        "1": "Am"
+      }
     }
   ]
 }
