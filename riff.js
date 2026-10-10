@@ -85,7 +85,14 @@ function beat(tok,v,d,first,chName){
   else if(tok==='D'){core=`(${v.all.map(N).join(' ')})`;fx.push('bd');}
   else if(tok==='U'){core=`(${v.up.map(N).join(' ')})`;fx.push('bu');}
   else if(tok==='X'){core=`(${v.all.map(x=>'x.'+x.s).join(' ')})`;fx.push('bd');}
-  return core+DUR[d]+(fx.length?`{${fx.join(' ')}}`:'');
+  // длительность, которой нет у одной ноты (5 или 7 восьмых), — составляем из нескольких, связанных лигой
+  const parts=[];let r=d;for(const k of [8,6,4,3,2,1])while(r>=k){parts.push(k);r-=k;}
+  const one=(c,k,f)=>c+DUR[k]+((f=f.concat(dotted(k)?['d']:[])).length?`{${f.join(' ')}}`:'');
+  const fx0=fx.filter(x=>x!=='d');
+  if(parts.length===1)return one(core,d,fx0);
+  // продолжение: те же струны с «-» вместо лада (лига); глушёный удар не тянется — пауза
+  const tie=tok==='X'?'r':core.replace(/(^|[( ])\d+\./g,'$1-.');
+  return parts.map((k,i)=>i?one(tie,k,[]):one(core,k,fx0)).join(' ');
 }
 const okGrid=(g,P)=>P&&P.kind==='b'&&typeof g==='string'&&g.length===P.grid.length&&/^[DUXB-]+$/.test(g)&&g[0]!=='-';
 const gridOf=(p,P)=>okGrid(p.grid,P)?p.grid:P&&P.grid;
@@ -425,7 +432,12 @@ function ownerUI(panel){
     <div class="rmsg" id="rM"></div>`;
     f.querySelectorAll('[data-k]').forEach(el=>{el.addEventListener(el.type==='file'?'change':'input',()=>{const i=+el.closest('.rpi').dataset.i,k=el.dataset.k;
       if(k==='file'){list[i]._file=el.files[0]||null;return;}
-      if(k==='chords')list[i].chords=el.value.trim()?chordTokens(el.value):undefined;
+      if(k==='chords'){list[i].chords=el.value.trim()?chordTokens(el.value):undefined;
+        // подсказка: ритм такта после «=» должен быть ровно на весь такт
+        const P=PAT[list[i].pattern],bad=[];
+        if(P&&P.kind==='b')(list[i].chords||[]).forEach(t=>{const e=t.indexOf('=');if(e<0)return;const g=t.slice(e+1);
+          if(!barGrid(g,P))bad.push(`«${t.slice(0,e)}=${g}»: ${[...g].length===P.grid.length?'первый знак не может быть точкой':`нужно ${P.grid.length} знаков (${P.ts===3?'«1 и 2 и 3 и»':'«1 и 2 и 3 и 4 и»'}), сейчас ${[...g].length}`}`);});
+        msg(bad.length?'Ритм такта не подходит — '+bad.join('; ')+'. Такой такт сыграется обычным рисунком.':'',!!bad.length);}
       else if(k==='bpm')list[i].bpm=+el.value||undefined;
       else list[i][k]=el.value;
       if(k==='pattern'){delete list[i].grid;}
