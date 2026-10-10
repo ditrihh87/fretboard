@@ -464,7 +464,7 @@ function render(p,gen){
       core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
       display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
         resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif',barNumberFont:'600 11px Manrope, Arial, sans-serif',markerFont:'800 14px Manrope, Arial, sans-serif'}},
-      notation:{rhythmMode:'ShowWithBars',rhythmHeight:34,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false,chordDiagrams:false}},
+      notation:{rhythmMode:'ShowWithBars',rhythmHeight:34,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false,chordDiagrams:false,effectPalmMute:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Continuous',scrollElement:$('riffAt').parentElement,scrollOffsetY:-12}   // длинный таб едет внутри окна (не выше двух строк), страница стоит на месте
     });
     api.isLooping=true;api.playbackSpeed=SPEED;
