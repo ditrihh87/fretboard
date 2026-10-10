@@ -23,6 +23,21 @@ const credits = s => {
   return a.length ? [(a.length > 1 ? 'Авторы: ' : 'Автор: ') + a.join(', ')] : [];
 };
 
+/* перебор / вступление к песне с аккордами: riffs/<id>.json {name, where, file | tex} (кладёт сервер по кнопке владельца) */
+const riffOf = s => {
+  if (s.tab) return null;
+  const j = path.join(ROOT, 'riffs', s.id + '.json');
+  if (!fs.existsSync(j)) return null;
+  try {
+    const m = JSON.parse(fs.readFileSync(j, 'utf8')), o = { name: String(m.name || 'Перебор').slice(0, 30) };
+    if (m.where) o.where = String(m.where).slice(0, 60);
+    if (typeof m.file === 'string' && /^riffs\/[a-z0-9-]{1,80}\.(gp|gp3|gp4|gp5|gpx)$/.test(m.file) && fs.existsSync(path.join(ROOT, m.file))) o.src = m.file;
+    else if (typeof m.tex === 'string' && m.tex.trim()) o.tex = m.tex.slice(0, 20000);
+    else return null;
+    return o;
+  } catch (e) { console.warn('riffs/' + s.id + '.json:', e.message); return null; }
+};
+
 const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].split('|')[0].trim()).filter(Boolean))];
 
 /* «Также ищут» сами: первая строчка первого куплета и первая строчка припева (если он есть) —
@@ -128,7 +143,7 @@ ${s.tab ? '<p>Таб со звуком: слушай, замедляй и игр
   const swap = (re, rep) => { if (!re.test(html)) throw new Error('шаблон song.html изменился: ' + re); html = html.replace(re, rep); };
   // все относительные адреса (стили, скрипты, songs.json, табы) — от корня сайта
   swap(/<head>/, `<head>\n<base href="../">`);
-  swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${coverOf(s) || SITE + 'brand/ditrihh-logo-dark.png'}">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};</script>`);
+  swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${coverOf(s) || SITE + 'brand/ditrihh-logo-dark.png'}">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};${(r => r ? `window.SONG_RIFF=${JSON.stringify(r).replace(/</g, '\\u003c')};` : '')(riffOf(s))}</script>`);
   swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(descFull)}">${aka.length ? `\n<meta name="keywords" content="${esc([s.title, s.artist, ...aka].filter(Boolean).map(k => k.replace(/,/g, '')).join(', '))}">` : ''}\n<meta property="og:description" content="${esc(desc)}">`);
   swap(/<div id="content">[\s\S]*?<\/div>\n/, `<div id="content">${pre}</div>\n`);
   return { file: path.join(ROOT, DIRS[kind], s.id + '.html'), url, html };

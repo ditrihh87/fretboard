@@ -25,6 +25,41 @@
   /* страница никогда не шире экрана — на телефоне не «ездит» вбок */
   html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
   .panel{max-width:100%}
+  /* перебор / вступление: короткий таб со звуком на странице аккордов */
+  .riff{margin:0 0 22px;border-radius:20px;padding:18px 18px 14px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.88));box-shadow:inset 0 0 0 1px rgba(110,123,255,.28)}
+  .riff .rh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:10px}
+  .riff .rk{font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:#B3AEE8}
+  .riff .chip{font-weight:800;font-size:12px;padding:4px 9px;border-radius:999px;background:rgba(239,236,251,.08);color:#CFCCF2}
+  .riff h2{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;margin:0;flex-basis:100%}
+  .riff .rv{position:relative;border-radius:14px;background:rgba(7,6,26,.55);overflow-x:auto;padding:4px 6px;min-height:150px}
+  .riff .rload{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:14px}
+  .riff .rload[hidden]{display:none}
+  .riff .rc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+  .riff .rc .pl{width:46px;height:46px;border-radius:50%;border:none;background:var(--amber);color:#1b1b1b;font-size:18px;box-shadow:0 4px 0 var(--amber-d);cursor:pointer;padding-left:3px}
+  .riff .rc .pl.pause{padding-left:0}.riff .rc .pl:disabled{opacity:.5;cursor:default}
+  .riff .rc .b{border:none;border-radius:11px;padding:10px 13px;background:var(--card);color:var(--paper);font:800 13px var(--body);cursor:pointer}
+  .riff .rc .b:hover{background:var(--card2)}
+  .riff .rc .b.on{background:rgba(240,168,48,.18);color:#F3C06A;box-shadow:inset 0 0 0 1px rgba(240,168,48,.45)}
+  .riff .rc .sp{margin-left:auto;color:var(--muted);font-weight:700;font-size:12px}
+  .riff .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
+  .riff .at-cursor-bar{background:transparent}
+  .riff .at-selection div{background:rgba(111,191,115,.22)}
+  @media (max-width:560px){.riff{padding:14px 12px 12px}.riff .rc .sp{flex-basis:100%;margin-left:0}}
+  /* владелец: добавить / изменить перебор */
+  .rown{display:flex;justify-content:flex-end;margin:0 0 12px}
+  .rown>button{border:none;border-radius:11px;padding:9px 13px;background:var(--card);color:#CFCCF2;font:800 13px var(--body);cursor:pointer}
+  .rform{margin:0 0 22px;padding:16px;border-radius:18px;background:rgba(28,24,72,.85);box-shadow:inset 0 0 0 1px rgba(240,168,48,.35);display:grid;gap:10px}
+  .rform[hidden]{display:none}
+  .rform .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rform label{display:grid;gap:5px;font-weight:800;font-size:13px;color:#CFCCF2}
+  .rform input,.rform select,.rform textarea{background:rgba(12,10,36,.7);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:10px;padding:10px 12px;color:var(--paper);font:600 14px var(--body)}
+  .rform textarea{min-height:110px;font:600 13px ui-monospace,Menlo,monospace}
+  .rform .rb{display:flex;flex-wrap:wrap;gap:8px}
+  .rform .rb button{border:none;border-radius:11px;padding:10px 14px;font:800 14px var(--body);cursor:pointer;background:var(--card2);color:var(--paper)}
+  .rform .rb .go{background:var(--amber);color:#1b1b1b}
+  .rform .rmsg{font-weight:700;font-size:13px;color:#8FD493;min-height:1.2em}.rform .rmsg.bad{color:#F26B6F}
+  .rform small{color:var(--muted);font-weight:600;font-size:12px;line-height:1.45}
+  @media (max-width:560px){.rform .r2{grid-template-columns:1fr}}
   #atScroll{overscroll-behavior:contain;touch-action:pan-x pan-y}
   .type{font-weight:800;font-size:12px;letter-spacing:.5px;padding:5px 10px;border-radius:999px;text-transform:uppercase}
   .type.ch{background:rgba(110,123,255,.2);color:#B3BAFF}.type.tb{background:rgba(240,168,48,.18);color:#F3C06A}
@@ -512,6 +547,81 @@ function renderChordsPage(){
   $('scrollBtn').onclick=toggleScroll;
   drawSong();
   floatVid();
+  riffBlock();
+}
+/* ===== Перебор / вступление: короткий таб со звуком (riffs/<id>.json → window.SONG_RIFF при сборке страницы) ===== */
+function riffBlock(){
+  const R=window.SONG_RIFF;
+  let own=false;try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');own=!!(l&&l.prov==='admin');}catch(e){}
+  const panel=document.querySelector('#content .panel');if(!panel)return;
+  if(own)riffOwner(panel,R);
+  if(!R||(!R.src&&!R.tex))return;
+  const name=R.name||'Перебор',sp=[1,.75,.5];let spI=0,api=null,ready=false;
+  const box=document.createElement('section');box.className='riff';box.id='riff';
+  box.innerHTML=`<div class="rh"><span class="rk">${esc(name)}</span>${R.where?`<span class="chip">${esc(R.where)}</span>`:''}<span class="chip" id="rBars" hidden></span><h2>${esc(name==='Перебор'?'Как играть перебор':name==='Бой'?'Как играть бой':name+': как играть')}</h2></div>
+    <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
+    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rView" aria-pressed="false">Показать ноты</button><span class="sp">Слушай, замедляй и играй вместе</span></div>`;
+  panel.before(box);
+  const ui=()=>{$('rSpd').textContent='Скорость '+Math.round(sp[spI]*100)+'%';$('rSpd').classList.toggle('on',spI>0);
+    const lp=!api||api.isLooping;$('rLoop').classList.toggle('on',lp);$('rLoop').setAttribute('aria-pressed',lp);};
+  const narrow=()=>innerWidth<700;
+  loadAlphaTab().then(()=>{
+    api=new alphaTab.AlphaTabApi($('riffAt'),{
+      core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
+      display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
+        resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif'}},
+      notation:{rhythmMode:'ShowWithBars',rhythmHeight:20,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false}},
+      player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true}
+    });
+    api.isLooping=true;
+    api.scoreLoaded.on(sc=>{const n=sc.masterBars.length;if(n){$('rBars').textContent=n+' '+(n%10===1&&n%100!==11?'такт':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'такта':'тактов');$('rBars').hidden=false;}
+      sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;});});   // нейлон → сталь, как в табах
+    api.renderFinished.on(()=>{$('rLoad').hidden=true;});
+    api.playerReady.on(()=>{ready=true;$('rPlay').disabled=false;});
+    api.playerStateChanged.on(e=>{const on=e.state===1;$('rPlay').textContent=on?'❚❚':'▶';$('rPlay').classList.toggle('pause',on);});
+    api.error.on(e=>{$('rLoad').hidden=false;$('rLoad').textContent='Не удалось открыть таб.';console.error('riff',e);});
+    if(R.tex)api.tex(R.tex);else api.load(new URL(R.src,document.baseURI).href);
+    $('rPlay').onclick=()=>ready&&api.playPause();
+    $('rSpd').onclick=()=>{spI=(spI+1)%sp.length;api.playbackSpeed=sp[spI];ui();};
+    $('rLoop').onclick=()=>{api.isLooping=!api.isLooping;ui();};
+    $('rView').onclick=()=>{const sc=api.settings.display.staveProfile===alphaTab.StaveProfile.ScoreTab;
+      api.settings.display.staveProfile=sc?alphaTab.StaveProfile.Tab:alphaTab.StaveProfile.ScoreTab;api.updateSettings();api.render();
+      $('rView').textContent=sc?'Показать ноты':'Только таб';$('rView').setAttribute('aria-pressed',!sc);};
+    let wNarrow=narrow();addEventListener('resize',()=>{if(narrow()===wNarrow)return;wNarrow=narrow();const d=api.settings.display;d.barsPerRow=wNarrow?2:4;d.scale=wNarrow?.85:1;api.updateSettings();api.render();});
+    ui();
+  }).catch(()=>{$('rLoad').textContent='Не удалось загрузить плеер табов.';});
+}
+/* владелец: добавить / заменить / убрать перебор прямо со страницы песни (файл Guitar Pro или текст alphaTex) */
+function riffOwner(panel,R){
+  const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
+  const bar=document.createElement('div');bar.className='rown';
+  bar.innerHTML=`<button type="button" id="rEdit">${R?'✎ Изменить перебор':'＋ Добавить перебор / вступление'}</button>`;
+  const f=document.createElement('form');f.className='rform';f.hidden=true;
+  const names=['Перебор','Вступление','Риф','Проигрыш','Бой'];
+  f.innerHTML=`<div class="r2"><label>Что это<select id="rfN">${names.map(n=>`<option${R&&R.name===n?' selected':''}>${n}</option>`).join('')}</select></label>
+    <label>Где играется (необязательно)<input id="rfW" maxlength="60" placeholder="например, вступление и куплет" value="${esc(R&&R.where||'')}"></label></div>
+    <label>Файл Guitar Pro (gp, gp5, gpx…)<input type="file" id="rfF" accept=".gp,.gp3,.gp4,.gp5,.gpx"></label>
+    <label>…или текст alphaTex<textarea id="rfT" spellcheck="false" placeholder="\\tempo 90&#10;.&#10;:8 0.4 2.3 3.2 1.1 3.2 2.3 3.2 2.3 |">${esc(R&&R.tex||'')}</textarea></label>
+    <small>2–4 такта: характерный перебор, вступление или риф. Появится на странице через 1–2 минуты после публикации.</small>
+    <div class="rb"><button class="go" type="submit">Опубликовать</button>${R?'<button type="button" id="rfDel">Убрать перебор</button>':''}<button type="button" id="rfX">Отмена</button></div>
+    <div class="rmsg" id="rfM"></div>`;
+  panel.before(bar,f);
+  const msg=(t,bad)=>{$('rfM').textContent=t;$('rfM').className='rmsg'+(bad?' bad':'');};
+  const tok=()=>{try{return (JSON.parse(localStorage.getItem('dgc_link')||'null')||{}).token;}catch(e){return null;}};
+  const call=async b=>{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(Object.assign({token:tok(),id:SONG.id},b))});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('ошибка '+r.status));return j;};
+  $('rEdit').onclick=()=>{f.hidden=!f.hidden;};
+  $('rfX').onclick=()=>{f.hidden=true;};
+  f.onsubmit=async e=>{e.preventDefault();const file=$('rfF').files[0],tex=$('rfT').value.trim();
+    const b={action:'publish_riff',name:$('rfN').value,where:$('rfW').value.trim()};
+    try{
+      if(file){const ext=(file.name.split('.').pop()||'').toLowerCase();if(!/^(gp|gp3|gp4|gp5|gpx)$/.test(ext))return msg('Нужен файл Guitar Pro: gp, gp3, gp4, gp5 или gpx.',true);
+        if(file.size>2e6)return msg('Файл больше 2 МБ — для перебора хватит 2–4 тактов.',true);
+        const buf=new Uint8Array(await file.arrayBuffer());let bin='';for(let i=0;i<buf.length;i+=32768)bin+=String.fromCharCode.apply(null,buf.subarray(i,i+32768));b.file={ext,data:btoa(bin)};}
+      else if(tex)b.tex=tex;else return msg('Выбери файл Guitar Pro или вставь текст alphaTex.',true);
+      msg('Публикую…');await call(b);msg('Готово! Перебор появится на странице через 1–2 минуты.');
+    }catch(err){msg('Не получилось: '+err.message,true);}};
+  const del=document.getElementById('rfDel');if(del)del.onclick=async()=>{if(!confirm('Убрать перебор с этой песни?'))return;
+    try{msg('Убираю…');await call({action:'riff_del'});msg('Убрано. Со страницы пропадёт через 1–2 минуты.');}catch(err){msg('Не получилось: '+err.message,true);}};
 }
 /* видео с игрой — плавающее окно в правом нижнем углу (только компьютер); можно свернуть в кнопку «▶ Видео» */
 function floatVid(){
