@@ -173,6 +173,10 @@ const CSS=`
 .riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 18px color-mix(in srgb,var(--sc) 55%,transparent),0 4px 0 color-mix(in srgb,var(--sc) 55%,#000)}
 .riff .chip.sec[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent)}
 .riff .rh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:8px}
+.riff .rchs{display:inline-flex;flex-wrap:wrap;gap:6px}
+.riff .rchs[hidden]{display:none}
+.riff .rchs i{font-style:normal;font-weight:800;font-size:15px;line-height:1;padding:7px 11px;border-radius:10px;color:var(--amber);background:rgba(240,168,48,.12);box-shadow:inset 0 0 0 1px rgba(240,168,48,.25)}
+.riff .rdesc.soft{color:#B9B4E6;font-size:14px;font-weight:600;margin:2px 0 12px}
 .riff .chip.pat{background:rgba(240,168,48,.16);color:#F3C06A}
 .riff h2 .sw[style*="--sc"]{color:var(--sc)}
 .riff .chip{font-weight:800;font-size:12px;padding:4px 9px;border-radius:999px;background:rgba(239,236,251,.08);color:#CFCCF2}
@@ -329,8 +333,8 @@ function draw(){
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const pat=P?(own?(P.kind==='b'?'Бой':'Перебор')+' — свой рисунок':(P.kind==='b'?'Бой':'Перебор')+' «'+P.name+'»'):'';
   const what=String(p.where||p.type||'').trim().toLowerCase().replace(/\s*[×xх]\s*\d+.*$/i,'');
-  box.innerHTML=`<div class="rh">${pat?`<span class="chip pat">${H(pat)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>Вот так <span class="brandtxt">ditrihh</span> играет <span class="sw"${sc(p)}>${H(what)}</span></h2></div>
-    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc">Записано ditrihh нота в ноту: слушай, замедляй и играй вместе. Аккорды над табом — как в тексте песни.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
+  box.innerHTML=`<div class="rh">${pat?`<span class="chip pat">${H(pat)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="rchs" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>Вот так <span class="brandtxt">ditrihh</span> играет <span class="sw"${sc(p)}>${H(what)}</span></h2></div>
+    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc soft">Нота в ноту, как играю я — слушай, замедляй и повторяй.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b ic" id="rLoop" aria-pressed="false" aria-label="Повтор" title="Повтор по кругу"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button><button class="b" id="rCol" aria-pressed="true">🎨 Цвета</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
@@ -488,7 +492,7 @@ function render(p,gen){
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
-      if(!gen){try{const r=autoChords(sc,songVocab(p.where),p.labels),n=r&&r.names;const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
+      if(!gen){try{const r=autoChords(sc,songVocab(p.where),p.labels),n=r&&r.names;const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.innerHTML=u.slice(0,10).map(x=>`<i>${H(x)}</i>`).join('');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
       // каждая цифра — цветом своей струны; интервал / аккорд — ещё и стрелка удара (если в файле не задана)
       S.score=sc;try{paintNotes(sc);}catch(e){console.warn('riff colors',e);}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
