@@ -286,7 +286,7 @@ function draw(){
   box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
-    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rView" aria-pressed="false">Показать ноты</button><span class="sp">Слушай, замедляй и играй вместе</span></div>`;
+    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
   const ed=box.querySelector('#rEditIn');if(ed)ed.onclick=()=>window.RIFF_EDIT&&RIFF_EDIT(S.cur);
   render(p,gen);
@@ -312,7 +312,7 @@ function render(p,gen){
       core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
       display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
         resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif',barNumberFont:'600 11px Manrope, Arial, sans-serif',markerFont:'800 14px Manrope, Arial, sans-serif'}},
-      notation:{rhythmMode:'ShowWithBars',rhythmHeight:20,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
+      notation:{rhythmMode:'ShowWithBars',rhythmHeight:34,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Continuous',scrollElement:$('riffAt').parentElement,scrollOffsetY:-12}   // длинный таб едет внутри окна (не выше двух строк), страница стоит на месте
     });
     api.isLooping=true;api.playbackSpeed=SPEED;
@@ -341,12 +341,16 @@ function render(p,gen){
     $('rPlay').onclick=()=>S.ready&&api.playPause();
     $('rSpd').onclick=()=>{SPEED=sp[(sp.indexOf(SPEED)+1)%sp.length];api.playbackSpeed=SPEED;ui();};
     $('rLoop').onclick=()=>{api.isLooping=!api.isLooping;ui();};
-    $('rView').onclick=()=>{const sc=api.settings.display.staveProfile===alphaTab.StaveProfile.ScoreTab;
-      api.settings.display.staveProfile=sc?alphaTab.StaveProfile.Tab:alphaTab.StaveProfile.ScoreTab;api.updateSettings();api.render();
-      $('rView').textContent=sc?'Показать ноты':'Только таб';$('rView').setAttribute('aria-pressed',!sc);};
     ui();
   }).catch(()=>{const l=$('rLoad');if(l)l.textContent='Не удалось загрузить плеер табов.';});
 }
+/* пробел — играть / пауза (если курсор не в поле ввода) */
+addEventListener('keydown',e=>{
+  if(!(e.code==='Space'||e.key===' ')||!S||!S.api||!S.ready||e.ctrlKey||e.metaKey||e.altKey)return;
+  const a=document.activeElement;if(a&&(/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)||a.isContentEditable))return;
+  if(a&&a.tagName==='BUTTON'&&!a.closest('.riff'))return;   // пробел на другой кнопке — пусть нажимает её
+  e.preventDefault();S.api.playPause();
+});
 let wN=narrow();
 addEventListener('resize',()=>{if(!S||!S.api||narrow()===wN)return;wN=narrow();const d=S.api.settings.display;d.barsPerRow=wN?2:4;d.scale=wN?.85:1;S.api.updateSettings();S.api.render();});
 
@@ -417,7 +421,7 @@ function ownerUI(panel){
     <div class="rh1"><b>Рисунки</b><table>${Object.values(PAT).map(P=>`<tr><td>${P.kind==='b'?'Бой':'Перебор'} «${H(P.name)}»</td><td><code>${P.kind==='b'?[...P.grid].map(c=>SYM[c]).join(' '):H(P.schema)}</code></td><td>${P.ts===3?'3/4':'4/4'}</td><td>${H(P.desc)}</td></tr>`).join('')}</table></div>
     <div class="rh1"><b>Что видят посетители</b><ul>
       <li>Вкладки частей, крупную схему боя стрелками со счётом (или порядок струн перебора) и короткое пояснение.</li>
-      <li>Таб со звуком (стальная акустика): ▶ играть, <b>скорость</b> 100 / 75 / 50%, <b>🔁 повтор</b> по кругу, <b>«Показать ноты»</b> — ноты над табом (по умолчанию только таб). Можно выделить такты мышью — повторяется участок.</li>
+      <li>Таб со звуком (стальная акустика): ▶ играть, <b>скорость</b> 100 / 75 / 50%, <b>🔁 повтор</b> по кругу, <b>пробел</b> — играть / пауза. Можно выделить такты мышью — повторяется участок.</li>
       <li>Во время игры подсвечивается текущая стрелка или струна, курсор бежит по табу. Окно не выше двух строк — длинный таб прокручивается внутри, страница стоит на месте.</li>
       <li>Сменили тон или включили «Простые аккорды» — таб перестраивается под новые аккорды.</li>
       <li>Для поисковиков на странице появляется строчка «Как играть: бой «шестёрка» (куплет)…».</li></ul></div>
