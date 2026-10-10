@@ -306,8 +306,7 @@
 .views svg{flex:none;opacity:.85}
 
 /* шапка без окна стрима: одна колонка, блок стрима идёт сразу под ней */
-.hero.solo{padding-bottom:8px}
-.hero.solo+section{padding-top:48px}
+main>h1.vh+section{padding-top:48px}
 .hero.solo .wrap{display:block}
 /* окно стрима: слои плеера и заставка, пока эфира нет */
 .screen .sc-layer{position:absolute;inset:0}
