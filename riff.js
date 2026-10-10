@@ -173,6 +173,9 @@ const CSS=`
 .riff h2{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;margin:0;flex-basis:100%}
 .riff .rdesc{color:var(--paper);font-weight:600;font-size:16px;line-height:1.55;margin:0 0 14px;max-width:760px}
 .riff .rleg{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.riff .rstr{align-items:center;gap:6px}
+.riff .rstr i{font-style:normal;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);box-shadow:inset 0 0 0 1.5px var(--c);color:var(--c);font-weight:800;font-size:13px}
+.riff .rstr .lt{background:none!important;box-shadow:none!important;padding:0 4px!important;color:var(--muted)!important;font-weight:700;font-size:13px}
 .riff .rleg span{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(239,236,251,.07);box-shadow:inset 0 0 0 1px rgba(110,123,255,.22);color:#E2DEFA;font-weight:700;font-size:14px}
 .riff .rleg b{min-width:28px;height:28px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;border-radius:999px;background:rgba(7,6,26,.6);color:var(--paper);font-size:17px;font-weight:800}
 .riff .rleg b.dn,.riff .rleg b.up{color:var(--paper)}.riff .rleg b.x{color:#FF7A7E}.riff .rleg b.bs{color:#F3C06A;font-size:15px}.riff .rleg b.h{color:rgba(239,236,251,.45)}
@@ -301,7 +304,7 @@ function draw(){
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):`${p.type} — партия ditrihh`;
   box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
-    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc">Записано ditrihh нота в ноту: слушай, замедляй и играй вместе. Аккорды над табом — как в тексте песни.</p>`}${scheme}${P?legend(P,p):''}
+    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc">Записано ditrihh нота в ноту: слушай, замедляй и играй вместе. Аккорды над табом — как в тексте песни.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
@@ -418,12 +421,15 @@ function autoChords(score,V,labels){
   const out={};for(let k=1;k<=st.bars.length;k++)out[k]=(bars[k]||[]).join(' ');
   return {names,bars:out,count:st.bars.length};
 }
+/* цвета струн — как на страницах табов: 6-я (толстая) красная … 1-я (тонкая) сиреневая */
+const SCOL=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7'];
+const strLegend=()=>`<div class="rleg rstr"><span class="lt">Струны:</span>${[1,2,3,4,5,6].map(k=>`<i style="--c:${SCOL[6-k]}">${k}</i>`).join('')}<span class="lt">1 — самая тонкая · ↑↓ над аккордом — удар вниз / вверх</span></div>`;
 /* обозначения под схемой — только те, что встречаются в рисунке */
 function legend(P,p){
   let it;
   if(P.kind==='b'){const g=gridOf(p,P)+(p.chords||[]).map(c=>{const e=String(c).indexOf('=');return e<0?'':barGrid(String(c).slice(e+1),P)||'';}).join('');
     it=[['D','↓','вниз','dn'],['U','↑','вверх','up'],['X','✕','вниз с глушением','x'],['B','Б','бас (большой палец)','bs'],['-','·','пауза — звук тянется','h']].filter(([k])=>g.includes(k));}
-  else it=[['','Б','бас аккорда (большой палец)','bs'],...(/Б₂/.test(P.schema)?[['','Б₂','соседняя басовая струна','bs']]:[]),['','1 2 3','струны: 1 — самая тонкая','']];
+  else it=[['','Б','бас аккорда (большой палец)','bs'],...(/Б₂/.test(P.schema)?[['','Б₂','соседняя басовая струна','bs']]:[])];
   return `<div class="rleg">${it.map(([,sym,txt,c])=>`<span><b class="${c}">${sym}</b>${txt}</span>`).join('')}</div>`;
 }
 function stop(){try{S.api&&S.api.stop();}catch(e){}}
@@ -448,6 +454,12 @@ function render(p,gen){
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
       if(!gen){try{const r=autoChords(sc,songVocab(p.where),p.labels),n=r&&r.names;const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
+      // одиночная нота — цвет её струны; интервал / аккорд — стрелка направления удара (если в файле не задана)
+      try{const NS=alphaTab.model.NoteSubElement.GuitarTabFretNumber,BT=alphaTab.model.BrushType,cols=SCOL.map(c=>alphaTab.model.Color.fromJson(c));
+        sc.tracks.forEach(t=>t.staves.forEach(stv=>{const n=stv.tuning&&stv.tuning.length||6;
+          stv.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{const ns=bt.notes.filter(x=>!x.isTieDestination);
+            if(ns.length>=2){if(!bt.brushType)bt.brushType=BT.BrushDown;return;}
+            ns.forEach(nt=>{if(!nt.style)nt.style=new alphaTab.model.NoteStyle();nt.style.colors.set(NS,cols[Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)))]);});})));}));}catch(e){console.warn('riff colors',e);}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
       sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
         t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
