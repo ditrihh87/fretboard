@@ -456,12 +456,12 @@ function render(p,gen){
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
       if(!gen){try{const r=autoChords(sc,songVocab(p.where),p.labels),n=r&&r.names;const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
-      // одиночная нота — цвет её струны; интервал / аккорд — стрелка направления удара (если в файле не задана)
+      // каждая цифра — цветом своей струны; интервал / аккорд — ещё и стрелка удара (если в файле не задана)
       try{const NS=alphaTab.model.NoteSubElement.GuitarTabFretNumber,BT=alphaTab.model.BrushType,cols=SCOL.map(c=>alphaTab.model.Color.fromJson(c));
         sc.tracks.forEach(t=>t.staves.forEach(stv=>{const n=stv.tuning&&stv.tuning.length||6;
           stv.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{const ns=bt.notes.filter(x=>!x.isTieDestination);
-            if(ns.length>=2){if(!bt.brushType)bt.brushType=BT.BrushDown;return;}
-            ns.forEach(nt=>{if(!nt.style)nt.style=new alphaTab.model.NoteStyle();nt.style.colors.set(NS,cols[Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)))]);});})));}));}catch(e){console.warn('riff colors',e);}
+            if(ns.length>=2&&!bt.brushType)bt.brushType=BT.BrushDown;
+            bt.notes.forEach(nt=>{if(!nt.style)nt.style=new alphaTab.model.NoteStyle();nt.style.colors.set(NS,cols[Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)))]);});})));}));}catch(e){console.warn('riff colors',e);}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
       sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
         t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
