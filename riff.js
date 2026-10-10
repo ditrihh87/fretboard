@@ -159,13 +159,13 @@ function buildTex(part,map){
 /* ===== внешний вид ===== */
 const CSS=`
 .riff{margin:0 0 22px;border-radius:20px;padding:18px 18px 14px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.88));box-shadow:inset 0 0 0 1px rgba(110,123,255,.28)}
-.riff .rtabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px}
-.riff .rtabs button{flex:none;border:none;border-radius:11px;padding:9px 13px;background:var(--card);color:var(--muted);font:800 13px var(--body);cursor:pointer;white-space:nowrap}
+.riff .rtabs{display:flex;gap:8px;overflow-x:auto;margin:0 0 16px;padding-bottom:2px}
+.riff .rtabs button{flex:none;border:none;border-radius:13px;padding:11px 18px;background:var(--card);color:var(--muted);font:800 15px var(--body);cursor:pointer;white-space:nowrap;transition:background .15s,box-shadow .15s,transform .15s}
 .riff .rtabs button[aria-selected="true"]{background:var(--amber);color:#1b1b1b}
-.riff .rtabs button[style*="--sc"]{color:var(--sc);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sc) 35%,transparent)}
-.riff .rtabs button[style*="--sc"]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:7px;vertical-align:1px}
-.riff .rtabs button[style*="--sc"]:hover{background:color-mix(in srgb,var(--sc) 14%,var(--card))}
-.riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 14px color-mix(in srgb,var(--sc) 45%,transparent)}
+.riff .rtabs button[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 14%,var(--card));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--sc) 55%,transparent)}
+.riff .rtabs button[style*="--sc"]::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:currentColor;margin-right:7px;vertical-align:1px}
+.riff .rtabs button[style*="--sc"]:hover{background:color-mix(in srgb,var(--sc) 24%,var(--card));transform:translateY(-1px)}
+.riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 18px color-mix(in srgb,var(--sc) 55%,transparent),0 4px 0 color-mix(in srgb,var(--sc) 55%,#000)}
 .riff .chip.sec[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent)}
 .riff .rh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:8px}
 .riff .rk{font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:#B3AEE8}
@@ -199,7 +199,7 @@ const CSS=`
 .riff .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
 .riff .at-cursor-bar{background:transparent}
 .riff .at-selection div{background:rgba(111,191,115,.22)}
-@media (max-width:560px){.riff{padding:14px 12px 12px}.riff .rc .sp{flex-basis:100%;margin-left:0}.riff .rgrid span{min-width:32px}}
+@media (max-width:560px){.riff .rtabs button{padding:10px 14px;font-size:14px}.riff{padding:14px 12px 12px}.riff .rc .sp{flex-basis:100%;margin-left:0}.riff .rgrid span{min-width:32px}}
 .rown{display:flex;justify-content:flex-end;margin:0 0 12px}
 .rown[hidden]{display:none}
 .riff .redit{margin-left:auto;border:none;border-radius:10px;padding:7px 12px;background:var(--card);color:#CFCCF2;font:800 13px var(--body);cursor:pointer}
@@ -250,8 +250,11 @@ const CSS=`
 let S=null;   // {parts, cur, api, ready, map, box, key}
 const H=t=>esc(String(t==null?'':t));
 const narrow=()=>innerWidth<700;
-function title(p){const P=PAT[p.pattern],w=String(p.where||'').trim(),same=w&&w.toLowerCase().replace(/ё/g,'е').startsWith(p.type.toLowerCase().replace(/ё/g,'е'));
-  return p.type+(w&&!same?' · '+w.toLowerCase():'')+(P&&!w?' · '+P.name:'');}
+/* вкладка: просто раздел («Куплет», «Припев»); тип («бой», «перебор») — только если у раздела несколько частей */
+function title(p){const P=PAT[p.pattern],w=String(p.where||'').trim();
+  if(!w)return p.type+(P?' · '+P.name:'');
+  const same=S.parts.filter(x=>String(x.where||'').trim().toLowerCase()===w.toLowerCase()).length>1;
+  return w[0].toUpperCase()+w.slice(1)+(same?' · '+p.type.toLowerCase():'');}
 
 function mount(){
   if(!document.getElementById('riffCss')){const st=document.createElement('style');st.id='riffCss';st.textContent=CSS;document.head.appendChild(st);}
