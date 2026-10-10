@@ -114,10 +114,16 @@ function seqOf(toks){
     if(t===')')continue;
     const m=/^x([2-8])$/.exec(t);
     if(m){const from=grp!=null?grp:seg;if(out.length>from){out[from].ro=true;out[out.length-1].rc=+m[1];}grp=null;seg=out.length;continue;}
-    out.push({c:t});
+    const eq=t.indexOf('=');   // «Gm+A5+C5=v.v^v.v.» — свой ритм такта
+    out.push(eq>0?{c:t.slice(0,eq),g:t.slice(eq+1)}:{c:t});
   }
   return out.slice(0,32);   // до 32 тактов
 }
+/* ритм отдельного такта (только для боя): по восьмым, как «1 и 2 и…»:
+   v ↓ D — вниз, ^ ↑ U — вверх, x ✕ — вниз с глушением, b Б — бас, . · - — пауза / звук тянется */
+const barGrid=(g,P)=>{if(!g||!P||P.kind!=='b')return null;
+  const n=[...String(g)].map(ch=>/[vVDвВ↓]/.test(ch)?'D':/[\^uU↑]/.test(ch)?'U':/[xXхХ✕]/.test(ch)?'X':/[bBбБ]/.test(ch)?'B':/[.\-·_]/.test(ch)?'-':'').join('');
+  return n.length===P.grid.length&&n[0]!=='-'?n:null;};
 // «Gm+Gm+A5+C5» — несколько аккордов в такте: делят такт поровну (Gm на 1–2, A5 на 3, C5 на 4)
 const subs=c=>String(c).split('+').filter(Boolean);
 const mapC=(c,map)=>subs(c).map(map).join('+');
@@ -128,18 +134,19 @@ function buildTex(part,map){
   const seq=seqOf(part.chords&&part.chords.length?part.chords:sectionChords(part.where)).map(x=>Object.assign({},x,{c:mapC(x.c,map)})).filter(x=>x.c);
   if(!seq.length)return null;
   const ev=P.ev||gridEv(gridOf(part,P));
-  const bars=[],used=[];
+  const bars=[],used=[],grids=[];
   const slots=ev.reduce((t,[,d])=>t+d,0);
   for(const x of seq){
+    const bg=barGrid(x.g,P),bev=bg?gridEv(bg):ev;
     // аккорды такта: делят такт поровну; лишние (не делят такт ровно) — отбрасываем до ближайшего делителя
     let cs=subs(x.c);while(cs.length>1&&slots%cs.length)cs=cs.slice(0,-1);
     const vs=cs.map(voices);if(vs.some(v=>!v))continue;
     const per=slots/cs.length;let t=0,prev=-1;
-    bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+ev.map(([tok,d])=>{const k=Math.min(cs.length-1,Math.floor(t/per));t+=d;
+    grids.push(bg);bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+bev.map(([tok,d])=>{const k=Math.min(cs.length-1,Math.floor(t/per));t+=d;
       const nm=cs[k].split('|')[0],show=k!==prev&&(prev<0||nm!==cs[prev].split('|')[0]);prev=k;return beat(tok,vs[k],d,show,nm);}).join(' '));used.push(x);
   }
   if(!bars.length)return null;
-  return {tex:`\\tempo ${part.bpm||(P.kind==='b'?96:80)}\n.\n\\ts ${P.ts} 4 `+bars.join(' |\n'),chords:used.map(x=>x.c),label:seqLabel(used)};
+  return {tex:`\\tempo ${part.bpm||(P.kind==='b'?96:80)}\n.\n\\ts ${P.ts} 4 `+bars.join(' |\n'),chords:used.map(x=>x.c),label:seqLabel(used),grids};
 }
 
 /* ===== внешний вид ===== */
@@ -307,7 +314,9 @@ function render(p,gen){
     const P=PAT[p.pattern],ev=P?(P.ev||gridEv(gridOf(p,P))):null,starts=[];if(ev){let t=0;ev.forEach(([,d])=>{starts.push(t);t+=d;});}
     const cells=()=>S.box.querySelectorAll(P&&P.kind==='b'?'.rgrid span':'.rseq i');
     const lit=i=>cells().forEach((c,k)=>c.classList.toggle('now',k===i));
-    if(ev)api.playedBeatChanged.on(b=>{if(!b)return;const i=b.index;lit(P.kind==='b'?starts[i]:i);});
+    const bStarts=(gen&&gen.grids||[]).map(g=>{if(!g)return null;const a=[];let t=0;gridEv(g).forEach(([,d])=>{a.push(t);t+=d;});return a;});
+    if(ev)api.playedBeatChanged.on(b=>{if(!b)return;const i=b.index;let bi=-1;try{bi=b.voice.bar.index;}catch(e){}
+      const st=bStarts[bi]||starts;lit(P.kind==='b'?st[i]:i);});
     api.playerStateChanged.on(e=>{if(e.state!==1)lit(-1);});
     api.playerReady.on(()=>{S.ready=true;const b=$('rPlay');if(b)b.disabled=false;});
     api.playerStateChanged.on(e=>{const b=$('rPlay');if(!b)return;const on=e.state===1;b.textContent=on?'❚❚':'▶';b.classList.toggle('pause',on);});
@@ -374,6 +383,7 @@ function ownerUI(panel){
       <tr><td><code>Dm F Gm A x3 | Bb C</code></td><td>первая группа 3 раза, вторая один; « | » — отдельным словом, через пробелы</td></tr>
       <tr><td><code>(Dm F) x2 Gm A</code></td><td>повтор только того, что в скобках</td></tr>
       <tr><td><code>Gm+A5</code></td><td>два аккорда в одном такте — по половине такта (на «1–2» и «3–4»)</td></tr>
+      <tr><td><code>Gm+Gm+A5+C5=v.v^v.v.</code></td><td>свой ритм этого такта (только бой): после «=» удары по восьмым «1 и 2 и 3 и 4 и» — <b>v</b> вниз, <b>^</b> вверх, <b>x</b> с глушением, <b>b</b> бас, <b>.</b> пауза / звук тянется. Здесь: Gm ↓ ↓↑, A5 ↓, C5 ↓</td></tr>
       <tr><td><code>Gm+Gm+A5+C5</code></td><td>Gm на «1–2», A5 на «3», C5 на «4»: аккорды через «+» делят такт поровну, повтор аккорда — дольше звучит</td></tr>
       <tr><td><code>Am|5x5553 C</code></td><td>аккорд со своей аппликатурой — как в тексте песни</td></tr>
       <tr><td>пусто</td><td>аккорды из раздела «Где играется»; раздел «Вступление ×4» сам даёт повтор ×4</td></tr></table>
