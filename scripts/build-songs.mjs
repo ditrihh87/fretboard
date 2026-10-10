@@ -17,10 +17,10 @@ const okId = id => typeof id === 'string' && /^[a-z0-9-]{1,80}$/.test(id);
 const songs = JSON.parse(fs.readFileSync(path.join(ROOT, 'songs.json'), 'utf8'));
 const tpl = fs.readFileSync(path.join(ROOT, 'song.html'), 'utf8');
 
-// как в Яндекс Музыке: «Авторы: …» (слова и музыка вместе, без повторов) и «Источник: …» (кто подобрал аккорды)
+// как в Яндекс Музыке: «Автор(ы): …» — слова и музыка вместе, без повторов
 const credits = s => {
   const a = [...new Set([s.words, s.music].filter(Boolean))];
-  return [a.length ? 'Авторы: ' + a.join(', ') : '', s.chordsBy ? 'Источник: ' + s.chordsBy : ''].filter(Boolean);
+  return a.length ? [(a.length > 1 ? 'Авторы: ' : 'Автор: ') + a.join(', ')] : [];
 };
 
 const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].split('|')[0].trim()).filter(Boolean))];
