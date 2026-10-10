@@ -47,7 +47,7 @@ function sectionChords(where){
     let on=false,out=[],times=0;
     for(const line of t.split('\n')){
       const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
-      if(cm){if(on&&out.length)break;on=cm[1].toLowerCase().replace(/ё/g,'е').startsWith(w.replace(/ё/g,'е').split(/[\s,]+/)[0]);
+      if(cm){if(on&&out.length)break;on=secMatch(cm[1],w);
         if(on){const r=cm[1].match(/[×xхX]\s*([2-8])\b/);times=r?+r[1]:0;}continue;}
       if(on)for(const m of line.matchAll(/\[([^\]]+)\]/g))out.push(m[1].trim());
     }
@@ -60,7 +60,12 @@ const dedupRun=a=>{const o=[];a.forEach(c=>{if(o[o.length-1]!==c)o.push(c);});co
   // строка из повторяющегося круга (Am F C G Am F C G) — берём один круг
   for(let k=1;k<=n/2;k++){if(n%k)continue;let ok=true;for(let i=k;i<n;i++)if(o[i]!==o[i-k]){ok=false;break;}if(ok)return o.slice(0,k);}
   return o;};
-function sectionNames(){const s=[];String(SONG.text||'').split('\n').forEach(l=>{const m=l.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);if(m){const n=m[1].replace(/\s*[×x]\s*\d+.*$/i,'').replace(/\s*\d+\s*$/,'').trim();if(n&&!s.includes(n))s.push(n);}});return s;}
+/* раздел текста подходит под «Где играется»: «Куплет 2» — только второй куплет; «Куплет» без номера — любой куплет (берём первый) */
+const secNorm=t=>String(t||'').toLowerCase().replace(/ё/g,'е').replace(/\s*[×xх]\s*\d+.*$/i,'').replace(/\s+/g,' ').trim();
+function secMatch(head,where){const h=secNorm(head),w=secNorm(where);if(!w)return false;
+  if(/\d/.test(w))return h===w;                                   // с номером — точное совпадение
+  return h.startsWith(w.split(/[\s,]+/)[0]);}
+function sectionNames(){const s=[];String(SONG.text||'').split('\n').forEach(l=>{const m=l.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);if(m){const n=m[1].replace(/\s*[×xх]\s*\d+.*$/i,'').trim();if(n&&!s.includes(n))s.push(n);}});return s;}
 
 /* ===== генератор alphaTex из рисунка и аккордов ===== */
 function voices(name){
@@ -361,7 +366,7 @@ function songVocab(where){
   const t=String(SONG.text||''),clean=c=>c.split('|')[0].trim(),w=String(where||'').trim().toLowerCase().replace(/ё/g,'е');
   const all=[...new Set(chordsIn(t).map(clean))],sec=new Set();
   if(w){let on=false;for(const line of t.split('\n')){const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
-    if(cm){on=cm[1].toLowerCase().replace(/ё/g,'е').startsWith(w.split(/[\s,]+/)[0]);continue;}
+    if(cm){on=secMatch(cm[1],w);continue;}
     if(on)for(const m of line.matchAll(/\[([^\]]+)\]/g))sec.add(clean(m[1]));}}
   return all.length?{all,sec}:null;
 }
