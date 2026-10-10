@@ -175,6 +175,8 @@ const CSS=`
 .riff .rleg{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .riff .rstr{align-items:center;gap:6px}
 .riff .rstr i{font-style:normal;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);box-shadow:inset 0 0 0 1.5px var(--c);color:var(--c);font-weight:800;font-size:13px}
+.riff .rstr i{transition:background .06s,color .06s,transform .06s,box-shadow .06s}
+.riff .rstr i.on{background:var(--c);color:#1b1b1b;transform:scale(1.18);box-shadow:0 0 14px var(--c)}
 .riff .rstr .lt{background:none!important;box-shadow:none!important;padding:0 4px!important;color:var(--muted)!important;font-weight:700;font-size:13px}
 .riff .rleg span{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(239,236,251,.07);box-shadow:inset 0 0 0 1px rgba(110,123,255,.22);color:#E2DEFA;font-weight:700;font-size:14px}
 .riff .rleg b{min-width:28px;height:28px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;border-radius:999px;background:rgba(7,6,26,.6);color:var(--paper);font-size:17px;font-weight:800}
@@ -423,7 +425,7 @@ function autoChords(score,V,labels){
 }
 /* цвета струн — как на страницах табов: 6-я (толстая) красная … 1-я (тонкая) сиреневая */
 const SCOL=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7'];
-const strLegend=()=>`<div class="rleg rstr"><span class="lt">Струны:</span>${[1,2,3,4,5,6].map(k=>`<i style="--c:${SCOL[6-k]}">${k}</i>`).join('')}<span class="lt">1 — самая тонкая · ↑↓ над аккордом — удар вниз / вверх</span></div>`;
+const strLegend=()=>`<div class="rleg rstr"><span class="lt">Струны:</span>${[1,2,3,4,5,6].map(k=>`<i data-s="${k}" style="--c:${SCOL[6-k]}">${k}</i>`).join('')}<span class="lt">1 — самая тонкая · ↑↓ над аккордом — удар вниз / вверх</span></div>`;
 /* обозначения под схемой — только те, что встречаются в рисунке */
 function legend(P,p){
   let it;
@@ -474,7 +476,15 @@ function render(p,gen){
     const bStarts=(gen&&gen.grids||[]).map(g=>{if(!g)return null;const a=[];let t=0;gridEv(g).forEach(([,d])=>{a.push(t);t+=d;});return a;});
     if(ev)api.playedBeatChanged.on(b=>{if(!b)return;const i=b.index;let bi=-1;try{bi=b.voice.bar.index;}catch(e){}
       const st=bStarts[bi]||starts;lit(P.kind==='b'?st[i]:i);});
-    api.playerStateChanged.on(e=>{if(e.state!==1)lit(-1);});
+    api.playerStateChanged.on(e=>{if(e.state!==1){lit(-1);strLit(null);}});
+    // строка «Струны»: одна нота — горит её струна; интервал / аккорд — горят все его струны со стрелкой удара
+    function strLit(bt){const row=S.box&&S.box.querySelector('.rstr');if(!row)return;
+      const on=new Map();
+      if(bt){const ns=bt.notes.filter(x=>!x.isTieDestination||bt.notes.length===1),n=(bt.voice&&bt.voice.bar.staff.tuning||[]).length||6;
+        const arrow=ns.length>=2?(bt.brushType===alphaTab.model.BrushType.BrushUp||bt.brushType===alphaTab.model.BrushType.ArpeggioUp?'↑':'↓'):null;
+        ns.forEach(nt=>{const disp=6-Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)));on.set(disp,arrow);});}
+      row.querySelectorAll('i[data-s]').forEach(el=>{const k=+el.dataset.s,hit=on.has(k);el.classList.toggle('on',hit);el.textContent=hit&&on.get(k)?on.get(k):k;});}
+    api.playedBeatChanged.on(b=>{if(b)strLit(b);});
     api.playerReady.on(()=>{S.ready=true;const b=$('rPlay');if(b)b.disabled=false;});
     api.playerStateChanged.on(e=>{const b=$('rPlay');if(!b)return;const on=e.state===1;b.textContent=on?'❚❚':'▶';b.classList.toggle('pause',on);});
     api.error.on(e=>{const l=$('rLoad');if(l){l.hidden=false;l.textContent='Не удалось открыть таб.';}console.error('riff',e);});
