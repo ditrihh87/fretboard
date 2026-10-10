@@ -504,7 +504,7 @@ function renderChordsPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ch">Аккорды</span><span class="type ver">✓ проверено ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${(a=>a.length?esc((a.length>1?'Авторы: ':'Автор: ')+a.join(', ')):'')([...new Set([SONG.words,SONG.music].filter(Boolean))])}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${(a=>a.length?esc((a.length>1?'Авторы: ':'Автор: ')+a.join(', ')):'')([...new Set([SONG.words,SONG.music].filter(x=>x&&x!==SONG.artist))])}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
         <div class="grp"><button class="ib" id="trDown" aria-label="Тон ниже">−</button><span id="trLabel">Тон</span><button class="ib" id="trUp" aria-label="Тон выше">+</button></div>
@@ -742,7 +742,7 @@ async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Fingerstyle</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${(a=>a.length?esc((a.length>1?'Авторы: ':'Автор: ')+a.join(', ')):'')([...new Set([SONG.words,SONG.music].filter(Boolean))])}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${(a=>a.length?esc((a.length>1?'Авторы: ':'Автор: ')+a.join(', ')):'')([...new Set([SONG.words,SONG.music].filter(x=>x&&x!==SONG.artist))])}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
         <div class="legend" id="legend">${SC.map((c,i)=>`<span><i style="background:${c}"></i>${6-i}</span>`).join('')}</div>
