@@ -159,7 +159,7 @@ function buildTex(part,map){
 /* ===== внешний вид ===== */
 const CSS=`
 .riff{margin:0 0 22px;border-radius:20px;padding:18px 18px 14px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.88));box-shadow:inset 0 0 0 1px rgba(110,123,255,.28)}
-.riff .rtabs{display:flex;gap:8px;overflow-x:auto;margin:0 0 16px;padding-bottom:2px}
+.riff .rtabs{display:flex;gap:8px;overflow-x:auto;margin:12px 0 0;padding-bottom:2px}
 .riff .rtabs button{flex:none;border:none;border-radius:13px;padding:11px 18px;background:var(--card);color:var(--muted);font:800 15px var(--body);cursor:pointer;white-space:nowrap;transition:background .15s,box-shadow .15s,transform .15s}
 .riff .rtabs button[aria-selected="true"]{background:var(--amber);color:#1b1b1b}
 .riff .rtabs button[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 14%,var(--card));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--sc) 55%,transparent)}
@@ -283,9 +283,9 @@ function draw(){
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
-  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
+  box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
-    <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
+    <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
   const ed=box.querySelector('#rEditIn');if(ed)ed.onclick=()=>window.RIFF_EDIT&&RIFF_EDIT(S.cur);
