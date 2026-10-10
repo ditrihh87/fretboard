@@ -22,6 +22,11 @@
         "18": "A5",
         "19": "A5"
       }
+    },
+    {
+      "type": "Бой",
+      "where": "Куплет",
+      "src": "riffs/lesnik-korol-i-shut-2.gp"
     }
   ]
 }
