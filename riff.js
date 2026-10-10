@@ -286,10 +286,17 @@ let S=null;   // {parts, cur, api, ready, map, box, key}
 const H=t=>esc(String(t==null?'':t));
 const narrow=()=>innerWidth<700;
 /* вкладка: просто раздел («Куплет», «Припев»); тип («бой», «перебор») — только если у раздела несколько частей */
+/* вкладка — просто раздел («Куплет 2», «Припев»); если один и тот же раздел встречается дважды —
+   у боя и перебора дописываем вид, а одинаковые нумеруем по порядку (Куплет → Куплет 1, Куплет 2) */
 function title(p){const P=PAT[p.pattern],w=String(p.where||'').trim();
   if(!w)return p.type+(P?' · '+P.name:'');
-  const same=S.parts.filter(x=>String(x.where||'').trim().toLowerCase()===w.toLowerCase()).length>1;
-  return w[0].toUpperCase()+w.slice(1)+(same?' · '+(P?(P.kind==='b'?'бой':'перебор'):'таб'):'');}
+  const kind=x=>{const Q=PAT[x.pattern];return Q?(Q.kind==='b'?'бой':'перебор'):'';};
+  const same=S.parts.filter(x=>String(x.where||'').trim().toLowerCase()===w.toLowerCase());
+  const W=w[0].toUpperCase()+w.slice(1);
+  if(same.length<2)return W;
+  const kinds=new Set(same.map(kind));
+  if(kinds.size===same.length)return W+(kind(p)?' · '+kind(p):'');
+  return /\d/.test(w)?W+' ('+(same.indexOf(p)+1)+')':W+' '+(same.indexOf(p)+1);}
 
 function mount(){
   if(!document.getElementById('riffCss')){const st=document.createElement('style');st.id='riffCss';st.textContent=CSS;document.head.appendChild(st);}
