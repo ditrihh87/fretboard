@@ -177,6 +177,13 @@ const CSS=`
 .riff .rstr i{font-style:normal;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);box-shadow:inset 0 0 0 1.5px var(--c);color:var(--c);font-weight:800;font-size:13px}
 .riff .rstr i{transition:background .06s,color .06s,transform .06s,box-shadow .06s}
 .riff .rstr i.on{background:var(--c);color:#1b1b1b;transform:scale(1.18);box-shadow:0 0 14px var(--c)}
+.riff .rstr i.hit{animation:strHit .22s ease-out}
+@keyframes strHit{0%{transform:scale(1.42);box-shadow:0 0 24px var(--c)}100%{transform:scale(1.18)}}
+/* белый режим: цифры и кружки белые, звучащая струна — оранжевая подсветка, как удары в схеме боя */
+.riff.mono .rstr i{--c:#CFCCF2!important}
+.riff.mono .rstr i.on{background:rgba(240,168,48,.22);color:var(--amber);box-shadow:inset 0 0 0 2px var(--amber),0 0 14px rgba(240,168,48,.45)}
+.riff.mono .rstr i.hit{animation:strHitM .22s ease-out}
+@keyframes strHitM{0%{transform:scale(1.42);box-shadow:inset 0 0 0 2px var(--amber),0 0 24px rgba(240,168,48,.7)}100%{transform:scale(1.18)}}
 .riff .rstr .lt{background:none!important;box-shadow:none!important;padding:0 4px!important;color:var(--muted)!important;font-weight:700;font-size:13px}
 .riff .rleg span{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(239,236,251,.07);box-shadow:inset 0 0 0 1px rgba(110,123,255,.22);color:#E2DEFA;font-weight:700;font-size:14px}
 .riff .rleg b{min-width:28px;height:28px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;border-radius:999px;background:rgba(7,6,26,.6);color:var(--paper);font-size:17px;font-weight:800}
@@ -308,7 +315,7 @@ function draw(){
   box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc">Записано ditrihh нота в ноту: слушай, замедляй и играй вместе. Аккорды над табом — как в тексте песни.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
-    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
+    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rCol" aria-pressed="true">🎨 Цвета</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
   const ed=box.querySelector('#rEditIn');if(ed)ed.onclick=()=>window.RIFF_EDIT&&RIFF_EDIT(S.cur);
   render(p,gen);
@@ -423,6 +430,15 @@ function autoChords(score,V,labels){
   const out={};for(let k=1;k<=st.bars.length;k++)out[k]=(bars[k]||[]).join(' ');
   return {names,bars:out,count:st.bars.length};
 }
+/* раскраска цифр: цветной режим — цвет струны, белый — все белые; интервал / аккорд — стрелка удара (если в файле не задана) */
+const colorMode=()=>{try{return prefs.tabColor!==false;}catch(e){return true;}};
+function paintNotes(sc){
+  const NS=alphaTab.model.NoteSubElement.GuitarTabFretNumber,BT=alphaTab.model.BrushType,cols=SCOL.map(c=>alphaTab.model.Color.fromJson(c)),white=alphaTab.model.Color.fromJson('#EFECFB'),on=colorMode();
+  sc.tracks.forEach(t=>t.staves.forEach(stv=>{const n=stv.tuning&&stv.tuning.length||6;
+    stv.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{const ns=bt.notes.filter(x=>!x.isTieDestination);
+      if(ns.length>=2&&!bt.brushType)bt.brushType=BT.BrushDown;
+      bt.notes.forEach(nt=>{if(!nt.style)nt.style=new alphaTab.model.NoteStyle();nt.style.colors.set(NS,on?cols[Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)))]:white);});})));}));
+}
 /* цвета струн — как на страницах табов: 6-я (толстая) красная … 1-я (тонкая) сиреневая */
 const SCOL=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7'];
 const strLegend=()=>`<div class="rleg rstr"><span class="lt">Струны:</span>${[1,2,3,4,5,6].map(k=>`<i data-s="${k}" style="--c:${SCOL[6-k]}">${k}</i>`).join('')}<span class="lt">1 — самая тонкая · ↑↓ над аккордом — удар вниз / вверх</span></div>`;
@@ -457,11 +473,7 @@ function render(p,gen){
     api.scoreLoaded.on(sc=>{
       if(!gen){try{const r=autoChords(sc,songVocab(p.where),p.labels),n=r&&r.names;const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
       // каждая цифра — цветом своей струны; интервал / аккорд — ещё и стрелка удара (если в файле не задана)
-      try{const NS=alphaTab.model.NoteSubElement.GuitarTabFretNumber,BT=alphaTab.model.BrushType,cols=SCOL.map(c=>alphaTab.model.Color.fromJson(c));
-        sc.tracks.forEach(t=>t.staves.forEach(stv=>{const n=stv.tuning&&stv.tuning.length||6;
-          stv.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{const ns=bt.notes.filter(x=>!x.isTieDestination);
-            if(ns.length>=2&&!bt.brushType)bt.brushType=BT.BrushDown;
-            bt.notes.forEach(nt=>{if(!nt.style)nt.style=new alphaTab.model.NoteStyle();nt.style.colors.set(NS,cols[Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)))]);});})));}));}catch(e){console.warn('riff colors',e);}
+      S.score=sc;try{paintNotes(sc);}catch(e){console.warn('riff colors',e);}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
       sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
         t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
@@ -483,7 +495,8 @@ function render(p,gen){
       if(bt){const ns=bt.notes.filter(x=>!x.isTieDestination||bt.notes.length===1),n=(bt.voice&&bt.voice.bar.staff.tuning||[]).length||6;
         const arrow=ns.length>=2?(bt.brushType===alphaTab.model.BrushType.BrushUp||bt.brushType===alphaTab.model.BrushType.ArpeggioUp?'↑':'↓'):null;
         ns.forEach(nt=>{const disp=6-Math.max(0,Math.min(5,nt.string-1-Math.max(0,n-6)));on.set(disp,arrow);});}
-      row.querySelectorAll('i[data-s]').forEach(el=>{const k=+el.dataset.s,hit=on.has(k);el.classList.toggle('on',hit);el.textContent=hit&&on.get(k)?on.get(k):k;});}
+      row.querySelectorAll('i[data-s]').forEach(el=>{const k=+el.dataset.s,hit=on.has(k);el.classList.toggle('on',hit);el.textContent=hit&&on.get(k)?on.get(k):k;
+        el.classList.remove('hit');if(hit){void el.offsetWidth;el.classList.add('hit');}});}
     api.playedBeatChanged.on(b=>{if(b)strLit(b);});
     api.playerReady.on(()=>{S.ready=true;const b=$('rPlay');if(b)b.disabled=false;});
     api.playerStateChanged.on(e=>{const b=$('rPlay');if(!b)return;const on=e.state===1;b.textContent=on?'❚❚':'▶';b.classList.toggle('pause',on);});
@@ -492,6 +505,9 @@ function render(p,gen){
     $('rPlay').onclick=()=>S.ready&&api.playPause();
     $('rSpd').onclick=()=>{SPEED=sp[(sp.indexOf(SPEED)+1)%sp.length];api.playbackSpeed=SPEED;ui();};
     $('rLoop').onclick=()=>{api.isLooping=!api.isLooping;ui();};
+    const colUI=()=>{const on=colorMode(),b=$('rCol');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);b.textContent=on?'🎨 Цвета':'⚪ Белые';}S.box.classList.toggle('mono',!on);};
+    $('rCol').onclick=()=>{try{prefs.tabColor=!colorMode();savePrefs();}catch(e){}colUI();if(S.score){paintNotes(S.score);api.render();}};
+    colUI();
     ui();
   }).catch(()=>{const l=$('rLoad');if(l)l.textContent='Не удалось загрузить плеер табов.';});
 }
