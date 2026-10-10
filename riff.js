@@ -168,7 +168,7 @@ function buildTex(part,map){
 /* ===== внешний вид ===== */
 const CSS=`
 .riff{margin:0 0 22px;border-radius:20px;padding:18px 18px 14px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.88));box-shadow:inset 0 0 0 1px rgba(110,123,255,.28)}
-.riff .rtabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.riff .rtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0;flex-basis:100%;order:-1}
 .riff .rtabs button{flex:none;border:none;border-radius:999px;padding:6px 12px;background:var(--card);color:var(--muted);font:800 13px var(--body);cursor:pointer;white-space:nowrap;transition:background .15s,box-shadow .15s,transform .15s}
 .riff .rtabs button[aria-selected="true"]{background:var(--amber);color:#1b1b1b}
 .riff .rtabs button[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sc) 45%,transparent)}
@@ -337,7 +337,7 @@ function draw(){
   const gen=P?buildTex(p,S.map):null;
   S.key=P?JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(c=>mapC(c,S.map)))+(p.grid||''):'';
   const sc=x=>{const c=window.secColor&&secColor(x.where||x.type);return c?` style="--sc:${c}"`:'';};
-  const tabs=S.parts.length>1?`<div class="rtabs" role="tablist">${S.parts.map((x,i)=>`<button role="tab" data-i="${i}" aria-selected="${i===S.cur}"${sc(x)}>${H(title(x))}</button>`).join('')}</div>`:'';
+  const tabs=S.parts.length>=1?`<div class="rtabs" role="tablist">${S.parts.map((x,i)=>`<button role="tab" data-i="${i}" aria-selected="${i===S.cur}"${sc(x)}>${H(title(x))}</button>`).join('')}</div>`:'';
   let scheme='';
   if(P&&P.kind==='b'){const g=gridOf(p,P),c=COUNT[P.ts];
     scheme=`<div class="rgrid" aria-label="Схема боя">${[...g].map((ch,i)=>`<span class="${i%2?'':'st'}"><b class="${ch==='X'?'x':ch==='-'?'h':ch==='B'?'bs':''}">${ch==='D'?'↓':ch==='U'?'↑':ch==='X'?'✕':ch==='B'?'Б':'·'}</b><small>${c[i]}</small></span>`).join('')}</div>`;}
@@ -345,9 +345,9 @@ function draw(){
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const pat=P?(own?(P.kind==='b'?'Бой':'Перебор')+' — свой рисунок':(P.kind==='b'?'Бой':'Перебор')+' «'+P.name+'»'):'';
   const what=String(p.where||p.type||'').trim().toLowerCase().replace(/\s*[×xх]\s*\d+.*$/i,'');
-  box.innerHTML=`<div class="rh">${pat?`<span class="chip pat">${H(pat)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="rchs" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>Вот так <span class="brandtxt">ditrihh</span> играет <span class="sw"${sc(p)}>${H(what)}</span></h2></div>
+  box.innerHTML=`<div class="rh">${pat?`<span class="chip pat">${H(pat)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="rchs" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>Вот так играет <span class="brandtxt">ditrihh</span></h2>${tabs}</div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc soft">Нота в ноту, как играю я — слушай, замедляй и повторяй.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
-    <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
+    <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть" title="Играть / пауза — пробел">▶</button><div class="rgrp"><button class="b spd" id="rSpd" title="Скорость: 100 → 75 → 50%">1×</button><button class="b ic" id="rLoop" aria-pressed="false" aria-label="Повтор" title="Повтор по кругу"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button><button class="b ic" id="rCol" aria-pressed="true" aria-label="Цвета струн" title="Цвета струн: вкл / выкл"><i class="pal"></i></button></div><span class="kb" title="Пробел — играть / пауза"><kbd>Пробел</kbd> ▶ / ❚❚</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
   const ed=box.querySelector('#rEditIn');if(ed)ed.onclick=()=>window.RIFF_EDIT&&RIFF_EDIT(S.cur);
