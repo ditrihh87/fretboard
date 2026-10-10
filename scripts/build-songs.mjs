@@ -23,6 +23,39 @@ const credits = s => {
   return a.length ? [(a.length > 1 ? 'Авторы: ' : 'Автор: ') + a.join(', ')] : [];
 };
 
+/* «Как играть» (бой, перебор, вступление…) к песне с аккордами: riffs/<id>.json {parts:[…]} — кладёт сервер по кнопке владельца.
+   Часть: {type, where?, pattern?, chords?, bpm?} — рисунок из библиотеки riff.js, или свой: src (файл GP в riffs/) / tex (alphaTex). */
+const RIFF_TYPES = ['Перебор', 'Бой', 'Вступление', 'Риф', 'Проигрыш'];
+const riffOf = s => {
+  if (s.tab) return null;
+  const j = path.join(ROOT, 'riffs', s.id + '.json');
+  if (!fs.existsSync(j)) return null;
+  try {
+    const m = JSON.parse(fs.readFileSync(j, 'utf8'));
+    const parts = (Array.isArray(m.parts) ? m.parts : []).slice(0, 6).map(p => {
+      const o = { type: RIFF_TYPES.includes(p.type) ? p.type : 'Перебор' };
+      if (p.where) o.where = String(p.where).slice(0, 40);
+      if (typeof p.pattern === 'string' && /^[a-z0-9]{2,4}$/.test(p.pattern)) {
+        o.pattern = p.pattern;
+        if (Array.isArray(p.chords)) o.chords = p.chords.map(String).filter(c => /^[A-H][^\s]{0,14}$/.test(c)).slice(0, 8);
+        if (p.bpm >= 40 && p.bpm <= 240) o.bpm = Math.round(p.bpm);
+      } else if (typeof p.src === 'string' && /^riffs\/[a-z0-9-]{1,90}\.(gp|gp3|gp4|gp5|gpx)$/.test(p.src) && fs.existsSync(path.join(ROOT, p.src))) o.src = p.src;
+      else if (typeof p.tex === 'string' && p.tex.trim()) o.tex = p.tex.slice(0, 20000);
+      else return null;
+      return o;
+    }).filter(Boolean);
+    return parts.length ? { parts } : null;
+  } catch (e) { console.warn('riffs/' + s.id + '.json:', e.message); return null; }
+};
+
+// для поисковиков: «Как играть: перебор «восьмёрка» (вступление), бой «шестёрка» (припев)»
+const RIFF_NAMES = { p4: 'перебор «четвёрка»', p6: 'перебор «шестёрка»', p8: 'перебор «восьмёрка»', p3: 'перебор «тройка» (вальс)', pq: 'перебор «щипок»',
+  b4: 'бой «четвёрка»', b6: 'бой «шестёрка»', bx: 'бой с глушением', b8: 'бой «восьмёрка»', bc: 'цоевский бой', bw: 'бой «вальс»' };
+const riffText = s => { const r = riffOf(s); if (!r) return '';
+  const it = r.parts.map(p => (RIFF_NAMES[p.pattern] || p.type.toLowerCase()) + (p.where ? ` (${p.where.toLowerCase()})` : ''));
+  const t = it.join(', ');
+  return `<h2>Как играть: бой и перебор</h2>\n<p>${esc(t[0].toUpperCase() + t.slice(1))} — с табом и звуком: слушай, замедляй и играй вместе.</p>\n`; };
+
 const chordsIn = t => [...new Set([...(t || '').matchAll(/\[([^\]]+)\]/g)].map(m => m[1].split('|')[0].trim()).filter(Boolean))];
 
 /* «Также ищут» сами: первая строчка первого куплета и первая строчка припева (если он есть) —
@@ -122,13 +155,13 @@ function page(s) {
   const pre = `<div class="crumbs"><a href="songs.html?type=${kind}">${s.tab ? '← Все табы' : '← Все аккорды'}</a></div>
 <article class="seo"><h1>${esc(s.title)}${s.tab ? ' — таб' : ' — аккорды'}</h1>
 <p class="by">${esc(s.artist || '')}</p>${credits(s).map(c => `<p class="credits">${esc(c)}</p>`).join('')}
-${s.tab ? '<p>Таб со звуком: слушай, замедляй и играй вместе с ним.</p>' : staticBody(s)}</article>`;
+${s.tab ? '<p>Таб со звуком: слушай, замедляй и играй вместе с ним.</p>' : riffText(s) + staticBody(s)}</article>`;
 
   let html = tpl;
   const swap = (re, rep) => { if (!re.test(html)) throw new Error('шаблон song.html изменился: ' + re); html = html.replace(re, rep); };
   // все относительные адреса (стили, скрипты, songs.json, табы) — от корня сайта
   swap(/<head>/, `<head>\n<base href="../">`);
-  swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${coverOf(s) || SITE + 'brand/ditrihh-logo-dark.png'}">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};</script>`);
+  swap(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>\n<link rel="canonical" href="${url}">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${coverOf(s) || SITE + 'brand/ditrihh-logo-dark.png'}">\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n<script>window.SONG_ID=${JSON.stringify(s.id)};${(r => r ? `window.SONG_RIFF=${JSON.stringify(r).replace(/</g, '\\u003c')};` : '')(riffOf(s))}</script>`);
   swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(descFull)}">${aka.length ? `\n<meta name="keywords" content="${esc([s.title, s.artist, ...aka].filter(Boolean).map(k => k.replace(/,/g, '')).join(', '))}">` : ''}\n<meta property="og:description" content="${esc(desc)}">`);
   swap(/<div id="content">[\s\S]*?<\/div>\n/, `<div id="content">${pre}</div>\n`);
   return { file: path.join(ROOT, DIRS[kind], s.id + '.html'), url, html };

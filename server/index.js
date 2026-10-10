@@ -747,6 +747,55 @@ async function handlePublishTab(body, token) {
   return mergeSongs([sg], 'Таб', ['video', 'videoV', 'chordsBy']);   // галочки «фингерстайл/эксклюзив» берём как есть
 }
 
+/* ===== «Как играть» (бой, перебор, вступление…) к песне: riffs/<id>.json {parts:[…]} + свои файлы GP riffs/<id>-<n>.<ext>.
+   Пишет только владелец, кнопкой на странице песни. Пустой список частей — убрать всё. Дальше GitHub Actions пересобирает страницу. */
+const RIFF_TYPES = ['Перебор', 'Бой', 'Вступление', 'Риф', 'Проигрыш'];
+async function ghSha(path) { try { return (await gh(`repos/${GH_REPO}/contents/${path}?ref=main`)).sha; } catch (e) { if (e.status === 404) return null; throw e; } }
+async function ghPut(path, b64, message) {
+  const sha = await ghSha(path);
+  await gh(`repos/${GH_REPO}/contents/${path}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ message, content: b64, branch: 'main' }, sha ? { sha } : {})) });
+}
+async function ghDel(path, message) {
+  const sha = await ghSha(path); if (!sha) return;
+  await gh(`repos/${GH_REPO}/contents/${path}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, sha, branch: 'main' }) });
+}
+async function handleRiff(body, token) {
+  const u = await commentUser(body, token);
+  if (!u || !adminAccs().includes(u.acc)) return reply(403, { error: 'admin only' });
+  if (!process.env.GH_TOKEN) return reply(503, { error: 'GH_TOKEN не задан' });
+  const id = body.id; if (!okSong(id)) return reply(400, { error: 'bad id' });
+  const metaPath = `riffs/${id}.json`;
+  let old = { parts: [] };
+  try { const f = await gh(`repos/${GH_REPO}/contents/${metaPath}?ref=main`); old = JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); } catch (e) { if (e.status !== 404) throw e; }
+  const oldFiles = (old.parts || []).map(p => p && p.src).filter(Boolean);
+  const inp = Array.isArray(body.parts) ? body.parts.slice(0, 6) : [];
+  const parts = [], keep = new Set();
+  for (let i = 0; i < inp.length; i++) {
+    const p = inp[i] || {}, o = { type: RIFF_TYPES.includes(p.type) ? p.type : 'Перебор' };
+    const where = String(p.where || '').replace(/[\u0000-\u001F]/g, ' ').trim().slice(0, 40); if (where) o.where = where;
+    if (typeof p.pattern === 'string' && /^[a-z0-9]{2,4}$/.test(p.pattern)) {
+      o.pattern = p.pattern;
+      if (Array.isArray(p.chords)) { const c = p.chords.map(String).filter(x => /^[A-H][^\s]{0,14}$/.test(x)).slice(0, 8); if (c.length) o.chords = c; }
+      if (+p.bpm >= 40 && +p.bpm <= 240) o.bpm = Math.round(+p.bpm);
+    } else if (p.file) {
+      const f = p.file;
+      if (typeof f.ext !== 'string' || !TAB_EXT.test(f.ext) || typeof f.data !== 'string' || f.data.length > 2.8e6) return reply(400, { error: 'файл не подходит (gp, gp3, gp4, gp5, gpx, до 2 МБ)' });
+      const buf = Buffer.from(f.data, 'base64'); if (buf.length < 16) return reply(400, { error: 'пустой файл' });
+      const path = `riffs/${id}-${i + 1}.${f.ext}`;
+      await ghPut(path, buf.toString('base64'), `Как играть: ${id} (файл ${i + 1})`);
+      o.src = path; keep.add(path);
+    } else if (typeof p.src === 'string' && oldFiles.includes(p.src)) { o.src = p.src; keep.add(p.src); }
+    else if (typeof p.tex === 'string' && p.tex.trim() && p.tex.length <= 20000) o.tex = p.tex.replace(/\r/g, '');
+    else continue;
+    parts.push(o);
+  }
+  for (const f of oldFiles) if (!keep.has(f)) await ghDel(f, `Как играть: ${id} — убран файл`);
+  if (parts.length) await ghPut(metaPath, Buffer.from(JSON.stringify({ parts }, null, 2) + '\n').toString('base64'), `Как играть: ${id}`);
+  else await ghDel(metaPath, `Как играть: ${id} — убрано`);
+  return reply(200, { ok: true, parts });
+}
+
 /* ===== Заявки на аккорды: посетители предлагают песни, остальные голосуют, владелец отмечает «готово» ===== */
 const REQ_KEY = 'requests/chords.json';
 const REQ_MAX = 600, REQ_OPEN_PER_USER = 5;
@@ -1089,6 +1138,9 @@ module.exports.handler = async (event, context) => {
   }
   if (body.action === 'publish_tab') {
     try { return await handlePublishTab(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
+  }
+  if (body.action === 'publish_riff') {
+    try { return await handleRiff(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
   }
   if (body.action === 'publish_song') {
     try { return await handlePublish(body, token); } catch (e) { console.error(e); return reply(502, { error: String(e.message || e) }); }
