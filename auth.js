@@ -232,7 +232,7 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     const b=document.createElement('button');b.id='navBurger';b.type='button';b.setAttribute('aria-label','Меню');b.setAttribute('aria-expanded','false');
     b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
     const m=document.createElement('div');m.id='navMenu';m.hidden=true;
-    const fill=()=>{m.innerHTML=[...nav.querySelectorAll('a')].map(a=>`<a href="${esc(a.href)}"${a.classList.contains('on')?' class="on"':''}>${esc(a.textContent)}</a>`).join('');};
+    const fill=()=>{m.innerHTML=[...nav.querySelectorAll('a')].map(a=>`<a href="${esc(a.href)}"${a.dataset.nav?` data-nav="${esc(a.dataset.nav)}"`:''}${a.classList.contains('on')?' class="on"':''}>${esc(a.textContent)}</a>`).join('');};
     wrap.appendChild(b);document.body.appendChild(m);
     const set=o=>{m.hidden=!o;b.setAttribute('aria-expanded',String(o));b.innerHTML=o?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';};
     b.addEventListener('click',e=>{e.stopPropagation();if(m.hidden)fill();set(m.hidden);});

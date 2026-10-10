@@ -36,8 +36,21 @@
   .logo{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;line-height:1}
   .logo:has(.slogan) img{height:29px}
   .slogan{text-transform:uppercase;letter-spacing:1.3px;font-size:8.6px;font-weight:800;color:#9C97D6;white-space:nowrap;margin-right:-1.3px}
-  .nav nav{display:flex;gap:22px;margin-left:auto;font-weight:700;font-size:15px;color:var(--muted)}
-  .nav nav a:hover{color:var(--paper)}
+  .nav nav{display:flex;gap:8px;margin-left:auto}
+  /* пункты меню — плашки со значками, как кнопки соцсетей в подвале */
+  .nav nav a{display:inline-flex;align-items:center;gap:7px;background:var(--card);color:var(--paper);font-weight:800;font-size:14px;padding:9px 13px;border-radius:12px;text-decoration:none;white-space:nowrap;transition:color .15s,background .15s}
+  .nav nav a:hover{background:var(--card2)}
+  .nav nav a[data-nav]::before{content:'';flex:none;width:17px;height:17px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+  a[data-nav="chords"]{--ic:url(/brand/icons/chord.svg)}a[data-nav="tab"]{--ic:url(/brand/icons/tab.svg)}
+  a[data-nav="stream"]{--ic:url(/brand/icons/stream.svg)}a[data-nav="school"]{--ic:url(/brand/icons/school.svg)}
+  a[data-nav="support"]{--ic:url(/brand/icons/donate.svg)}
+  .nav nav a[data-nav="chords"]:hover{color:#F0A830}.nav nav a[data-nav="tab"]:hover{color:#6FBF73}.nav nav a[data-nav="stream"]:hover{color:#FF6B70}
+  .nav nav a[data-nav="school"]:hover{color:#7CC4F2}.nav nav a[data-nav="support"]:hover{color:#FF7AC6}
+  header.nav nav a.on{color:var(--amber);background:var(--card2)}
+  #navMenu a[data-nav]{display:flex!important;align-items:center;gap:12px}
+  #navMenu a[data-nav]::before{content:'';flex:none;width:20px;height:20px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+  @media (max-width:1180px){.nav nav{gap:6px}.nav nav a{padding:8px 10px;font-size:13px;gap:6px}}
+  @media (max-width:1000px){.nav nav a[data-nav]{font-size:0;gap:0;padding:9px}.nav nav a[data-nav]::before{width:18px;height:18px}}
   .nav .btn{padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 4px 0 var(--amber-d)}
   /* эфир идёт: красная кнопка, мягко «дышит» */
   .nav .btn.live{background:#E5484D;color:#fff;box-shadow:0 4px 0 #9E2A2E;display:inline-flex;align-items:center;gap:8px;animation:liveGlow 2.6s ease-in-out infinite}
