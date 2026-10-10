@@ -267,7 +267,7 @@
   <div class="crumbs"><a href="songs.html" id="crumb">← Все аккорды и табы</a></div>
   <div id="content"><div class="crumbs"><a href="songs.html?type=chords">← Все аккорды</a></div>
 <article class="seo"><h1>Лесник — аккорды</h1>
-<p class="by">Король и Шут</p><p class="credits">Слова: Андрей Князев</p><p class="credits">Музыка: Король и Шут</p>
+<p class="by">Король и Шут</p><p class="credits">Авторы: Андрей Князев, Король и Шут</p>
 <h2>Куплет 1</h2>
 <p>За<b>Am</b>мученный дорогой, я <b>F</b>выбился из <b>G</b>сил</p>
 <p>И в <b>Am</b>доме лесника я ноч<b>F</b>лега попро<b>G</b>сил,</p>
@@ -546,7 +546,7 @@ function renderChordsPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}<span class="type ch">Аккорды</span><span class="type ver">✓ проверено ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[(a=>a.length?'Авторы: '+a.join(', '):'')([...new Set([SONG.words,SONG.music].filter(Boolean))]),SONG.chordsBy?'Источник: '+SONG.chordsBy:''].filter(Boolean).map(esc).join('<br>')}</div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
         <div class="grp"><button class="ib" id="trDown" aria-label="Тон ниже">−</button><span id="trLabel">Тон</span><button class="ib" id="trUp" aria-label="Тон выше">+</button></div>
@@ -784,7 +784,7 @@ async function renderTabPage(){
   $('content').innerHTML=`
     <div class="shead"><div>
       <div class="badges">${SONG.exclusive?'<span class="type ex">★ Эксклюзив</span>':''}${SONG.fingerstyle?'<span class="type fs">Fingerstyle</span>':''}<span class="type tb">Таб</span><span class="type ver">✓ ditrihh</span></div>
-      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[SONG.words&&SONG.words===SONG.music?'Слова и музыка: '+SONG.words:'',SONG.words&&SONG.words!==SONG.music?'Слова: '+SONG.words:'',SONG.music&&SONG.words!==SONG.music?'Музыка: '+SONG.music:''].filter(Boolean).map(esc).join('<br>')}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
+      <h1>${esc(SONG.title)}</h1><div class="by">${esc(SONG.artist||'')}</div><div class="credits">${[(a=>a.length?'Авторы: '+a.join(', '):'')([...new Set([SONG.words,SONG.music].filter(Boolean))]),SONG.chordsBy?'Источник: '+SONG.chordsBy:''].filter(Boolean).map(esc).join('<br>')}</div><div class="tinfo" id="tInfo" hidden></div><div class="rbox" id="rateBox"></div><div class="ym" id="ymBox"></div></div>${vidHTML()}</div>
     <div class="panel">
       <div class="bar">
         <div class="legend" id="legend">${SC.map((c,i)=>`<span><i style="background:${c}"></i>${6-i}</span>`).join('')}</div>
