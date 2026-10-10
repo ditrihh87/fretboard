@@ -162,6 +162,11 @@ const CSS=`
 .riff .rtabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px}
 .riff .rtabs button{flex:none;border:none;border-radius:11px;padding:9px 13px;background:var(--card);color:var(--muted);font:800 13px var(--body);cursor:pointer;white-space:nowrap}
 .riff .rtabs button[aria-selected="true"]{background:var(--amber);color:#1b1b1b}
+.riff .rtabs button[style*="--sc"]{color:var(--sc);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sc) 35%,transparent)}
+.riff .rtabs button[style*="--sc"]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:7px;vertical-align:1px}
+.riff .rtabs button[style*="--sc"]:hover{background:color-mix(in srgb,var(--sc) 14%,var(--card))}
+.riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 14px color-mix(in srgb,var(--sc) 45%,transparent)}
+.riff .chip.sec[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent)}
 .riff .rh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:8px}
 .riff .rk{font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:#B3AEE8}
 .riff .chip{font-weight:800;font-size:12px;padding:4px 9px;border-radius:999px;background:rgba(239,236,251,.08);color:#CFCCF2}
@@ -267,14 +272,15 @@ function draw(){
   const p=S.parts[S.cur],P=PAT[p.pattern],box=S.box;
   const gen=P?buildTex(p,S.map):null;
   S.key=P?JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(c=>mapC(c,S.map)))+(p.grid||''):'';
-  const tabs=S.parts.length>1?`<div class="rtabs" role="tablist">${S.parts.map((x,i)=>`<button role="tab" data-i="${i}" aria-selected="${i===S.cur}">${H(title(x))}</button>`).join('')}</div>`:'';
+  const sc=x=>{const c=window.secColor&&secColor(x.where||x.type);return c?` style="--sc:${c}"`:'';};
+  const tabs=S.parts.length>1?`<div class="rtabs" role="tablist">${S.parts.map((x,i)=>`<button role="tab" data-i="${i}" aria-selected="${i===S.cur}"${sc(x)}>${H(title(x))}</button>`).join('')}</div>`:'';
   let scheme='';
   if(P&&P.kind==='b'){const g=gridOf(p,P),c=COUNT[P.ts];
     scheme=`<div class="rgrid" aria-label="Схема боя">${[...g].map((ch,i)=>`<span class="${i%2?'':'st'}"><b class="${ch==='X'?'x':ch==='-'?'h':ch==='B'?'bs':''}">${ch==='D'?'↓':ch==='U'?'↑':ch==='X'?'✕':ch==='B'?'Б':'·'}</b><small>${c[i]}</small></span>`).join('')}</div>`;}
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
-  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip">${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
+  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rView" aria-pressed="false">Показать ноты</button><span class="sp">Слушай, замедляй и играй вместе</span></div>`;
