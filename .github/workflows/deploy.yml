@@ -42,8 +42,8 @@ jobs:
           git pull --rebase origin main
           git push
       - name: Залить в Yandex Object Storage
-        # выключено: остаёмся на GitHub Pages. Включить — переменная репозитория DEPLOY_YC=1 (Settings → Variables → Actions)
-        if: env.HAS_KEYS == 'true' && vars.DEPLOY_YC == '1'
+        # переезд в Yandex Cloud (Oct 10, 2026): выкладка в бакет включена; ditrihh.ru — основной, ditrihh.com перекидывает на него
+        if: env.HAS_KEYS == 'true'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.YC_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_KEY }}
