@@ -789,6 +789,8 @@ async function renderTabPage(){
       notation:{rhythmMode:'ShowWithBars',rhythmHeight:22,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',scrollElement:$('atScroll'),scrollOffsetY:-30,enableCursor:true,enableUserInteraction:true}
     });
+    /* акустика: банк Acoustic Guitars JN (сталь, «Open Long Rings») поверх sonivox — для всех гитар (программы 24–31) */
+    {let sf=false;atApi.soundFontLoaded.on(()=>{if(sf)return;sf=true;try{atApi.loadSoundFontFromUrl(AT_DIR+'soundfont/steel-acoustic.sf3',true);}catch(e){}});}
     atApi.scoreLoaded.on(score=>{tp.score=score;
       /* все гитары звучат как акустика со стальными струнами: нейлон (24) → сталь (25) */
       score.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;});
