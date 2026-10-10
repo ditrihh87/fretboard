@@ -505,6 +505,8 @@ function render(p,gen){
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Continuous',scrollElement:$('riffAt').parentElement,scrollOffsetY:-12}   // длинный таб едет внутри окна (не выше двух строк), страница стоит на месте
     });
     api.isLooping=false;api.playbackSpeed=SPEED;
+    /* акустика: банк Acoustic Guitars JN (сталь, «Open Long Rings») поверх sonivox — для всех гитар (программы 24–31) */
+    {let sf=false;api.soundFontLoaded.on(()=>{if(sf)return;sf=true;try{api.loadSoundFontFromUrl(AT_DIR+'soundfont/steel-acoustic.sf3',true);}catch(e){}});}
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
