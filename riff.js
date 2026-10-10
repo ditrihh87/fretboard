@@ -153,9 +153,13 @@ function buildTex(part,map){
     // аккорды такта: делят такт поровну; лишние (не делят такт ровно) — отбрасываем до ближайшего делителя
     let cs=subs(x.c);while(cs.length>1&&slots%cs.length)cs=cs.slice(0,-1);
     const vs=cs.map(voices);if(vs.some(v=>!v))continue;
-    const per=slots/cs.length;let t=0,prev=-1;
-    grids.push(bg);bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+bev.map(([tok,d])=>{const k=Math.min(cs.length-1,Math.floor(t/per));t+=d;
-      const nm=cs[k].split('|')[0],show=k!==prev&&(prev<0||nm!==cs[prev].split('|')[0]);prev=k;return beat(tok,vs[k],d,show,nm);}).join(' '));used.push(x);
+    const per=slots/cs.length;let t=0,prev=-1,defer=null;
+    grids.push(bg);bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+bev.map(([tok,d],i)=>{const t0=t,k=Math.min(cs.length-1,Math.floor(t/per));t+=d;
+      const nm=cs[k].split('|')[0];let show=k!==prev&&(prev<0||nm!==cs[prev].split('|')[0]);
+      // аккорд на начале такта — над второй восьмой (не налезает на номер такта и курсор)
+      if(show&&t0===0&&d===1&&bev.length>1&&Math.floor(1/per)===k){show=false;defer=nm;}
+      else if(defer&&i===1){show=true;defer=null;}
+      prev=k;return beat(tok,vs[k],d,show,nm);}).join(' '));used.push(x);
   }
   if(!bars.length)return null;
   return {tex:`\\tempo ${part.bpm||(P.kind==='b'?96:80)}\n.\n\\ts ${P.ts} 4 `+bars.join(' |\n'),chords:used.map(x=>x.c),label:seqLabel(used),grids};
@@ -421,7 +425,11 @@ function autoChords(score,V,labels){
   if(has)return null;                                             // в файле уже есть аккорды автора — не трогаем
   const live=bt=>bt.notes.filter(n=>!n.isDead&&!n.isTieDestination&&n.realValue!=null).map(n=>n.realValue);
   const names=[],bars={};let prev=null,id=0,cur=null;
-  const mark=(bt,name)=>{const c=new alphaTab.model.Chord();c.name=name;c.showDiagram=false;c.showFingering=false;const key='auto'+(id++);st.addChord(key,c);bt.chordId=key;};
+  const mark=(bt,name)=>{
+    // аккорд на начале такта подписываем над второй восьмой — иначе налезает на номер такта и курсор
+    if(bt.playbackStart===0){const vb=bt.voice&&bt.voice.beats,nx=vb&&vb[vb.indexOf(bt)+1];if(nx&&nx.playbackStart<=Q/2+1&&!nx.chordId)bt=nx;}
+    if(bt.chordId){const c0=st.getChord(bt.chordId);if(c0){c0.name+=' '+name;return;}}
+    const c=new alphaTab.model.Chord();c.name=name;c.showDiagram=false;c.showFingering=false;const key='auto'+(id++);st.addChord(key,c);bt.chordId=key;};
   const put=(bt,name)=>{if(!bt||!name||name===prev)return;prev=name;names.push(name);mark(bt,name);
     (bars[cur]=bars[cur]||[]).push(bt.playbackStart?name+'@'+posTxt(bt.playbackStart):name);};
   st.bars.forEach((bar,bi)=>{
