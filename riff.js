@@ -242,6 +242,9 @@ const CSS=`
 .rform .rh1 table{display:block;overflow-x:auto}
 .rform .rh1 td{padding:5px 12px 5px 0;border-bottom:1px solid rgba(110,123,255,.15);vertical-align:top}
 .rform .rh1 td:nth-child(2) code{font-size:13px;letter-spacing:1px}
+.rform .rfile{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.rform .rfbtn{display:inline-flex!important;align-items:center;gap:6px;padding:10px 14px;border-radius:11px;background:var(--amber);color:#1b1b1b!important;font:800 14px var(--body)!important;cursor:pointer}
+.rform .rfile span{font-weight:600;font-size:13px;color:#CFCCF2}.rform .rfile b{color:var(--paper)}
 .rform .rx{border:none;border-radius:10px;width:38px;height:38px;background:rgba(242,107,111,.18);color:#FF9CA0;font:800 16px var(--body);cursor:pointer}
 .rform .rb{display:flex;flex-wrap:wrap;gap:8px}
 .rform .rb button{border:none;border-radius:11px;padding:10px 14px;font:800 14px var(--body);cursor:pointer;background:var(--card2);color:var(--paper)}
@@ -258,12 +261,12 @@ const narrow=()=>innerWidth<700;
 function title(p){const P=PAT[p.pattern],w=String(p.where||'').trim();
   if(!w)return p.type+(P?' · '+P.name:'');
   const same=S.parts.filter(x=>String(x.where||'').trim().toLowerCase()===w.toLowerCase()).length>1;
-  return w[0].toUpperCase()+w.slice(1)+(same?' · '+p.type.toLowerCase():'');}
+  return w[0].toUpperCase()+w.slice(1)+(same?' · '+(P?(P.kind==='b'?'бой':'перебор'):'таб'):'');}
 
 function mount(){
   if(!document.getElementById('riffCss')){const st=document.createElement('style');st.id='riffCss';st.textContent=CSS;document.head.appendChild(st);}
   const panel=document.querySelector('#content .panel');if(!panel)return false;
-  const R=window.SONG_RIFF;const parts=(R&&Array.isArray(R.parts)?R.parts:[]).filter(p=>p&&(PAT[p.pattern]||p.src||p.tex));
+  const R=window.SONG_RIFF;const parts=(R&&Array.isArray(R.parts)?R.parts:[]).filter(p=>p&&(PAT[p.pattern]||p.src||p.tex||p._file));
   let own=false;try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');own=!!(l&&l.prov==='admin');}catch(e){}
   S={parts,cur:0,api:null,ready:false,map:window.RIFF_MAP||(c=>c),key:''};
   document.querySelectorAll('.riff,.rown,.rform').forEach(e=>e.remove());
@@ -349,7 +352,7 @@ function render(p,gen){
     api.playerReady.on(()=>{S.ready=true;const b=$('rPlay');if(b)b.disabled=false;});
     api.playerStateChanged.on(e=>{const b=$('rPlay');if(!b)return;const on=e.state===1;b.textContent=on?'❚❚':'▶';b.classList.toggle('pause',on);});
     api.error.on(e=>{const l=$('rLoad');if(l){l.hidden=false;l.textContent='Не удалось открыть таб.';}console.error('riff',e);});
-    if(gen)api.tex(gen.tex);else if(p.tex)api.tex(p.tex);else api.load(new URL(p.src,document.baseURI).href);
+    if(gen)api.tex(gen.tex);else if(p._file)p._file.arrayBuffer().then(b=>api.load(new Uint8Array(b)));else if(p.tex)api.tex(p.tex);else api.load(new URL(p.src,document.baseURI).href);
     $('rPlay').onclick=()=>S.ready&&api.playPause();
     $('rSpd').onclick=()=>{SPEED=sp[(sp.indexOf(SPEED)+1)%sp.length];api.playbackSpeed=SPEED;ui();};
     $('rLoop').onclick=()=>{api.isLooping=!api.isLooping;ui();};
@@ -391,8 +394,9 @@ function ownerUI(panel){
     <label>Темп, уд/мин<input data-k="bpm" type="number" min="40" max="240" value="${H(p.bpm||'')}" placeholder="авто"></label>
     <button type="button" class="rx" data-del="${i}" title="Убрать часть">✕</button>
     ${PAT[p.pattern]&&PAT[p.pattern].kind==='b'?gridRow(p,i):''}
-    <label class="wide">Аккорды (необязательно — иначе из раздела «${H(p.where||'…')}»). Повтор: x3 после группы, группы через « | »<input data-k="chords" value="${H((p.chords||[]).join(' ').replace(/\( /g,'(').replace(/ \)/g,')'))}" placeholder="${H(sectionChords(p.where).join(' '))}"></label>
-    ${p.pattern?'':`<label class="wide">Файл Guitar Pro<input type="file" data-k="file" accept=".gp,.gp3,.gp4,.gp5,.gpx">${p.src?`<small>Сейчас: ${H(p.src.split('/').pop())}</small>`:''}</label>
+    ${p.pattern?'':'<!--'}<label class="wide">Аккорды (необязательно — иначе из раздела «${H(p.where||'…')}»). Повтор: x3 после группы, группы через « | »<input data-k="chords" value="${H((p.chords||[]).join(' ').replace(/\( /g,'(').replace(/ \)/g,')'))}" placeholder="${H(sectionChords(p.where).join(' '))}"></label>${p.pattern?'':'-->'}
+    ${p.pattern?'':`<div class="wide rfile"><label class="rfbtn">📁 ${p._file||p.src?'Заменить файл':'Выбрать файл Guitar Pro'}<input type="file" data-k="file" accept=".gp,.gp3,.gp4,.gp5,.gpx" hidden></label>
+      <span>${p._file?`Выбран: <b>${H(p._file.name)}</b> — нажми «Показать на странице», чтобы проверить`:p.src?`Сейчас: <b>${H(p.src.split('/').pop())}</b>`:'gp, gp3, gp4, gp5, gpx — до 2 МБ'}</span></div>
     <label class="wide">…или текст alphaTex<textarea data-k="tex" spellcheck="false">${H(p.tex||'')}</textarea></label>`}
   </div>`;
   const SYM={D:'↓',U:'↑',X:'✕',B:'Б','-':'·'},NEXT={D:'U',U:'X',X:'B',B:'-','-':'D'};
@@ -438,6 +442,7 @@ function ownerUI(panel){
       <li>Сменили тон или включили «Простые аккорды» — таб перестраивается под новые аккорды.</li>
       <li>Для поисковиков на странице появляется строчка «Как играть: бой «шестёрка» (куплет)…».</li></ul></div>
     <div class="rh1"><b>Своя партия</b> — рисунок «свой (файл GP / alphaTex)»:<ul>
+      <li><b>Как загрузить:</b> кнопка <b>«📁 Загрузить свой таб»</b> внизу формы → выбери файл → укажи «Что» и «Где играется» → «Показать на странице» (проверить) → «Опубликовать». Заменить файл — «📁 Заменить файл» в этой части.</li>
       <li><b>Guitar Pro</b>: одна гитарная дорожка, до 2 МБ (gp, gp3, gp4, gp5, gpx). Свою партию тон посетителя не меняет.</li>
       <li><b>alphaTex</b> — таб текстом: <code>лад.струна</code> — нота (<code>0.1</code> — открытая 1-я); <code>(0.1 1.2 0.3)</code> — несколько струн сразу; <code>:8</code> — дальше восьмые (<code>:4</code> четверти, <code>:2</code> половинные, <code>:16</code> шестнадцатые); <code>{d}</code> — с точкой; <code>r</code> — пауза; <code>|</code> — новый такт; <code>{ch "Am"}</code> — название аккорда; <code>x.3</code> — глушёная струна; <code>{bd}</code> / <code>{bu}</code> — удар вниз / вверх; <code>\\ts 3 4</code> — размер 3/4; <code>\\ro</code> … <code>\\rc 3</code> в начале тактов — повтор 3 раза.</li>
       <li>Пример (перебор Am и E, восьмые, 2 раза):<pre>\\tempo 80
@@ -452,11 +457,11 @@ function ownerUI(panel){
   </details>`;
   const paint=()=>{f.innerHTML=`<h3>Как играть</h3>${help()}<datalist id="rSecs">${secs.map(s=>`<option value="${H(s)}">`).join('')}</datalist>
     <div class="rpl">${list.map(row).join('')||'<small>Пока пусто — добавь часть: например «Перебор · Куплет · восьмёрка» и «Бой · Припев · шестёрка».</small>'}</div>
-    <div class="rb"><button type="button" id="rAdd">＋ Часть</button><button type="button" id="rPrev">Показать на странице</button><button class="go" type="submit">Опубликовать</button><button type="button" id="rX">Закрыть</button></div>
+    <div class="rb"><button type="button" id="rAdd">＋ Часть</button><button type="button" id="rUp">📁 Загрузить свой таб</button><button type="button" id="rPrev">Показать на странице</button><button class="go" type="submit">Опубликовать</button><button type="button" id="rX">Закрыть</button></div>
     <small>Аккорды берутся из раздела песни с тем же названием, что в «Где играется». Рисунок «свой» — для уникальной партии из Guitar Pro. «Показать на странице» — проверить у себя до публикации; посетители увидят через 1–2 минуты после «Опубликовать».</small>
     <div class="rmsg" id="rM"></div>`;
     f.querySelectorAll('[data-k]').forEach(el=>{el.addEventListener(el.type==='file'?'change':'input',()=>{const i=+el.closest('.rpi').dataset.i,k=el.dataset.k;
-      if(k==='file'){list[i]._file=el.files[0]||null;return;}
+      if(k==='file'){list[i]._file=el.files[0]||null;if(list[i]._file)delete list[i].tex;paint();return;}
       if(k==='chords'){list[i].chords=el.value.trim()?chordTokens(el.value):undefined;
         // подсказка: ритм такта после «=» должен быть ровно на весь такт
         const P=PAT[list[i].pattern],bad=[];
@@ -472,6 +477,8 @@ function ownerUI(panel){
     f.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.row],P=PAT[p.pattern],g=[...gridOf(p,P)],k=+b.dataset.slot;
       g[k]=NEXT[g[k]];if(k===0&&g[0]==='-')g[0]='D';p.grid=g.join('');if(p.grid===P.grid)delete p.grid;paint();});
     f.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{delete list[+b.dataset.reset].grid;paint();});
+    $('rUp').onclick=()=>{list.push({type:'Вступление',where:secs[0]||'',pattern:''});const i=list.length-1;paint();
+      const inp=f.querySelector(`.rpi[data-i="${i}"] input[type=file]`);if(inp){inp.closest('.rpi').scrollIntoView({block:'center'});inp.click();}};
     $('rAdd').onclick=()=>{list.push({type:list.length?'Бой':'Перебор',where:secs[list.length]||secs[0]||'',pattern:list.length?'b6':'p8'});paint();};
     $('rPrev').onclick=()=>{window.SONG_RIFF={parts:clean(list,true)};const keep=list;mount();list=keep;$('rEdit').click();msg('Так это увидят посетители (пока только у тебя). Не забудь «Опубликовать».');};
     $('rX').onclick=()=>{f.hidden=true;};
