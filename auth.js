@@ -240,7 +240,84 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     document.addEventListener('click',e=>{if(!m.hidden&&!m.contains(e.target))set(false);});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')set(false);});
   }
+  /* ===== Поиск в шапке: на всех страницах, по названию, исполнителю, «также ищут» и строчкам песни ===== */
+  function search(){
+    const wrap=document.querySelector('header.nav .wrap');
+    if(!wrap||document.getElementById('navSearch'))return;
+    const css=document.createElement('style');
+    css.textContent=`#navSearch{flex:none;width:40px;height:38px;border:none;border-radius:12px;background:rgba(239,236,251,.1);color:#EFECFB;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+#navSearch:hover{background:rgba(110,123,255,.24)}#navSearch svg{width:19px;height:19px}
+@media (max-width:820px){#navSearch{margin-left:auto}.live-dot~#navSearch{margin-left:0}#navSearch~#authBox{margin-left:0!important}}
+@media (max-width:560px){.live-dot:not(.on)~#navSearch{margin-left:auto}}
+#srch{position:fixed;inset:0;z-index:60;background:rgba(7,6,26,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:flex-start;padding:72px 16px 16px;font-family:Manrope,system-ui,sans-serif}
+#srch[hidden]{display:none}
+#srch .sp{width:100%;max-width:640px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;border-radius:20px;background:#1C1848;box-shadow:0 0 0 1px rgba(110,123,255,.35),0 30px 70px rgba(0,0,0,.55);overflow:hidden}
+#srch .sh{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(110,123,255,.2)}
+#srch .sh svg{flex:none;width:20px;height:20px;color:#9C97D6}
+#srch input{flex:1;min-width:0;background:transparent;border:none;outline:none;color:#EFECFB;font:700 18px Manrope,system-ui,sans-serif;padding:6px 0}
+#srch input::placeholder{color:#8E89C4}
+#srch input::-webkit-search-cancel-button{display:none}
+#srch .sx{flex:none;border:none;background:rgba(239,236,251,.08);color:#CFCCF2;font:800 12px Manrope,system-ui,sans-serif;padding:6px 9px;border-radius:8px;cursor:pointer}
+#srch .sr{overflow-y:auto;padding:8px}
+#srch .sg{padding:10px 10px 4px;color:#8E89C4;font-weight:800;font-size:11px;letter-spacing:1.4px;text-transform:uppercase}
+#srch .si{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:#EFECFB;text-decoration:none}
+#srch .si:hover,#srch .si.on{background:rgba(110,123,255,.2)}
+#srch .si .ic{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font:800 13px Manrope,system-ui,sans-serif}
+#srch .ic.ch{background:rgba(110,123,255,.2);color:#B3BAFF}#srch .ic.tb{background:rgba(240,168,48,.18);color:#F3C06A}#srch .ic.ar{background:rgba(255,95,207,.16);color:#FF9BE2}
+#srch .si b{display:block;font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#srch .si small{display:block;color:#9C97D6;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#srch .si>span{min-width:0;flex:1}
+#srch .si mark{background:none;color:#F0A830}
+#srch .sf{display:block;margin:6px 4px 4px;padding:12px;border-radius:12px;background:rgba(239,236,251,.06);color:#F0A830;font-weight:800;font-size:14px;text-align:center;text-decoration:none}
+#srch .sf:hover{background:rgba(239,236,251,.12)}
+#srch .se{padding:22px 12px;color:#9C97D6;font-weight:700;text-align:center}
+@media (max-width:560px){#srch{padding:10px 8px}#srch .sp{max-height:calc(100vh - 20px)}}`;
+    document.head.appendChild(css);
+    const ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>';
+    const b=document.createElement('button');b.id='navSearch';b.type='button';b.setAttribute('aria-label','Поиск');b.title='Поиск (/)';b.innerHTML=ico;
+    const ab=document.getElementById('authBox');ab?wrap.insertBefore(b,ab):wrap.appendChild(b);
+    const o=document.createElement('div');o.id='srch';o.hidden=true;o.setAttribute('role','dialog');o.setAttribute('aria-label','Поиск по сайту');
+    o.innerHTML=`<div class="sp"><div class="sh">${ico}<input type="search" id="srchQ" placeholder="Песня, исполнитель или строчка из песни" autocomplete="off" enterkeyhint="search"><button class="sx" type="button">Esc</button></div><div class="sr" id="srchR"></div></div>`;
+    document.body.appendChild(o);
+    const q=o.querySelector('#srchQ'),R=o.querySelector('#srchR');
+    const norm=t=>String(t||'').toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9#]+/g,' ').trim();
+    let S=null,pick=0;
+    const load=()=>S||(S=fetch(ROOT+'songs.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>(Array.isArray(j)?j:[]).map(s=>Object.assign({},s,{
+      _t:norm(s.title),_a:norm(s.artist),_k:norm((s.aka||[]).join(' ')),_x:norm(String(s.text||'').replace(/\{[^}]*\}|\[[^\]]*\]|\(\(|\)\)/g,''))}))).catch(()=>{S=null;return [];}));
+    const hl=(t,w)=>{const e=esc(t);if(!w)return e;const i=norm(t).indexOf(w);
+      // подсветка, только если совпадение легко найти в исходной строке
+      const k=String(t).toLowerCase().replace(/ё/g,'е').indexOf(w);return k<0||i<0?e:esc(t.slice(0,k))+'<mark>'+esc(t.slice(k,k+w.length))+'</mark>'+esc(t.slice(k+w.length));};
+    const line=(s,w)=>{const L=String(s.text||'').split('\n').map(l=>l.replace(/\{[^}]*\}|\[[^\]]*\]|\(\(|\)\)/g,'').trim()).filter(Boolean);const f=L.find(l=>norm(l).includes(w));return f?'«'+f.slice(0,70)+'»':'';};
+    const songUrl=s=>ROOT+(s.tab?'taby/':'akkordy/')+encodeURIComponent(s.id)+'.html';
+    async function run(){
+      const w=norm(q.value);const all=await load();
+      if(!w){R.innerHTML='<div class="se">Начни вводить — например «Король», «Кукла колдуна» или строчку из песни.</div>';return;}
+      const sc=s=>s._t.startsWith(w)?1:s._t.includes(w)?2:s._a.includes(w)?3:s._k.includes(w)?4:s._x.includes(w)?5:0;
+      const songs=all.map(s=>[sc(s),s]).filter(x=>x[0]).sort((a,b)=>a[0]-b[0]).slice(0,8);
+      const arts=new Map();all.forEach(s=>{if(s.artist&&s._a.includes(w))arts.set(s.artist,(arts.get(s.artist)||0)+1);});
+      let h='',n=0;
+      if(arts.size){h+='<div class="sg">Исполнители</div>'+[...arts].slice(0,4).map(([a,c])=>`<a class="si" data-i="${n++}" href="${ROOT}songs.html?artist=${encodeURIComponent(a)}"><i class="ic ar">${esc(a.split(/\s+/).filter((x,i,r)=>r.length<2||x.length>2||i===0).map(x=>x[0]).join('').slice(0,2).toUpperCase())}</i><span><b>${hl(a,w)}</b><small>${c} ${c%10===1&&c%100!==11?'песня':c%10>=2&&c%10<=4&&(c%100<10||c%100>=20)?'песни':'песен'}</small></span></a>`).join('');}
+      if(songs.length){h+='<div class="sg">Песни</div>'+songs.map(([k,s])=>`<a class="si" data-i="${n++}" href="${songUrl(s)}"><i class="ic ${s.tab?'tb':'ch'}">${s.tab?'Таб':'Am'}</i><span><b>${hl(s.title,w)}</b><small>${k===5?hl(line(s,w),w):hl(s.artist||'',w)}</small></span></a>`).join('');}
+      h+=n?`<a class="sf" href="${ROOT}songs.html?q=${encodeURIComponent(q.value.trim())}">Все результаты в каталоге →</a>`:`<div class="se">Ничего не нашлось. Нет нужной песни? <a href="${ROOT}songs.html?type=chords" style="color:#F0A830">Закажи аккорды</a> — подберу.</div>`;
+      R.innerHTML=h;pick=0;mark();
+    }
+    const items=()=>[...R.querySelectorAll('.si')];
+    const mark=()=>items().forEach((a,i)=>a.classList.toggle('on',i===pick));
+    const open=()=>{o.hidden=false;document.documentElement.style.overflow='hidden';q.focus();q.select();load();run();};
+    const close=()=>{o.hidden=true;document.documentElement.style.overflow='';};
+    b.addEventListener('click',open);
+    o.querySelector('.sx').addEventListener('click',close);
+    o.addEventListener('click',e=>{if(e.target===o)close();});
+    q.addEventListener('input',run);
+    q.addEventListener('keydown',e=>{const it=items();
+      if(e.key==='ArrowDown'){e.preventDefault();pick=Math.min(pick+1,it.length-1);mark();it[pick]&&it[pick].scrollIntoView({block:'nearest'});}
+      else if(e.key==='ArrowUp'){e.preventDefault();pick=Math.max(pick-1,0);mark();it[pick]&&it[pick].scrollIntoView({block:'nearest'});}
+      else if(e.key==='Enter'){e.preventDefault();if(it[pick])location.href=it[pick].href;else if(q.value.trim())location.href=ROOT+'songs.html?q='+encodeURIComponent(q.value.trim());}});
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape'&&!o.hidden)close();
+      else if(e.key==='/'&&o.hidden&&!/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||'')&&!(document.activeElement||{}).isContentEditable){e.preventDefault();open();}});
+  }
   // разделы подсвечиваются скриптом страницы чуть позже — меню строим после него
-  const go=()=>{paint();setTimeout(burger,0);};
+  const go=()=>{paint();search();setTimeout(burger,0);};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
 })();

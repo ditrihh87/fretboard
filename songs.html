@@ -26,6 +26,7 @@
   .tools{display:flex;gap:10px;margin:18px 0}
   .tools .addsong{flex:none;padding:0 18px;font-size:15px;white-space:nowrap}
   .tools .addsong[hidden]{display:none}
+  @media (max-width:560px){.tools{flex-wrap:wrap}.tools .artists{flex:1 1 100%;text-align:center;padding:12px}}
   .tools .search{min-width:0}
   @media (max-width:600px){.tools .addsong{display:none}}
   .search{flex:1 1 320px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239C97D6' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") no-repeat 16px 50% / 20px,rgba(28,24,72,.7);padding-left:48px!important;border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:14px;padding:15px 18px;color:var(--paper);font:600 16px var(--body)}
@@ -126,6 +127,7 @@
 
   <div class="tools">
     <input class="search" id="q" type="search" placeholder="Найти песню или исполнителя" autocomplete="off" aria-label="Поиск">
+    <a class="btn ghost addsong artists" href="artists.html">Исполнители</a>
     <a class="btn main addsong" id="addSong" href="add-song.html" hidden>＋ Добавить песню</a>
   </div>
   <script>/* кнопка «Добавить песню» / «Добавить таб» — только владельцу (вход «Тот Самый»), на телефоне скрыта */
@@ -187,11 +189,21 @@ if(TYPE!=='all'){
   $('cross').textContent=SECT.cross[0];$('cross').href=SECT.cross[1];$('cross').hidden=false;
   document.querySelectorAll(`[data-nav="${TYPE}"]`).forEach(a=>{a.classList.add('on');a.setAttribute('aria-current','page');});
 }
+/* ?artist=Имя — песни одного исполнителя (из страницы «Исполнители» и поиска в шапке); ?q= — сразу искать */
+const PRM=new URLSearchParams(location.search),ARTIST=PRM.get('artist')||'';
+if(PRM.get('q'))$('q').value=PRM.get('q');
+if(ARTIST){
+  $('kicker').textContent='Исполнитель';$('ttl').textContent=ARTIST;$('lead').textContent='';
+  document.title=`${ARTIST} — аккорды и табы | ditrihh`;
+  const md=document.querySelector('meta[name="description"]');if(md)md.content=`${ARTIST}: правильные аккорды и табы, подобранные и проверенные на гитаре — ditrihh.`;
+  $('cross').textContent='← Все исполнители';$('cross').href='artists.html';$('cross').hidden=false;
+}
 const F0=(()=>{const f=new URLSearchParams(location.search).get('f');return SECT.filters.some(x=>x[0]===f)?f:'all';})();
 $('filters').innerHTML=SECT.filters.map(([f,t])=>`<button data-f="${f}" aria-pressed="${f===F0}">${t}</button>`).join('');
 let SONGS=[],filter=F0,RT={},VW={};
 /* шапка «Fingerstyle» — только когда выбран фильтр Fingerstyle; остальные фильтры — обычная шапка раздела */
 function applyHead(){
+  if(ARTIST){try{const u=new URL(location.href);if(filter==='all')u.searchParams.delete('f');else u.searchParams.set('f',filter);history.replaceState(null,'',u);}catch(e){}return;}
   const fs=filter==='fs'&&TYPE==='tab';
   if(TYPE!=='all'){$('ttl').innerHTML=fs?'Fingerstyle<br><em>от ditrihh</em>':SECT.h1;$('lead').textContent=fs?'Мои аранжировки для одной гитары: мелодия, бас и аккомпанемент сразу. Табы со звуком — слушай, замедляй и играй вместе с ними.':SECT.lead;document.title=fs?'Fingerstyle табы и аранжировки — ditrihh':SECT.title;}
   try{const u=new URL(location.href);if(filter==='all')u.searchParams.delete('f');else u.searchParams.set('f',filter);history.replaceState(null,'',u);}catch(e){}
@@ -202,7 +214,8 @@ const HAY=new Map();
 const hay=s=>{if(!HAY.has(s.id))HAY.set(s.id,(s.title+' '+(s.artist||'')+' '+(s.aka||[]).join(' ')+' '+String(s.text||'').replace(/\{[^}]*\}|\[[^\]]*\]|\(\(|\)\)/g,'')).toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9#]+/g,' '));return HAY.get(s.id);};
 function render(){
   const q=$('q').value.toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9#]+/g,' ').trim();
-  const items=SONGS.filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||hay(s).includes(q))
+  if(ARTIST&&SONGS.length){const n=SONGS.filter(s=>s.artist===ARTIST);$('lead').textContent=n.length?`${n.length} ${n.length%10===1&&n.length%100!==11?'песня':n.length%10>=2&&n.length%10<=4&&(n.length%100<10||n.length%100>=20)?'песни':'песен'} на сайте`+[[n.filter(s=>!s.tab).length,'с аккордами'],[n.filter(s=>s.tab).length,'с табами']].filter(x=>x[0]&&x[0]<n.length).map((x,i)=>(i?', ':' · ')+x[0]+' '+x[1]).join(''):'Песен этого исполнителя пока нет.';}
+  const items=SONGS.filter(s=>!ARTIST||s.artist===ARTIST).filter(s=>TYPE==='all'||(TYPE==='tab'?!!s.tab:!s.tab)).filter(s=>!q||hay(s).includes(q))
     .filter(s=>filter==='all'||(filter==='saved'?DR.isSaved(s.id):filter==='ex'?!!s.exclusive:filter==='fs'?!!s.fingerstyle:filter==='tab'?!!s.tab:!s.tab));
   // эксклюзивные — первыми
   items.sort((a,b)=>(b.exclusive?1:0)-(a.exclusive?1:0));
