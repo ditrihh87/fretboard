@@ -168,13 +168,13 @@ function buildTex(part,map){
 /* ===== внешний вид ===== */
 const CSS=`
 .riff{margin:0 0 22px;border-radius:20px;padding:18px 18px 14px;background:linear-gradient(160deg,rgba(37,31,94,.75),rgba(20,17,55,.88));box-shadow:inset 0 0 0 1px rgba(110,123,255,.28)}
-.riff .rtabs{display:flex;gap:8px;overflow-x:auto;margin:12px 0 0;padding-bottom:2px}
-.riff .rtabs button{flex:none;border:none;border-radius:13px;padding:11px 18px;background:var(--card);color:var(--muted);font:800 15px var(--body);cursor:pointer;white-space:nowrap;transition:background .15s,box-shadow .15s,transform .15s}
+.riff .rtabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.riff .rtabs button{flex:none;border:none;border-radius:999px;padding:6px 12px;background:var(--card);color:var(--muted);font:800 13px var(--body);cursor:pointer;white-space:nowrap;transition:background .15s,box-shadow .15s,transform .15s}
 .riff .rtabs button[aria-selected="true"]{background:var(--amber);color:#1b1b1b}
-.riff .rtabs button[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 14%,var(--card));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--sc) 55%,transparent)}
-.riff .rtabs button[style*="--sc"]::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:currentColor;margin-right:7px;vertical-align:1px}
+.riff .rtabs button[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sc) 45%,transparent)}
+.riff .rtabs button[style*="--sc"]::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
 .riff .rtabs button[style*="--sc"]:hover{background:color-mix(in srgb,var(--sc) 24%,var(--card));transform:translateY(-1px)}
-.riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 18px color-mix(in srgb,var(--sc) 55%,transparent),0 4px 0 color-mix(in srgb,var(--sc) 55%,#000)}
+.riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 12px color-mix(in srgb,var(--sc) 45%,transparent)}
 .riff .chip.sec[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent)}
 .riff .rh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:8px}
 .riff .rchs{display:inline-flex;flex-wrap:wrap;gap:6px}
@@ -227,15 +227,23 @@ const CSS=`
 .riff .rc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
 .riff .rc .pl{width:46px;height:46px;border-radius:50%;border:none;background:var(--amber);color:#1b1b1b;font-size:18px;box-shadow:0 4px 0 var(--amber-d);cursor:pointer;padding-left:3px}
 .riff .rc .pl.pause{padding-left:0}.riff .rc .pl:disabled{opacity:.5;cursor:default}
-.riff .rc .b{border:none;border-radius:11px;padding:10px 13px;background:var(--card);color:var(--paper);font:800 13px var(--body);cursor:pointer}
+.riff .rc{gap:10px}
+.riff .rc .rgrp{display:inline-flex;gap:2px;padding:3px;border-radius:14px;background:rgba(7,6,26,.55);box-shadow:inset 0 0 0 1px rgba(110,123,255,.18)}
+.riff .rc .b{border:none;border-radius:11px;padding:0 12px;height:38px;background:transparent;color:#CFCCF2;font:800 14px var(--body);cursor:pointer;transition:background .15s,color .15s}
+.riff .rc .b.spd{min-width:52px}
+.riff .rc .pal{display:block;width:18px;height:18px;border-radius:50%;background:conic-gradient(#CFA6F7 0 60deg,#7CC4F2 0 120deg,#6FBF73 0 180deg,#E8D44D 0 240deg,#F0A830 0 300deg,#F26B6F 0)}
+.riff .rc .b:not(.on) .pal{background:#EFECFB;box-shadow:inset 0 0 0 2px rgba(7,6,26,.35)}
+.riff .rc .kb{margin-left:auto;display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-weight:700;font-size:12px}
+.riff .rc kbd{font:800 11px var(--body);padding:3px 7px;border-radius:6px;background:rgba(239,236,251,.08);box-shadow:inset 0 -2px 0 rgba(0,0,0,.35),inset 0 0 0 1px rgba(239,236,251,.15);color:#CFCCF2}
+@media (hover:none){.riff .rc .kb{display:none}}
 .riff .rc .b:hover{background:var(--card2)}
-.riff .rc .b.ic{width:42px;height:42px;padding:0;display:inline-grid;place-items:center}
-.riff .rc .b.on{background:rgba(240,168,48,.18);color:#F3C06A;box-shadow:inset 0 0 0 1px rgba(240,168,48,.45)}
-.riff .rc .sp{margin-left:auto;color:var(--muted);font-weight:700;font-size:12px}
+.riff .rc .b.ic{width:40px;padding:0;display:inline-grid;place-items:center}
+.riff .rc .b.on{background:rgba(240,168,48,.16);color:#F3C06A}
+.riff .rc #rCol.on{background:rgba(239,236,251,.08)}
 .riff .at-cursor-beat{background:var(--amber);width:3px;border-radius:2px;box-shadow:0 0 8px rgba(240,168,48,.8)}
 .riff .at-cursor-bar{background:transparent}
 .riff .at-selection div{background:rgba(111,191,115,.22)}
-@media (max-width:560px){.riff .rtabs button{padding:10px 14px;font-size:14px}.riff{padding:14px 12px 12px}.riff .rc .sp{flex-basis:100%;margin-left:0}.riff .rgrid span{min-width:32px}}
+@media (max-width:560px){.riff .rtabs button{padding:6px 11px;font-size:13px}.riff{padding:14px 12px 12px}.riff .rgrid span{min-width:32px}}
 .rown{display:flex;justify-content:flex-end;margin:0 0 12px}
 .rown[hidden]{display:none}
 .riff .redit{margin-left:auto;border:none;border-radius:10px;padding:7px 12px;background:var(--card);color:#CFCCF2;font:800 13px var(--body);cursor:pointer}
@@ -340,7 +348,7 @@ function draw(){
   box.innerHTML=`<div class="rh">${pat?`<span class="chip pat">${H(pat)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="rchs" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>Вот так <span class="brandtxt">ditrihh</span> играет <span class="sw"${sc(p)}>${H(what)}</span></h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc soft">Нота в ноту, как играю я — слушай, замедляй и повторяй.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
-    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b ic" id="rLoop" aria-pressed="false" aria-label="Повтор" title="Повтор по кругу"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button><button class="b" id="rCol" aria-pressed="true">🎨 Цвета</button><span class="sp">Пробел — играть / пауза</span></div>`;
+    <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть" title="Играть / пауза — пробел">▶</button><div class="rgrp"><button class="b spd" id="rSpd" title="Скорость: 100 → 75 → 50%">1×</button><button class="b ic" id="rLoop" aria-pressed="false" aria-label="Повтор" title="Повтор по кругу"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button><button class="b ic" id="rCol" aria-pressed="true" aria-label="Цвета струн" title="Цвета струн: вкл / выкл"><i class="pal"></i></button></div><span class="kb" title="Пробел — играть / пауза"><kbd>Пробел</kbd> ▶ / ❚❚</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
   const ed=box.querySelector('#rEditIn');if(ed)ed.onclick=()=>window.RIFF_EDIT&&RIFF_EDIT(S.cur);
   render(p,gen);
@@ -483,7 +491,7 @@ function stop(){try{S.api&&S.api.stop();}catch(e){}}
 let SPEED=1;
 function render(p,gen){
   const sp=[1,.75,.5];
-  const ui=()=>{const b=$('rSpd');if(!b)return;b.textContent='Скорость '+Math.round(SPEED*100)+'%';b.classList.toggle('on',SPEED<1);
+  const ui=()=>{const b=$('rSpd');if(!b)return;b.textContent=(SPEED===1?'1':String(SPEED).replace(/^0/,'0'))+'×';b.classList.toggle('on',SPEED<1);
     const lp=!!(S.api&&S.api.isLooping);$('rLoop').classList.toggle('on',lp);$('rLoop').setAttribute('aria-pressed',lp);};
   if(PAT[p.pattern]&&!gen){$('rLoad').textContent='Не получилось разложить рисунок по аккордам этой части.';return;}
   loadAlphaTab().then(()=>{
@@ -534,7 +542,7 @@ function render(p,gen){
     $('rPlay').onclick=()=>S.ready&&api.playPause();
     $('rSpd').onclick=()=>{SPEED=sp[(sp.indexOf(SPEED)+1)%sp.length];api.playbackSpeed=SPEED;ui();};
     $('rLoop').onclick=()=>{api.isLooping=!api.isLooping;ui();};
-    const colUI=()=>{const on=colorMode(),b=$('rCol');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);b.textContent=on?'🎨 Цвета':'⚪ Белые';}S.box.classList.toggle('mono',!on);};
+    const colUI=()=>{const on=colorMode(),b=$('rCol');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);b.title=on?'Цвета струн включены — нажми, чтобы сделать белыми':'Цифры белые — нажми, чтобы раскрасить по струнам';}S.box.classList.toggle('mono',!on);};
     $('rCol').onclick=()=>{try{prefs.tabColor=!colorMode();savePrefs();}catch(e){}colUI();if(S.score){paintNotes(S.score);api.render();}};
     colUI();
     ui();
@@ -619,7 +627,7 @@ function ownerUI(panel){
     <div class="rh1"><b>Рисунки</b><table>${Object.values(PAT).map(P=>`<tr><td>${P.kind==='b'?'Бой':'Перебор'} «${H(P.name)}»</td><td><code>${P.kind==='b'?[...P.grid].map(c=>SYM[c]).join(' '):H(P.schema)}</code></td><td>${P.ts===3?'3/4':'4/4'}</td><td>${H(P.desc)}</td></tr>`).join('')}</table></div>
     <div class="rh1"><b>Что видят посетители</b><ul>
       <li>Вкладки частей, крупную схему боя стрелками со счётом (или порядок струн перебора) и короткое пояснение.</li>
-      <li>Таб со звуком (стальная акустика): ▶ играть, <b>скорость</b> 100 / 75 / 50%, <b>повтор</b> по кругу (значок ⟳, по умолчанию выключен), <b>пробел</b> — играть / пауза. Можно выделить такты мышью — повторяется участок.</li>
+      <li>Таб со звуком (стальная акустика): ▶ играть (или пробел), <b>скорость</b> 1× / 0.75× / 0.5×, <b>повтор</b> по кругу (значок ⟳, по умолчанию выключен), <b>пробел</b> — играть / пауза. Можно выделить такты мышью — повторяется участок.</li>
       <li>Во время игры подсвечивается текущая стрелка или струна, курсор бежит по табу. Окно не выше двух строк — длинный таб прокручивается внутри, страница стоит на месте.</li>
       <li>Сменили тон или включили «Простые аккорды» — таб перестраивается под новые аккорды.</li>
       <li>Для поисковиков на странице появляется строчка «Как играть: бой «шестёрка» (куплет)…».</li></ul></div>
