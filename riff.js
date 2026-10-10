@@ -173,6 +173,10 @@ const CSS=`
 .riff .at-selection div{background:rgba(111,191,115,.22)}
 @media (max-width:560px){.riff{padding:14px 12px 12px}.riff .rc .sp{flex-basis:100%;margin-left:0}.riff .rgrid span{min-width:32px}}
 .rown{display:flex;justify-content:flex-end;margin:0 0 12px}
+.rown[hidden]{display:none}
+.riff .redit{margin-left:auto;border:none;border-radius:10px;padding:7px 12px;background:var(--card);color:#CFCCF2;font:800 13px var(--body);cursor:pointer}
+.riff .redit:hover{background:var(--card2);color:var(--amber)}
+.rform .rpi{transition:box-shadow .3s}.rform .rpi.hl{box-shadow:inset 0 0 0 2px var(--amber)}
 .rown>button{border:none;border-radius:11px;padding:9px 13px;background:var(--card);color:#CFCCF2;font:800 13px var(--body);cursor:pointer}
 .rown>button:hover{background:var(--card2);color:var(--amber)}
 .rform{margin:0 0 22px;padding:16px;border-radius:18px;background:rgba(28,24,72,.92);box-shadow:inset 0 0 0 1px rgba(240,168,48,.35);display:grid;gap:12px}
@@ -218,7 +222,8 @@ const CSS=`
 let S=null;   // {parts, cur, api, ready, map, box, key}
 const H=t=>esc(String(t==null?'':t));
 const narrow=()=>innerWidth<700;
-function title(p){const P=PAT[p.pattern];return p.type+(p.where?' · '+p.where.toLowerCase():'')+(P&&!p.where?' · '+P.name:'');}
+function title(p){const P=PAT[p.pattern],w=String(p.where||'').trim(),same=w&&w.toLowerCase().replace(/ё/g,'е').startsWith(p.type.toLowerCase().replace(/ё/g,'е'));
+  return p.type+(w&&!same?' · '+w.toLowerCase():'')+(P&&!w?' · '+P.name:'');}
 
 function mount(){
   if(!document.getElementById('riffCss')){const st=document.createElement('style');st.id='riffCss';st.textContent=CSS;document.head.appendChild(st);}
@@ -227,6 +232,7 @@ function mount(){
   let own=false;try{const l=JSON.parse(localStorage.getItem('dgc_link')||'null');own=!!(l&&l.prov==='admin');}catch(e){}
   S={parts,cur:0,api:null,ready:false,map:window.RIFF_MAP||(c=>c),key:''};
   document.querySelectorAll('.riff,.rown,.rform').forEach(e=>e.remove());
+  S.own=own;
   if(own)ownerUI(panel);
   if(!parts.length)return true;
   const box=document.createElement('section');box.className='riff';box.id='riff';S.box=box;
@@ -245,11 +251,12 @@ function draw(){
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
-  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip">${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}<h2>${H(head)}</h2></div>
+  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip">${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rView" aria-pressed="false">Показать ноты</button><span class="sp">Слушай, замедляй и играй вместе</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
+  const ed=box.querySelector('#rEditIn');if(ed)ed.onclick=()=>window.RIFF_EDIT&&RIFF_EDIT(S.cur);
   render(p,gen);
 }
 /* подпись «rendered by alphaTab» в самом низу — прячем, как на страницах табов */
@@ -322,7 +329,7 @@ function update(map){
 function ownerUI(panel){
   const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
   const bar=document.createElement('div');bar.className='rown';
-  bar.innerHTML=`<button type="button" id="rEdit">${S.parts.length?'✎ Как играть: изменить':'＋ Добавить бой / перебор'}</button>`;
+  bar.innerHTML=`<button type="button" id="rEdit">＋ Добавить бой / перебор</button>`;if(S.parts.length)bar.hidden=true;
   const f=document.createElement('form');f.className='rform';f.hidden=true;
   const secs=sectionNames();
   const pOpts=k=>Object.entries(PAT).map(([id,P])=>`<option value="${id}"${id===k?' selected':''}>${P.kind==='b'?'Бой':'Перебор'}: ${P.name}</option>`).join('');
@@ -433,6 +440,10 @@ function ownerUI(panel){
     }catch(err){msg('Не получилось: '+err.message+(String(err.message).includes('unknown')||String(err.message).includes('400')?' (обнови функцию на сервере — см. STATUS.md)':''),true);}};
   panel.before(bar,f);
   $('rEdit').onclick=()=>{f.hidden=!f.hidden;if(!f.hidden&&!f.innerHTML)paint();};
+  // «✎ Редактировать» в блоке: открыть форму и подсветить ту часть, что сейчас на экране
+  window.RIFF_EDIT=i=>{f.hidden=false;if(!f.innerHTML)paint();
+    const row=f.querySelector(`.rpi[data-i="${i}"]`)||f;f.scrollIntoView({behavior:'smooth',block:'start'});
+    if(row!==f){row.classList.add('hl');setTimeout(()=>row.classList.remove('hl'),1600);const inp=row.querySelector('select,input');if(inp)setTimeout(()=>inp.focus({preventScroll:true}),400);}};
   paint();
 }
 
