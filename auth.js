@@ -145,8 +145,10 @@
     const css=document.createElement('style');
     css.textContent=`
 #authBox{position:relative;flex:none}
-#authBox .ab-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border:none;border-radius:12px;background:rgba(239,236,251,.1);color:#EFECFB;font:800 14px Manrope,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
-#authBox .ab-btn:hover{background:rgba(110,123,255,.24)}
+#authBox .ab-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border:none;border-radius:12px;background:#1C1848;color:#EFECFB;font:800 14px Manrope,system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:color .15s,background-color .15s,box-shadow .15s}
+#authBox .ab-btn:not(.ab-ava):hover{background-color:#251F5E;color:#F0A830}
+#authBox .ab-ava:hover{box-shadow:0 0 0 2px #F0A830}
+#navBurger:hover{background:#251F5E;color:#F0A830}
 #authBox .ab-ava{width:38px;height:38px;padding:0;border-radius:50%;background:#F0A830 center/cover;color:#1b1b1b;overflow:hidden}
 #authBox .ab-pop{position:absolute;right:0;top:calc(100% + 10px);width:310px;box-sizing:border-box;padding:14px;border-radius:16px;background:#1C1848;border:1px solid rgba(110,123,255,.3);box-shadow:0 18px 40px rgba(0,0,0,.45);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;z-index:50}
 #authBox .ab-pop[hidden]{display:none}
@@ -220,7 +222,7 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     const wrap=document.querySelector('header.nav .wrap'),nav=wrap&&wrap.querySelector('nav');
     if(!nav||document.getElementById('navBurger'))return;
     const css=document.createElement('style');
-    css.textContent=`#navBurger{display:none;flex:none;width:40px;height:38px;border:none;border-radius:12px;background:rgba(239,236,251,.1);color:#EFECFB;cursor:pointer;align-items:center;justify-content:center;padding:0}
+    css.textContent=`#navBurger{display:none;flex:none;width:40px;height:38px;border:none;border-radius:12px;background:#1C1848;transition:color .15s,background .15s;color:#EFECFB;cursor:pointer;align-items:center;justify-content:center;padding:0}
 #navBurger svg{width:20px;height:20px}
 #navMenu{position:fixed;left:0;right:0;top:64px;z-index:19;background:rgba(12,10,36,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(110,123,255,.25);padding:8px 16px 16px;box-shadow:0 18px 40px rgba(0,0,0,.45)}
 #navMenu[hidden]{display:none}
@@ -245,8 +247,8 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     const wrap=document.querySelector('header.nav .wrap');
     if(!wrap||document.getElementById('navSearch'))return;
     const css=document.createElement('style');
-    css.textContent=`#navSearch{flex:none;width:40px;height:38px;border:none;border-radius:12px;background:rgba(239,236,251,.1);color:#EFECFB;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
-#navSearch:hover{background:rgba(110,123,255,.24)}#navSearch svg{width:19px;height:19px}
+    css.textContent=`#navSearch{flex:none;width:40px;height:38px;border:none;border-radius:12px;background:#1C1848;color:#EFECFB;transition:color .15s,background .15s;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+#navSearch:hover{background:#251F5E;color:#F0A830}#navSearch svg{width:19px;height:19px}
 @media (max-width:820px){#navSearch{margin-left:auto}.live-dot~#navSearch{margin-left:0}#navSearch~#authBox{margin-left:0!important}}
 @media (max-width:560px){.live-dot:not(.on)~#navSearch{margin-left:auto}}
 #srch{position:fixed;inset:0;z-index:60;background:rgba(7,6,26,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:flex-start;padding:72px 16px 16px;font-family:Manrope,system-ui,sans-serif}
