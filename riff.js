@@ -191,6 +191,9 @@ const CSS=`
 .riff .rseq i.bs{color:#F3C06A}
 .riff .rv{position:relative;border-radius:14px;background:rgba(7,6,26,.55);overflow-x:auto;overflow-y:hidden;padding:4px 6px;min-height:140px;scrollbar-width:thin;scrollbar-color:rgba(110,123,255,.45) transparent}
 .riff .rv.long{overflow-y:auto}
+.riff .rv::-webkit-scrollbar{width:8px;height:8px}.riff .rv::-webkit-scrollbar-track{background:transparent}
+.riff .rv::-webkit-scrollbar-thumb{background:rgba(110,123,255,.45);border-radius:8px}.riff .rv::-webkit-scrollbar-thumb:hover{background:rgba(110,123,255,.7)}
+.riff .rv::-webkit-scrollbar-button{display:none}
 .riff .rload{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:14px;text-align:center;padding:10px}
 .riff .rload[hidden]{display:none}
 .riff .rc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
@@ -296,9 +299,9 @@ function draw(){
     scheme=`<div class="rgrid" aria-label="Схема боя">${[...g].map((ch,i)=>`<span class="${i%2?'':'st'}"><b class="${ch==='X'?'x':ch==='-'?'h':ch==='B'?'bs':''}">${ch==='D'?'↓':ch==='U'?'↑':ch==='X'?'✕':ch==='B'?'Б':'·'}</b><small>${c[i]}</small></span>`).join('')}</div>`;}
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
-  const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
+  const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):`${p.type} — партия ditrihh`;
   box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
-    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:''}${scheme}${P?legend(P,p):''}
+    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc">Записано ditrihh нота в ноту: слушай, замедляй и играй вместе. Аккорды над табом — как в тексте песни.</p>`}${scheme}${P?legend(P,p):''}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
@@ -311,7 +314,7 @@ function hideMark(){const surf=$('riffAt')&&$('riffAt').querySelector('.at-surfa
   const cu=$('riffAt').querySelector('.at-cursors');if(cu)cu.style.height=surf.style.height||surf.offsetHeight+'px';
   // окно — не выше двух строк таба; длиннее — прокрутка внутри окна
   const rv=$('riffAt').parentElement,rows=[...surf.children].filter(d=>d.tagName==='DIV'&&d.style.display!=='none');
-  if(rows.length>2){rv.style.maxHeight=(parseFloat(rows[2].style.top)||rows[2].offsetTop)+10+'px';rv.classList.add('long');}else{rv.style.maxHeight='';rv.classList.remove('long');}}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
+  if(rows.length>2){rv.style.maxHeight=Math.min((parseFloat(rows[2].style.top)||rows[2].offsetTop),(parseFloat(rows[1].style.top)||rows[1].offsetTop)+(parseFloat(rows[1].style.height)||rows[1].offsetHeight))-14+'px';rv.classList.add('long');}else{rv.style.maxHeight='';rv.classList.remove('long');}}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
 /* ===== свой таб (Guitar Pro / alphaTex): аккорды по нотам =====
    Если в файле аккорды не подписаны — определяем по звучащим нотам и подписываем над табом, как в наших табах:
    удар/щипок из 3+ струн — свой аккорд; перебор — по нотам половины такта. Подпись — только там, где аккорд меняется. */
