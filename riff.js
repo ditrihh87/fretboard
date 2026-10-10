@@ -44,13 +44,15 @@ const COUNT={4:['1','и','2','и','3','и','4','и'],3:['1','и','2','и','3','�
 function sectionChords(where){
   const t=String(SONG.text||''),w=String(where||'').trim().toLowerCase();
   if(w){
-    let on=false,out=[];
+    let on=false,out=[],times=0;
     for(const line of t.split('\n')){
       const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
-      if(cm){if(on&&out.length)break;on=cm[1].toLowerCase().replace(/ё/g,'е').startsWith(w.replace(/ё/g,'е').split(/[\s,]+/)[0]);continue;}
+      if(cm){if(on&&out.length)break;on=cm[1].toLowerCase().replace(/ё/g,'е').startsWith(w.replace(/ё/g,'е').split(/[\s,]+/)[0]);
+        if(on){const r=cm[1].match(/[×xхX]\s*([2-8])\b/);times=r?+r[1]:0;}continue;}
       if(on)for(const m of line.matchAll(/\[([^\]]+)\]/g))out.push(m[1].trim());
     }
-    if(out.length)return dedupRun(out).slice(0,4);   // один круг: до 4 тактов (больше — только если аккорды заданы явно)
+    // один круг: до 4 тактов (больше — только если аккорды заданы явно); «Вступление ×4» → повтор ×4
+    if(out.length){const c=dedupRun(out).slice(0,4);return times?[...c,'x'+times]:c;}
   }
   return [...new Set(chordsIn(t))].slice(0,4);
 }
@@ -88,19 +90,47 @@ function beat(tok,v,d,first,chName){
 const okGrid=(g,P)=>P&&P.kind==='b'&&typeof g==='string'&&g.length===P.grid.length&&/^[DUXB-]+$/.test(g)&&g[0]!=='-';
 const gridOf=(p,P)=>okGrid(p.grid,P)?p.grid:P&&P.grid;
 const gridEv=g=>{const ev=[];for(let i=0;i<g.length;i++){if(g[i]==='-')continue;let d=1;while(g[i+d]==='-')d++;ev.push([g[i],d]);}return ev;};
+/* поле «Аккорды»: «Dm F Gm A x3 | Bb C» или «(Dm F) x2 Gm A» — x3 после группы = сыграть 3 раза;
+   « | » (отдельным словом) отделяет группы; «×3» и «х3» тоже понимаем. Аккорд со своей аппликатурой (Am|5x5553) не трогаем. */
+function chordTokens(str){
+  const out=[];
+  String(str||'').replace(/[×хХ](?=\s*[2-8](?:\b|$))/g,'x').replace(/(^|\s)x\s+(?=[2-8](?:\b|$))/g,'$1x').split(/[\s,]+/).filter(Boolean).forEach(t=>{
+    while(t.startsWith('(')){out.push('(');t=t.slice(1);}
+    let m=t.match(/^(.*)\)(x[2-8])?$/);
+    if(m){if(m[1])out.push(m[1]);out.push(')');if(m[2])out.push(m[2]);return;}
+    if(t==='|'||/^x[2-8]$/.test(t)){out.push(t);return;}
+    m=!t.includes('|')&&t.match(/^([A-H].*?)x([2-8])$/);
+    if(m){out.push(m[1],'x'+m[2]);return;}
+    if(t)out.push(t);
+  });
+  return out.slice(0,96);
+}
+// токены → такты: {c: аккорд, ro: начало повтора, rc: сколько раз}
+function seqOf(toks){
+  const out=[];let seg=0,grp=null;
+  for(const t of toks){
+    if(t==='|'){seg=out.length;grp=null;continue;}
+    if(t==='('){grp=out.length;continue;}
+    if(t===')')continue;
+    const m=/^x([2-8])$/.exec(t);
+    if(m){const from=grp!=null?grp:seg;if(out.length>from){out[from].ro=true;out[out.length-1].rc=+m[1];}grp=null;seg=out.length;continue;}
+    out.push({c:t});
+  }
+  return out.slice(0,32);   // до 32 тактов
+}
+const seqLabel=seq=>seq.map(x=>(x.ro?'‖: ':'')+x.c.split('|')[0]+(x.rc?' :‖ ×'+x.rc:'')).join(' · ');
 function buildTex(part,map){
   const P=PAT[part.pattern];if(!P)return null;
-  const src=(part.chords&&part.chords.length?part.chords:sectionChords(part.where)).slice(0,8);
-  const chords=src.map(c=>map(c)).filter(Boolean);
-  if(!chords.length)return null;
+  const seq=seqOf(part.chords&&part.chords.length?part.chords:sectionChords(part.where)).map(x=>Object.assign({},x,{c:map(x.c)})).filter(x=>x.c);
+  if(!seq.length)return null;
   const ev=P.ev||gridEv(gridOf(part,P));
-  const bars=[];
-  for(const c of chords){
-    const v=voices(c);if(!v)continue;
-    bars.push(ev.map(([tok,d],i)=>beat(tok,v,d,i===0,c.split('|')[0])).join(' '));
+  const bars=[],used=[];
+  for(const x of seq){
+    const v=voices(x.c);if(!v)continue;
+    bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+ev.map(([tok,d],i)=>beat(tok,v,d,i===0,x.c.split('|')[0])).join(' '));used.push(x);
   }
   if(!bars.length)return null;
-  return {tex:`\\tempo ${part.bpm||(P.kind==='b'?96:80)}\n.\n\\ts ${P.ts} 4 `+bars.join(' |\n'),chords};
+  return {tex:`\\tempo ${part.bpm||(P.kind==='b'?96:80)}\n.\n\\ts ${P.ts} 4 `+bars.join(' |\n'),chords:used.map(x=>x.c),label:seqLabel(used)};
 }
 
 /* ===== внешний вид ===== */
@@ -127,7 +157,8 @@ const CSS=`
 .riff .rseq{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .riff .rseq i{font-style:normal;min-width:34px;text-align:center;padding:7px 9px;border-radius:10px;background:rgba(7,6,26,.5);font-weight:800;font-size:16px;color:var(--paper)}
 .riff .rseq i.bs{color:#F3C06A}
-.riff .rv{position:relative;border-radius:14px;background:rgba(7,6,26,.55);overflow-x:auto;overflow-y:hidden;padding:4px 6px;min-height:140px}
+.riff .rv{position:relative;border-radius:14px;background:rgba(7,6,26,.55);overflow-x:auto;overflow-y:hidden;padding:4px 6px;min-height:140px;scrollbar-width:thin;scrollbar-color:rgba(110,123,255,.45) transparent}
+.riff .rv.long{overflow-y:auto}
 .riff .rload{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:14px;text-align:center;padding:10px}
 .riff .rload[hidden]{display:none}
 .riff .rc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
@@ -212,7 +243,7 @@ function draw(){
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
-  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip">${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.chords.map(c=>c.split('|')[0]).join(' · '))}</span>`:''}<h2>${H(head)}</h2></div>
+  box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip">${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rView" aria-pressed="false">Показать ноты</button><span class="sp">Слушай, замедляй и играй вместе</span></div>`;
@@ -222,7 +253,10 @@ function draw(){
 /* подпись «rendered by alphaTab» в самом низу — прячем, как на страницах табов */
 function hideMark(){const surf=$('riffAt')&&$('riffAt').querySelector('.at-surface');if(!surf)return;const last=surf.lastElementChild;
   if(last&&last.tagName==='DIV'&&(parseFloat(last.style.height)||99)<24&&surf.children.length>1){last.style.display='none';const top=parseFloat(last.style.top);if(top>0)surf.style.height=top+'px';}
-  const cu=$('riffAt').querySelector('.at-cursors');if(cu)cu.style.height=surf.style.height||surf.offsetHeight+'px';}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
+  const cu=$('riffAt').querySelector('.at-cursors');if(cu)cu.style.height=surf.style.height||surf.offsetHeight+'px';
+  // окно — не выше двух строк таба; длиннее — прокрутка внутри окна
+  const rv=$('riffAt').parentElement,rows=[...surf.children].filter(d=>d.tagName==='DIV'&&d.style.display!=='none');
+  if(rows.length>2){rv.style.maxHeight=(parseFloat(rows[2].style.top)||rows[2].offsetTop)+10+'px';rv.classList.add('long');}else{rv.style.maxHeight='';rv.classList.remove('long');}}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
 function stop(){try{S.api&&S.api.stop();}catch(e){}}
 let SPEED=1;
 function render(p,gen){
@@ -238,7 +272,7 @@ function render(p,gen){
       display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
         resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif',barNumberFont:'600 11px Manrope, Arial, sans-serif',markerFont:'800 14px Manrope, Arial, sans-serif'}},
       notation:{rhythmMode:'ShowWithBars',rhythmHeight:20,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
-      player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Off'}   // таб короткий и весь на экране — страницу за курсором не двигаем
+      player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Continuous',scrollElement:$('riffAt').parentElement,scrollOffsetY:-12}   // длинный таб едет внутри окна (не выше двух строк), страница стоит на месте
     });
     api.isLooping=true;api.playbackSpeed=SPEED;
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
@@ -298,7 +332,7 @@ function ownerUI(panel){
     <label>Темп, уд/мин<input data-k="bpm" type="number" min="40" max="240" value="${H(p.bpm||'')}" placeholder="авто"></label>
     <button type="button" class="rx" data-del="${i}" title="Убрать часть">✕</button>
     ${PAT[p.pattern]&&PAT[p.pattern].kind==='b'?gridRow(p,i):''}
-    <label class="wide">Аккорды (необязательно — иначе из раздела «${H(p.where||'…')}»)<input data-k="chords" value="${H((p.chords||[]).join(' '))}" placeholder="${H(sectionChords(p.where).join(' '))}"></label>
+    <label class="wide">Аккорды (необязательно — иначе из раздела «${H(p.where||'…')}»). Повтор: x3 после группы, группы через « | »<input data-k="chords" value="${H((p.chords||[]).join(' ').replace(/\( /g,'(').replace(/ \)/g,')'))}" placeholder="${H(sectionChords(p.where).join(' '))}"></label>
     ${p.pattern?'':`<label class="wide">Файл Guitar Pro<input type="file" data-k="file" accept=".gp,.gp3,.gp4,.gp5,.gpx">${p.src?`<small>Сейчас: ${H(p.src.split('/').pop())}</small>`:''}</label>
     <label class="wide">…или текст alphaTex<textarea data-k="tex" spellcheck="false">${H(p.tex||'')}</textarea></label>`}
   </div>`;
@@ -314,7 +348,8 @@ function ownerUI(panel){
       <li><b>Где играется</b> — название раздела <i>как в тексте песни</i>: Вступление, Куплет, Припев… Аккорды берутся из этого раздела сами: один круг, до 4 тактов, по такту на аккорд.</li>
       <li><b>Рисунок</b> — из списка; таб и звук построятся по аккордам песни и перестроятся, если посетитель сменит тон.</li>
       <li><b>Темп</b> — ударов в минуту; пусто — бой 96, перебор 80.</li>
-      <li><b>Аккорды</b> — только если нужен другой порядок или больше тактов: через пробел, до 8 (<code>Am F C G</code>).</li>
+      <li><b>Аккорды</b> — только если нужен другой порядок или больше тактов: через пробел, до 32 тактов (<code>Am F C G</code>).</li>
+      <li><b>Повторы</b>: <code>x3</code> после группы — сыграть её 3 раза, группы разделяй <code> | </code> через пробелы: <code>Dm F Gm A x3 | Bb C</code> — первая строка 3 раза, вторая один. Или скобками: <code>(Dm F) x2 Gm A</code>. На табе появятся знаки повтора ‖: :‖ ×3, звук тоже повторится. Если раздел в тексте подписан «Вступление ×4», повтор подставится сам.</li>
       <li><b>Показать на странице</b> — проверить у себя. <b>Опубликовать</b> — для всех, появится через 1–2 минуты. Убрать часть — ✕ и «Опубликовать».</li></ol></div>
     <div class="rh1"><b>Обозначения</b><ul>
       <li><b>Б</b> — бас аккорда (большой палец), <b>Б₂</b> — соседняя басовая струна; <b>1 2 3</b> — струны, 1 — самая тонкая.</li>
@@ -335,7 +370,7 @@ function ownerUI(panel){
     <div class="rmsg" id="rM"></div>`;
     f.querySelectorAll('[data-k]').forEach(el=>{el.addEventListener(el.type==='file'?'change':'input',()=>{const i=+el.closest('.rpi').dataset.i,k=el.dataset.k;
       if(k==='file'){list[i]._file=el.files[0]||null;return;}
-      if(k==='chords')list[i].chords=el.value.trim()?el.value.trim().split(/[\s,]+/):undefined;
+      if(k==='chords')list[i].chords=el.value.trim()?chordTokens(el.value):undefined;
       else if(k==='bpm')list[i].bpm=+el.value||undefined;
       else list[i][k]=el.value;
       if(k==='pattern'){delete list[i].grid;}
@@ -350,7 +385,7 @@ function ownerUI(panel){
     $('rX').onclick=()=>{f.hidden=true;};
   };
   const clean=(l,local)=>l.map(p=>{const o={type:TYPES.includes(p.type)?p.type:'Перебор'};if(p.where)o.where=String(p.where).slice(0,40);
-    if(p.pattern&&PAT[p.pattern]){o.pattern=p.pattern;if(p.chords&&p.chords.length)o.chords=p.chords.slice(0,8);if(p.bpm)o.bpm=p.bpm;if(okGrid(p.grid,PAT[p.pattern])&&p.grid!==PAT[p.pattern].grid)o.grid=p.grid;}
+    if(p.pattern&&PAT[p.pattern]){o.pattern=p.pattern;if(p.chords&&p.chords.length)o.chords=p.chords.slice(0,96);if(p.bpm)o.bpm=p.bpm;if(okGrid(p.grid,PAT[p.pattern])&&p.grid!==PAT[p.pattern].grid)o.grid=p.grid;}
     else{if(p.tex)o.tex=p.tex;if(p.src)o.src=p.src;if(local&&p._file)o._file=p._file;}
     return o;}).filter(o=>o.pattern||o.tex||o.src||o._file);
   const msg=(t,bad)=>{const m=$('rM');if(m){m.textContent=t;m.className='rmsg'+(bad?' bad':'');}};
