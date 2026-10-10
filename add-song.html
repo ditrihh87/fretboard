@@ -165,9 +165,9 @@
       <p class="hint">Каждую песню начинай строкой <code>=== Название | Исполнитель</code>. Сразу под ней можно (не обязательно) добавить строки <code>Слова: …</code>, <code>Музыка: …</code>, <code>Баре: Am 5, Bm 7, A5 0</code> (аккорд, пробел, лад: с какого лада играть; струна 6-я или 5-я — где на этом ладу корень; в «Простых аккордах» будут открытые), <code>Простые: F</code> (с какого аккорда начать «Простые аккорды»), <code>Также ищут: КиШ, первая строчка</code> (другие названия для поиска), ссылку на Яндекс Музыку и слово <code>Эксклюзив</code>. Дальше — текст с аккордами как обычно.</p>
       <div class="row">
         <div><label for="bArtist">Исполнитель по умолчанию</label><input type="text" id="bArtist" value="Король и Шут"></div>
-        <div><label for="bWords">Слова по умолчанию</label><input type="text" id="bWords" placeholder="например, Андрей Князев"></div>
+        <div><label for="bWords">Слова по умолчанию</label><input type="text" id="bWords" value="Андрей Князев"></div>
       </div>
-      <label for="bMusic">Музыка по умолчанию</label><input type="text" id="bMusic" value="Король и Шут">
+      <label for="bMusic">Музыка по умолчанию</label><input type="text" id="bMusic" value="" placeholder="если отличается от исполнителя">
       <label for="bsrc">Все песни подряд</label>
       <textarea id="bsrc" spellcheck="false" placeholder="=== Первая песня | Исполнитель&#10;Слова: Автор&#10;&#10;Куплет 1:&#10;Am          F&#10;Строка куплета&#10;&#10;=== Вторая песня&#10;https://music.yandex.ru/album/…/track/…&#10;&#10;Припев:&#10;C       G&#10;Строка припева"></textarea>
     </section>

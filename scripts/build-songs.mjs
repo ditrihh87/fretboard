@@ -19,7 +19,7 @@ const tpl = fs.readFileSync(path.join(ROOT, 'song.html'), 'utf8');
 
 // как в Яндекс Музыке: «Автор(ы): …» — слова и музыка вместе, без повторов
 const credits = s => {
-  const a = [...new Set([s.words, s.music].filter(Boolean))];
+  const a = [...new Set([s.words, s.music].filter(x => x && x !== s.artist))];   // сама группа — не автор
   return a.length ? [(a.length > 1 ? 'Авторы: ' : 'Автор: ') + a.join(', ')] : [];
 };
 
