@@ -147,7 +147,7 @@
 #authBox{position:relative;flex:none}
 #authBox .ab-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border:none;border-radius:12px;background:#1C1848;color:#EFECFB;font:800 14px Manrope,system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:color .15s,background-color .15s,box-shadow .15s}
 #authBox .ab-btn:not(.ab-ava):hover{background-color:#251F5E;color:#F0A830}
-#authBox .ab-ava:hover{box-shadow:0 0 0 2px #F0A830}
+#authBox .ab-ava:hover{box-shadow:0 0 0 2px rgba(160,140,255,.35),0 0 12px rgba(160,107,255,.3)}
 #navBurger:hover{background:#251F5E;color:#F0A830}
 #authBox .ab-ava{width:38px;height:38px;padding:0;border-radius:50%;background:#F0A830 center/cover;color:#1b1b1b;overflow:hidden}
 #authBox .ab-pop{position:absolute;right:0;top:calc(100% + 10px);width:310px;box-sizing:border-box;padding:14px;border-radius:16px;background:#1C1848;border:1px solid rgba(110,123,255,.3);box-shadow:0 18px 40px rgba(0,0,0,.45);color:#EFECFB;font-family:Manrope,system-ui,sans-serif;z-index:50}
