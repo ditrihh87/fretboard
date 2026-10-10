@@ -173,9 +173,12 @@ const CSS=`
 .riff .rtabs button[style*="--sc"][aria-selected="true"]{background:var(--sc);color:#1b1b1b;box-shadow:0 0 18px color-mix(in srgb,var(--sc) 55%,transparent),0 4px 0 color-mix(in srgb,var(--sc) 55%,#000)}
 .riff .chip.sec[style*="--sc"]{color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent)}
 .riff .rh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:8px}
-.riff .rk{font-weight:800;font-size:16px;color:#CFCCF2}.riff .rk b{font-weight:800}
+.riff .chip.pat{background:rgba(240,168,48,.16);color:#F3C06A}
+.riff h2 .sw[style*="--sc"]{color:var(--sc)}
 .riff .chip{font-weight:800;font-size:12px;padding:4px 9px;border-radius:999px;background:rgba(239,236,251,.08);color:#CFCCF2}
-.riff h2{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;margin:0;flex-basis:100%}
+.riff h2{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.15;margin:0 0 2px;flex:1 1 auto;order:-3}
+.riff .rh .redit{order:-2;margin-left:auto}
+.riff .rh::after{content:'';order:-1;flex-basis:100%}
 .riff .rdesc{color:var(--paper);font-weight:600;font-size:16px;line-height:1.55;margin:0 0 14px;max-width:760px}
 .riff .rleg{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .riff .rstr{align-items:center;gap:6px}
@@ -324,8 +327,9 @@ function draw(){
     scheme=`<div class="rgrid" aria-label="Схема боя">${[...g].map((ch,i)=>`<span class="${i%2?'':'st'}"><b class="${ch==='X'?'x':ch==='-'?'h':ch==='B'?'bs':''}">${ch==='D'?'↓':ch==='U'?'↑':ch==='X'?'✕':ch==='B'?'Б':'·'}</b><small>${c[i]}</small></span>`).join('')}</div>`;}
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
-  const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
-  box.innerHTML=`<div class="rh"><span class="rk">Вот так играет <b class="brandtxt">ditrihh</b></span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
+  const pat=P?(own?(P.kind==='b'?'Бой':'Перебор')+' — свой рисунок':(P.kind==='b'?'Бой':'Перебор')+' «'+P.name+'»'):'';
+  const what=String(p.where||p.type||'').trim().toLowerCase().replace(/\s*[×xх]\s*\d+.*$/i,'');
+  box.innerHTML=`<div class="rh">${pat?`<span class="chip pat">${H(pat)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>Вот так <span class="brandtxt">ditrihh</span> играет <span class="sw"${sc(p)}>${H(what)}</span></h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:`<p class="rdesc">Записано ditrihh нота в ноту: слушай, замедляй и играй вместе. Аккорды над табом — как в тексте песни.</p>`}${scheme}${P?legend(P,p):''}${P&&P.kind==='b'?'':strLegend()}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b ic" id="rLoop" aria-pressed="false" aria-label="Повтор" title="Повтор по кругу"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button><button class="b" id="rCol" aria-pressed="true">🎨 Цвета</button><span class="sp">Пробел — играть / пауза</span></div>`;
