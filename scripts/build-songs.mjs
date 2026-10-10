@@ -25,7 +25,7 @@ const credits = s => {
 
 /* «Как играть» (бой, перебор, вступление…) к песне с аккордами: riffs/<id>.json {parts:[…]} — кладёт сервер по кнопке владельца.
    Часть: {type, where?, pattern?, chords?, bpm?} — рисунок из библиотеки riff.js, или свой: src (файл GP в riffs/) / tex (alphaTex). */
-const RIFF_TYPES = ['Перебор', 'Бой', 'Вступление', 'Риф', 'Проигрыш'];
+const RIFF_TYPES = ['Перебор', 'Бой', 'Вступление', 'Риф', 'Проигрыш', 'Кода'];
 const riffOf = s => {
   if (s.tab) return null;
   const j = path.join(ROOT, 'riffs', s.id + '.json');

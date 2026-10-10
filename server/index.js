@@ -749,7 +749,7 @@ async function handlePublishTab(body, token) {
 
 /* ===== «Как играть» (бой, перебор, вступление…) к песне: riffs/<id>.json {parts:[…]} + свои файлы GP riffs/<id>-<n>.<ext>.
    Пишет только владелец, кнопкой на странице песни. Пустой список частей — убрать всё. Дальше GitHub Actions пересобирает страницу. */
-const RIFF_TYPES = ['Перебор', 'Бой', 'Вступление', 'Риф', 'Проигрыш'];
+const RIFF_TYPES = ['Перебор', 'Бой', 'Вступление', 'Риф', 'Проигрыш', 'Кода'];
 async function ghSha(path) { try { return (await gh(`repos/${GH_REPO}/contents/${path}?ref=main`)).sha; } catch (e) { if (e.status === 404) return null; throw e; } }
 async function ghPut(path, b64, message) {
   const sha = await ghSha(path);
