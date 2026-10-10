@@ -171,7 +171,11 @@ const CSS=`
 .riff .rk{font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:#B3AEE8}
 .riff .chip{font-weight:800;font-size:12px;padding:4px 9px;border-radius:999px;background:rgba(239,236,251,.08);color:#CFCCF2}
 .riff h2{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;margin:0;flex-basis:100%}
-.riff .rdesc{color:#CFCCF2;font-weight:600;font-size:14px;line-height:1.5;margin:0 0 12px;max-width:760px}
+.riff .rdesc{color:var(--paper);font-weight:600;font-size:16px;line-height:1.55;margin:0 0 14px;max-width:760px}
+.riff .rleg{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.riff .rleg span{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(239,236,251,.07);box-shadow:inset 0 0 0 1px rgba(110,123,255,.22);color:#E2DEFA;font-weight:700;font-size:14px}
+.riff .rleg b{min-width:28px;height:28px;padding:0 6px;box-sizing:border-box;display:grid;place-items:center;border-radius:999px;background:rgba(7,6,26,.6);color:var(--paper);font-size:17px;font-weight:800}
+.riff .rleg b.dn,.riff .rleg b.up{color:var(--paper)}.riff .rleg b.x{color:#FF7A7E}.riff .rleg b.bs{color:#F3C06A;font-size:15px}.riff .rleg b.h{color:rgba(239,236,251,.45)}
 .riff .rgrid{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .riff .rgrid span{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:38px;padding:8px 6px 6px;border-radius:12px;background:rgba(7,6,26,.5)}
 .riff .rgrid b{font-size:22px;line-height:1;color:var(--paper);font-weight:800}
@@ -284,7 +288,7 @@ function draw(){
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
   box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
-    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
+    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:''}${scheme}${P?legend(P,p):''}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
@@ -298,6 +302,14 @@ function hideMark(){const surf=$('riffAt')&&$('riffAt').querySelector('.at-surfa
   // окно — не выше двух строк таба; длиннее — прокрутка внутри окна
   const rv=$('riffAt').parentElement,rows=[...surf.children].filter(d=>d.tagName==='DIV'&&d.style.display!=='none');
   if(rows.length>2){rv.style.maxHeight=(parseFloat(rows[2].style.top)||rows[2].offsetTop)+10+'px';rv.classList.add('long');}else{rv.style.maxHeight='';rv.classList.remove('long');}}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
+/* обозначения под схемой — только те, что встречаются в рисунке */
+function legend(P,p){
+  let it;
+  if(P.kind==='b'){const g=gridOf(p,P)+(p.chords||[]).map(c=>{const e=String(c).indexOf('=');return e<0?'':barGrid(String(c).slice(e+1),P)||'';}).join('');
+    it=[['D','↓','вниз','dn'],['U','↑','вверх','up'],['X','✕','вниз с глушением','x'],['B','Б','бас (большой палец)','bs'],['-','·','пауза — звук тянется','h']].filter(([k])=>g.includes(k));}
+  else it=[['','Б','бас аккорда (большой палец)','bs'],...(/Б₂/.test(P.schema)?[['','Б₂','соседняя басовая струна','bs']]:[]),['','1 2 3','струны: 1 — самая тонкая','']];
+  return `<div class="rleg">${it.map(([,sym,txt,c])=>`<span><b class="${c}">${sym}</b>${txt}</span>`).join('')}</div>`;
+}
 function stop(){try{S.api&&S.api.stop();}catch(e){}}
 let SPEED=1;
 function render(p,gen){
