@@ -343,3 +343,6 @@ main>h1.vh+section{padding-top:48px}
 @media (min-width:821px){.nav .live-dot{display:none}}
 @media (max-width:820px){.nav a.btn.live[href*="#stream"]{display:inline-flex!important;margin-left:auto;padding:7px 11px;font-size:13px;background:#E5484D;color:#fff;box-shadow:none}}
 @media (prefers-reduced-motion:reduce){.nav nav a[data-nav="stream"].live{animation:none}}
+/* кнопка звука над Twitch-плеером — выше его нижней панели (шестерёнка, логотип) */
+.screen .lb-sound{bottom:62px;right:16px}
+@media (max-width:560px){.screen .lb-off strong{font-size:clamp(20px,6vw,30px)}}

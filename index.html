@@ -217,7 +217,7 @@ function paintSched(){
   const ttl=$('lbOff').querySelector('small');
   if(n.live){ttl.textContent='Стрим';$('lbWhen').textContent='Сейчас в эфире';$('lbIn').textContent='обычно с 00:00 до 05:00 по Москве';}
   else if(n.soon){ttl.textContent='Следующий стрим';$('lbWhen').textContent='Скоро начнём';$('lbIn').textContent='эфир обычно с 00:00 по Москве';}
-  else{ttl.textContent='Следующий стрим';$('lbWhen').textContent=n.label;$('lbIn').textContent=`${n.moved?'сегодня без эфира · ':''}по Москве · через ${inTxt(n.mins)}`;}
+  else{ttl.textContent='Следующий стрим';$('lbWhen').textContent=(n.label+' по МСК').replace(/ (в|по) /g,'\u00a0$1\u00a0');$('lbIn').textContent=`${n.moved?'сегодня без эфира · ':''}через ${inTxt(n.mins)}`;}
   $('lbPlay').hidden=!n.live;$('lbSub').hidden=!!n.live;
   $('lbBadge').classList.toggle('on',!!n.live);$('lbBadge').querySelector('span').textContent=n.live?'В эфире':'Офлайн';
   paintOffBtn(n);
