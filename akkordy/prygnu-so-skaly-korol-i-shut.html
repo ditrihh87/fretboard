@@ -122,6 +122,9 @@
   }
   .lyrics .cm{display:block;color:#B3AEE8;font-weight:800;font-size:12px;margin:26px 0 10px;letter-spacing:2.2px;text-transform:uppercase}
   .lyrics .cm:first-child{margin-top:4px}
+  /* разделы песни — свой цвет у каждого типа (тот же цвет у вкладок «Как играть») */
+  .lyrics .cm[style*="--sc"]{color:var(--sc);display:flex;align-items:center;gap:8px}
+  .lyrics .cm[style*="--sc"]::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--sc);box-shadow:0 0 8px var(--sc)}
   .lyrics .gap{height:.4em}
   .lyrics .gap+.cm{margin-top:18px}
   .lyrics .ln{display:flex;flex-wrap:nowrap;align-items:flex-end;margin-bottom:.85em;white-space:pre}
@@ -597,6 +600,11 @@ function floatVid(){
 function setTr(d){if(st.easy){st.easy=false;(prefs.easy||{})[SONG.id]=false;}st.tr=Math.max(-11,Math.min(11,st.tr+d));prefs.tr=prefs.tr||{};prefs.tr[SONG.id]=st.tr;savePrefs();drawSong();}
 // ((текст)) — курсив (бэк-вокал, пометки); может тянуться через аккорды и строки
 const itx=(t,S)=>String(t).split(/(\(\(|\)\))/).map(p=>p==='(('?(S.it=true,''):p==='))'?(S.it=false,''):p?(S.it?'<i>'+esc(p)+'</i>':esc(p)):'').join('');
+/* цвет раздела по названию: «Куплет 2», «Припев ×2», «Вступление» … — одинаковый в тексте и на вкладках боя/перебора */
+const SEC_COLORS=[[/^(вступ|интро|intro)/,'#7CC4F2'],[/^(пред.?припев|пре.?припев|pre)/,'#F3A86A'],[/^(куплет|verse)/,'#6FBF73'],[/^(припев|рефрен|chorus)/,'#FF7AC6'],
+  [/^(бридж|переход|bridge)/,'#CFA6F7'],[/^(проигрыш|интерлюд|interlude)/,'#E8D44D'],[/^(соло|solo)/,'#F26B6F'],[/^(кода|концовк|финал|оконч|аутро|outro|coda)/,'#A9A3E6']];
+function secColor(name){const n=String(name||'').toLowerCase().replace(/ё/g,'е').trim();for(const [re,c] of SEC_COLORS)if(re.test(n))return c;return null;}
+window.secColor=secColor;
 function drawSong(){
   const t=SONG.text||'';let tr=st.tr;
   const hasSh=SONG.shapes&&Object.keys(SONG.shapes).length;
@@ -620,7 +628,7 @@ function drawSong(){
   let html='';const S={it:false};
   t.split('\n').forEach(line=>{
     const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
-    if(cm){html+=`<span class="cm">${esc(cm[1])}</span>`;return;}
+    if(cm){const sc=secColor(cm[1]);html+=`<span class="cm"${sc?` style="--sc:${sc}"`:''}>${esc(cm[1])}</span>`;return;}
     if(/^\s*\{.*\}\s*$/.test(line))return;
     const parts=line.split(/(\[[^\]]+\])/),textOnly=parts.filter(p=>!/^\[/.test(p)).join('').trim()==='';
     let segs='',pend=null;
