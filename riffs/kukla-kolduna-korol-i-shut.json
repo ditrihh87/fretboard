@@ -1,7 +1,7 @@
 {
   "parts": [
     {
-      "type": "Вступление",
+      "type": "Бой",
       "where": "Вступление",
       "pattern": "b6",
       "chords": [
@@ -30,17 +30,28 @@
     {
       "type": "Бой",
       "where": "Припев",
-      "pattern": "b6"
-    },
-    {
-      "type": "Бой",
-      "where": "Проигрыш",
-      "pattern": "b6"
+      "pattern": "b6",
+      "chords": [
+        "Dm",
+        "Dm",
+        "Gm",
+        "A",
+        "x2"
+      ],
+      "bpm": 140
     },
     {
       "type": "Бой",
       "where": "Бридж",
-      "pattern": "b6"
+      "pattern": "b6",
+      "chords": [
+        "Bb+Bb=v..v....",
+        "F+F+F+F",
+        "Bb+Bb=v..v....",
+        "Gm+Gm=v..v....",
+        "A+A+A+A"
+      ],
+      "bpm": 140
     }
   ]
 }
