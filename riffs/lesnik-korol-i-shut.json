@@ -2,7 +2,7 @@
   "parts": [
     {
       "type": "Вступление",
-      "where": "Куплет",
+      "where": "Вступление",
       "src": "riffs/lesnik-korol-i-shut-1.gp"
     }
   ]
