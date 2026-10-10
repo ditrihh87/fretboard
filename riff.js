@@ -127,7 +127,7 @@ const CSS=`
 .riff .rseq{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .riff .rseq i{font-style:normal;min-width:34px;text-align:center;padding:7px 9px;border-radius:10px;background:rgba(7,6,26,.5);font-weight:800;font-size:16px;color:var(--paper)}
 .riff .rseq i.bs{color:#F3C06A}
-.riff .rv{position:relative;border-radius:14px;background:rgba(7,6,26,.55);overflow-x:auto;padding:4px 6px;min-height:140px}
+.riff .rv{position:relative;border-radius:14px;background:rgba(7,6,26,.55);overflow-x:auto;overflow-y:hidden;padding:4px 6px;min-height:140px}
 .riff .rload{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:14px;text-align:center;padding:10px}
 .riff .rload[hidden]{display:none}
 .riff .rc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
@@ -161,6 +161,18 @@ const CSS=`
 .rform .rgb button:hover{box-shadow:inset 0 0 0 2px var(--amber)}
 .rform .rgb b{font-size:22px;line-height:1;font-weight:800}.rform .rgb small{font-weight:800;font-size:11px;color:var(--muted)}
 .rform .rgb button.x b{color:#FF7A7E}.rform .rgb button.h b{color:rgba(239,236,251,.3)}
+.rform .rhelp{border-radius:12px;background:rgba(12,10,36,.5);padding:0 14px}
+.rform .rhelp summary{cursor:pointer;padding:11px 0;font-weight:800;font-size:14px;color:var(--amber);list-style:none}
+.rform .rhelp summary::-webkit-details-marker{display:none}
+.rform .rhelp[open]{padding-bottom:12px}
+.rform .rh1{margin:6px 0 10px;font-size:13px;line-height:1.55;color:#CFCCF2}
+.rform .rh1>b{display:block;color:var(--paper);font-size:14px;margin-bottom:4px}
+.rform .rh1 ol,.rform .rh1 ul{margin:0;padding-left:20px;display:grid;gap:3px}
+.rform .rh1 code,.rform .rh1 pre{font:700 12px ui-monospace,Menlo,monospace;background:rgba(239,236,251,.08);border-radius:6px;padding:1px 5px;color:#F3C06A}
+.rform .rh1 pre{display:block;padding:8px 10px;margin:4px 0 0;white-space:pre;overflow-x:auto}
+.rform .rh1 table{border-collapse:collapse;width:100%;max-width:560px}
+.rform .rh1 td{padding:4px 10px 4px 0;border-bottom:1px solid rgba(110,123,255,.15);vertical-align:top}
+.rform .rh1 td:nth-child(2) code{font-size:13px;letter-spacing:1px}
 .rform .rx{border:none;border-radius:10px;width:38px;height:38px;background:rgba(242,107,111,.18);color:#FF9CA0;font:800 16px var(--body);cursor:pointer}
 .rform .rb{display:flex;flex-wrap:wrap;gap:8px}
 .rform .rb button{border:none;border-radius:11px;padding:10px 14px;font:800 14px var(--body);cursor:pointer;background:var(--card2);color:var(--paper)}
@@ -209,7 +221,8 @@ function draw(){
 }
 /* подпись «rendered by alphaTab» в самом низу — прячем, как на страницах табов */
 function hideMark(){const surf=$('riffAt')&&$('riffAt').querySelector('.at-surface');if(!surf)return;const last=surf.lastElementChild;
-  if(last&&last.tagName==='DIV'&&(parseFloat(last.style.height)||99)<24&&surf.children.length>1){last.style.display='none';const top=parseFloat(last.style.top);if(top>0)surf.style.height=top+'px';}}
+  if(last&&last.tagName==='DIV'&&(parseFloat(last.style.height)||99)<24&&surf.children.length>1){last.style.display='none';const top=parseFloat(last.style.top);if(top>0)surf.style.height=top+'px';}
+  const cu=$('riffAt').querySelector('.at-cursors');if(cu)cu.style.height=surf.style.height||surf.offsetHeight+'px';}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
 function stop(){try{S.api&&S.api.stop();}catch(e){}}
 let SPEED=1;
 function render(p,gen){
@@ -225,7 +238,7 @@ function render(p,gen){
       display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
         resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif',barNumberFont:'600 11px Manrope, Arial, sans-serif',markerFont:'800 14px Manrope, Arial, sans-serif'}},
       notation:{rhythmMode:'ShowWithBars',rhythmHeight:20,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
-      player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true}
+      player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Off'}   // таб короткий и весь на экране — страницу за курсором не двигаем
     });
     api.isLooping=true;api.playbackSpeed=SPEED;
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
@@ -293,7 +306,29 @@ function ownerUI(panel){
   const gridRow=(p,i)=>{const P=PAT[p.pattern],g=gridOf(p,P),c=COUNT[P.ts],own=g!==P.grid;
     return `<div class="wide rge"><span class="rgl">Удары по долям — нажми, чтобы сменить: ↓ → ↑ → ✕ глушение → Б бас → · пауза${own?' · <button type="button" class="rgr" data-reset="'+i+'">Как было</button>':''}</span>
       <div class="rgb">${[...g].map((ch,k)=>`<button type="button" data-slot="${k}" data-row="${i}" class="${ch==='X'?'x':ch==='-'?'h':''}"><b>${SYM[ch]}</b><small>${c[k]}</small></button>`).join('')}</div></div>`;};
-  const paint=()=>{f.innerHTML=`<h3>Как играть</h3><datalist id="rSecs">${secs.map(s=>`<option value="${H(s)}">`).join('')}</datalist>
+  let helpOpen=!list.length;
+  const help=()=>`<details class="rhelp"${helpOpen?' open':''}><summary>📖 Шпаргалка</summary>
+    <div class="rh1"><b>Как добавить</b><ol>
+      <li><b>＋ Часть</b> — новая часть песни. У одной песни их может быть до 6: например, перебор во вступлении и бой в припеве.</li>
+      <li><b>Что</b> — Перебор, Бой, Вступление, Риф или Проигрыш (это подпись на вкладке).</li>
+      <li><b>Где играется</b> — название раздела <i>как в тексте песни</i>: Вступление, Куплет, Припев… Аккорды берутся из этого раздела сами: один круг, до 4 тактов, по такту на аккорд.</li>
+      <li><b>Рисунок</b> — из списка; таб и звук построятся по аккордам песни и перестроятся, если посетитель сменит тон.</li>
+      <li><b>Темп</b> — ударов в минуту; пусто — бой 96, перебор 80.</li>
+      <li><b>Аккорды</b> — только если нужен другой порядок или больше тактов: через пробел, до 8 (<code>Am F C G</code>).</li>
+      <li><b>Показать на странице</b> — проверить у себя. <b>Опубликовать</b> — для всех, появится через 1–2 минуты. Убрать часть — ✕ и «Опубликовать».</li></ol></div>
+    <div class="rh1"><b>Обозначения</b><ul>
+      <li><b>Б</b> — бас аккорда (большой палец), <b>Б₂</b> — соседняя басовая струна; <b>1 2 3</b> — струны, 1 — самая тонкая.</li>
+      <li><b>↓</b> удар вниз · <b>↑</b> вверх · <b>✕</b> вниз с глушением · <b>·</b> пауза / звук тянется. Счёт: <b>1 и 2 и 3 и 4 и</b>.</li>
+      <li><b>Свой бой</b>: выбери любой бой и нажимай на доли — удар меняется по кругу ↓ → ↑ → ✕ → Б → ·. «Как было» — вернуть стандартный.</li></ul></div>
+    <div class="rh1"><b>Рисунки</b><table>${Object.values(PAT).map(P=>`<tr><td>${P.kind==='b'?'Бой':'Перебор'} «${H(P.name)}»</td><td><code>${P.kind==='b'?[...P.grid].map(c=>SYM[c]).join(' '):H(P.schema)}</code></td><td>${P.ts===3?'3/4':'4/4'}</td></tr>`).join('')}</table></div>
+    <div class="rh1"><b>Своя партия</b> — рисунок «свой (файл GP / alphaTex)»:<ul>
+      <li><b>Guitar Pro</b>: 2–4 такта, одна гитарная дорожка, до 2 МБ (gp, gp5, gpx…).</li>
+      <li><b>alphaTex</b> — таб текстом: <code>лад.струна</code> — нота; <code>(0.1 1.2 0.3)</code> — несколько струн сразу; <code>:8</code> — дальше восьмые (<code>:4</code> четверти, <code>:16</code> шестнадцатые); <code>|</code> — новый такт; <code>{ch "Am"}</code> — название аккорда над нотой; <code>x.3</code> — глушёная струна; <code>{bd}</code> / <code>{bu}</code> — удар вниз / вверх; <code>r</code> — пауза.</li>
+      <li>Пример (перебор Am, восьмые):<pre>\\tempo 80
+.
+:8 0.5{ch "Am"} 2.3 1.2 2.3 0.1 2.3 1.2 2.3 |</pre></li></ul></div>
+  </details>`;
+  const paint=()=>{f.innerHTML=`<h3>Как играть</h3>${help()}<datalist id="rSecs">${secs.map(s=>`<option value="${H(s)}">`).join('')}</datalist>
     <div class="rpl">${list.map(row).join('')||'<small>Пока пусто — добавь часть: например «Перебор · Куплет · восьмёрка» и «Бой · Припев · шестёрка».</small>'}</div>
     <div class="rb"><button type="button" id="rAdd">＋ Часть</button><button type="button" id="rPrev">Показать на странице</button><button class="go" type="submit">Опубликовать</button><button type="button" id="rX">Закрыть</button></div>
     <small>Аккорды берутся из раздела песни с тем же названием, что в «Где играется». Рисунок «свой» — для уникальной партии из Guitar Pro. «Показать на странице» — проверить у себя до публикации; посетители увидят через 1–2 минуты после «Опубликовать».</small>
@@ -305,6 +340,7 @@ function ownerUI(panel){
       else list[i][k]=el.value;
       if(k==='pattern'){delete list[i].grid;}
       if(k==='pattern'||k==='where')paint();});});
+    const hp=f.querySelector('.rhelp');if(hp)hp.ontoggle=()=>{helpOpen=hp.open;};
     f.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{list.splice(+b.dataset.del,1);paint();});
     f.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.row],P=PAT[p.pattern],g=[...gridOf(p,P)],k=+b.dataset.slot;
       g[k]=NEXT[g[k]];if(k===0&&g[0]==='-')g[0]='D';p.grid=g.join('');if(p.grid===P.grid)delete p.grid;paint();});
