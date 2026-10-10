@@ -333,7 +333,33 @@ function chordOf(midis,simple,prev){
     if(r>=0&&t){const sc=score(r,t[0],t[1]);if(sc!=null&&sc>=best.sc-(simple?1.2:0.4))return prev;}}
   return best.name;
 }
-function autoChords(score){
+/* аккорды из текста песни: раздел «Где играется» (в приоритете) и вся песня */
+function songVocab(where){
+  const t=String(SONG.text||''),clean=c=>c.split('|')[0].trim(),w=String(where||'').trim().toLowerCase().replace(/ё/g,'е');
+  const all=[...new Set(chordsIn(t).map(clean))],sec=new Set();
+  if(w){let on=false;for(const line of t.split('\n')){const cm=line.match(/^\s*\{(?:comment|c):\s*(.*)\}\s*$/i);
+    if(cm){on=cm[1].toLowerCase().replace(/ё/g,'е').startsWith(w.split(/[\s,]+/)[0]);continue;}
+    if(on)for(const m of line.matchAll(/\[([^\]]+)\]/g))sec.add(clean(m[1]));}}
+  return all.length?{all,sec}:null;
+}
+// шаблон аккорда из названия в тексте: Am7 → m7, F#m → m, Cadd9 → add9, неизвестное — ближайшее (m…, …7, мажор)
+const tplOf=q=>{q=normQ(String(q||'').split('/')[0]);const t=CH_TPL.find(([x])=>x===q);if(t)return t;
+  const minor=/^m(?!aj)/.test(q),sev=/7/.test(q);return CH_TPL.find(([x])=>x===(minor?(sev?'m7':'m'):(sev?'7':'')));};
+function fromVocab(midis,V,prev,simple){
+  if(!V||midis.length<2)return null;
+  const w=new Array(12).fill(0);midis.forEach(m=>{w[((m%12)+12)%12]+=1;});
+  const bass=((Math.min(...midis)%12)+12)%12,pcs=w.map((x,i)=>x?i:-1).filter(i=>i>=0);
+  let best=null;
+  for(const name of V.all){const c=parseChord(name);if(!c)continue;const t=tplOf(c.q);if(!t)continue;
+    const set=t[1].map(i=>(i+c.pc)%12);
+    const hit=set.reduce((a,pc)=>a+(w[pc]?Math.min(w[pc],2):0),0),miss=set.filter(pc=>!w[pc]).length,extra=pcs.filter(pc=>!set.includes(pc)).reduce((a,pc)=>a+w[pc],0);
+    if(!w[c.pc]&&bass!==c.pc)continue;                                    // корня нет вовсе — не он
+    const sl=name.split('/')[1],sb=sl&&parseChord(sl);
+    const sc=hit-1.1*miss-(simple?0.35:0.8)*extra+(bass===(sb?sb.pc:c.pc)?(simple?3:1.6):0)+(V.sec.has(name)?0.8:0)+(name===prev?(simple?1.2:0.5):0);
+    if(!best||sc>best.sc)best={sc,name};}
+  return best&&best.sc>1?best.name:null;
+}
+function autoChords(score,V){
   const tr=score.tracks[0];if(!tr)return [];
   const st=tr.staves[0];if(!st)return [];
   let has=false;st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{if(bt.chordId)has=true;})));
@@ -345,14 +371,18 @@ function autoChords(score){
   st.bars.forEach(bar=>{
     const beats=[];bar.voices.forEach(v=>v.beats.forEach(bt=>{if(!bt.isRest&&bt.notes.length)beats.push(bt);}));
     if(!beats.length)return;beats.sort((a,b)=>a.playbackStart-b.playbackStart);
+    const pick=(m,simple,pv)=>fromVocab(m,V,pv,simple)||chordOf(m,simple,pv);
     const strums=beats.filter(bt=>live(bt).length>=3);
-    if(strums.length>=Math.max(1,beats.length/2)){strums.forEach(bt=>put(bt,chordOf(live(bt),false,prev)));return;}
-    // перебор: по половинам такта
+    if(strums.length>=Math.max(1,beats.length/2)){strums.forEach(bt=>put(bt,pick(live(bt),false,prev)));return;}
+    // перебор: куски по половинам такта; удар (3+ струны) посреди перебора — подписываем отдельно
     let len=0;try{len=bar.masterBar.calculateDuration();}catch(e){}
     const half=len?len/2:beats[beats.length-1].playbackStart+1;
-    const A=beats.filter(bt=>bt.playbackStart<half),B=beats.filter(bt=>bt.playbackStart>=half);
-    const nA=chordOf(A.flatMap(live),true,prev),nB=chordOf(B.flatMap(live),true,nA||prev),nAll=chordOf(beats.flatMap(live),true,prev);
-    if(nA&&nB&&nA!==nB){put(A[0],nA);put(B[0],nB);}else put(beats[0],nAll||nA||nB);
+    let grp=[],gh=-1;
+    const flush=()=>{if(!grp.length)return;const n=pick(grp.flatMap(live),true,prev);if(n)put(grp[0],n);grp=[];};
+    beats.forEach(bt=>{
+      if(live(bt).length>=3){flush();put(bt,pick(live(bt),false,prev));return;}
+      const h=bt.playbackStart<half?0:1;if(h!==gh){flush();gh=h;}grp.push(bt);});
+    flush();
   });
   return names;
 }
@@ -385,7 +415,7 @@ function render(p,gen){
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
-      if(!gen){try{const n=autoChords(sc);const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
+      if(!gen){try{const n=autoChords(sc,songVocab(p.where));const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
       sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
         t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
@@ -496,7 +526,7 @@ function ownerUI(panel){
     <div class="rh1"><b>Своя партия</b> — рисунок «свой (файл GP / alphaTex)»:<ul>
       <li><b>Как загрузить:</b> кнопка <b>«📁 Загрузить свой таб»</b> внизу формы → выбери файл → укажи «Что» и «Где играется» → «Показать на странице» (проверить) → «Опубликовать». Заменить файл — «📁 Заменить файл» в этой части.</li>
       <li><b>Guitar Pro</b>: одна гитарная дорожка, до 2 МБ (gp, gp3, gp4, gp5, gpx). Свою партию тон посетителя не меняет.</li>
-      <li><b>Аккорды над табом</b> сайт подпишет сам — распознает по нотам (удар из 3+ струн — по нему, перебор — по басу половины такта) и покажет только там, где аккорд меняется. Если в файле аккорды уже подписаны (Guitar Pro: Текст аккорда), берутся твои. Распознавание примерное: в сложной аранжировке с мелодией лучше подписать аккорды в Guitar Pro.</li>
+      <li><b>Аккорды над табом</b> сайт подпишет сам — берёт аккорды из текста песни (сначала из раздела «Где играется», потом из всей песни) и по нотам каждого такта выбирает, какой звучит; если ни один не подходит — распознаёт по нотам (удар из 3+ струн — по нему, перебор — по басу половины такта) и покажет только там, где аккорд меняется. Если в файле аккорды уже подписаны (Guitar Pro: Текст аккорда), берутся твои. Распознавание примерное: в сложной аранжировке с мелодией лучше подписать аккорды в Guitar Pro.</li>
       <li><b>alphaTex</b> — таб текстом: <code>лад.струна</code> — нота (<code>0.1</code> — открытая 1-я); <code>(0.1 1.2 0.3)</code> — несколько струн сразу; <code>:8</code> — дальше восьмые (<code>:4</code> четверти, <code>:2</code> половинные, <code>:16</code> шестнадцатые); <code>{d}</code> — с точкой; <code>r</code> — пауза; <code>|</code> — новый такт; <code>{ch "Am"}</code> — название аккорда; <code>x.3</code> — глушёная струна; <code>{bd}</code> / <code>{bu}</code> — удар вниз / вверх; <code>\\ts 3 4</code> — размер 3/4; <code>\\ro</code> … <code>\\rc 3</code> в начале тактов — повтор 3 раза.</li>
       <li>Пример (перебор Am и E, восьмые, 2 раза):<pre>\\tempo 80
 .
