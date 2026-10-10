@@ -304,3 +304,20 @@
 /* просмотры: число с глазиком */
 .views{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:12px;color:#9C97C9;white-space:nowrap;font-variant-numeric:tabular-nums}
 .views svg{flex:none;opacity:.85}
+
+/* шапка без окна стрима: одна колонка, блок стрима идёт сразу под ней */
+.hero.solo{padding-bottom:8px}
+.hero.solo+section{padding-top:48px}
+.hero.solo .wrap{display:block}
+/* окно стрима: слои плеера и заставка, пока эфира нет */
+.screen .sc-layer{position:absolute;inset:0}
+.screen .sc-layer[hidden],.screen .lb-off[hidden],.screen .lb-badge[hidden]{display:none}
+.screen.off{aspect-ratio:auto;min-height:340px;background:radial-gradient(circle at 30% 20%,#2B237A,#0B0920 70%)}
+@media (min-width:961px){.screen.off{aspect-ratio:16/9;min-height:0}}
+.screen .lb-off{position:absolute;inset:0;min-height:0}
+.screen.off .lb-off{position:relative;min-height:100%}
+.lb-badge.on{background:#E5484D;color:#fff}
+.lb-badge.on i{background:#fff;animation:pulse 1.6s infinite}
+/* эквалайзер на заставке — без анимации */
+.screen .lb-eq b{animation:none}
+.screen .lb-eq b:nth-child(1){height:45%}.screen .lb-eq b:nth-child(2){height:80%}.screen .lb-eq b:nth-child(3){height:30%}.screen .lb-eq b:nth-child(4){height:100%}.screen .lb-eq b:nth-child(5){height:55%}.screen .lb-eq b:nth-child(6){height:35%}.screen .lb-eq b:nth-child(7){height:75%}

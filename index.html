@@ -42,7 +42,7 @@
 </header>
 
 <main id="top">
-  <section class="hero">
+  <section class="hero solo">
     <div class="wrap">
       <div>
         <h1><img src="brand/ditrihh-logo.svg" alt="ditrihh"><span class="vh">ditrihh — уроки гитары, табы и стримы</span></h1>
@@ -53,37 +53,6 @@
           <span class="btn ghost off" aria-disabled="true">Школа с нуля · скоро</span>
         </div>
       </div>
-      <div class="livebox" id="liveBox">
-        <div class="lb-badge" id="lbBadge"><i></i><span>Офлайн</span></div>
-        <div class="lb-player" id="lbPlayer" hidden></div>
-        <button class="lb-sound" id="lbSound" type="button" aria-label="Звук" title="Включить / выключить звук" hidden>🔇</button>
-        <div class="lb-off" id="lbOff">
-          <div class="lb-eq" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
-          <small>Следующий стрим</small>
-          <strong id="lbWhen">сегодня в 00:00</strong>
-          <span id="lbIn">по Москве</span>
-          <p id="lbAbout">Денис на гитаре, Ксюша на вокале. Споём любую песню на русском — даже ту, которую слышим впервые.</p>
-          <script>(function(){var t=["Денис на гитаре, Ксюша на вокале. Споём любую песню на русском — даже ту, которую слышим впервые.", "Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.", "Гитарист, который играет всё с ходу, и вокалистка с потрясающим голосом. Любая песня на русском — прямо в эфире.", "Приём ведут доктор гитары Денис и доктор вокала Ксюша. Лечим любой песней на русском, даже незнакомой.", "Назови песню на русском — Денис подберёт её на гитаре, а Ксюша споёт. Даже если мы её ни разу не слышали.", "Добро пожаловать в музыкальную клинику! Живая гитара, живой вокал и любые песни на русском по твоему заказу.", "Денис и Ксюша: импровизация на гитаре и прекрасный вокал. Не знаем песню? Споём всё равно!", "Каждый вечер в музыкальной клинике: любая русская песня по заявке из чата — с ходу, вживую, вдвоём.", "Пиши в чат любую песню на русском — Денис сыграет, Ксюша споёт. Ждём на приём именно тебя!", "Гитара Дениса, голос Ксюши и твой заказ из чата. Споём любую песню на русском, даже если впервые её слышим."];var i=Math.floor(Math.random()*t.length);window.ABOUT={t:t,i:i};document.getElementById("lbAbout").textContent=t[i];})();</script>
-          <div class="lb-btns">
-            <a class="btn main" href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">💜 Подписаться на Twitch</a>
-            <a class="btn ghost" href="https://t.me/ditrihh" target="_blank" rel="noopener">Анонсы в Telegram</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="tabs" class="tabsec rnd">
-    <div class="wrap">
-      <div class="rnd-head">
-        <div>
-          <div class="kicker">Аккорды и табы</div>
-          <h2><span class="brandtxt">Что</span> сыграть сегодня?</h2>
-        </div>
-        <button class="btn ghost" id="rndMore" type="button">🎲 Другие песни</button>
-      </div>
-      <div class="rnd-list" id="rndList"><p class="lead">Загружаю песни…</p></div>
-      <div class="rnd-foot"><a class="btn ghost" href="songs.html?type=tab"><i class="bi" style="--ic:url(/brand/icons/tab.svg)"></i>Все табы</a><a class="btn ghost" href="songs.html?type=chords"><i class="bi" style="--ic:url(/brand/icons/chord.svg)"></i>Все аккорды</a></div>
     </div>
   </section>
 
@@ -94,7 +63,6 @@
           <div class="kicker">Стримы</div>
           <h2><span class="brandtxt">Играю</span> вживую каждый день</h2>
           <p class="lead" id="stAbout">Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.</p>
-          <script>(function(){var a=window.ABOUT;if(!a)return;var j=Math.floor(Math.random()*(a.t.length-1));if(j>=a.i)j++;document.getElementById("stAbout").textContent=a.t[j];})();</script>
         </div>
         <div class="sched"><small>Следующий эфир</small><b id="nextLive">сегодня в 00:00</b><small id="nextIn">по Москве</small><button class="btn ghost offbtn" id="offBtn" type="button" hidden></button></div>
       </div>
@@ -103,11 +71,24 @@
         <button class="tab" role="tab" aria-selected="false" data-p="vk"><span class="pl" style="background:#0077FF"></span>VK Видео Live</button>
       </div>
       <div class="player">
-        <div class="screen" id="screen">
-          <div class="poster">
-            <button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button>
-            <p id="posterText">Нажми, чтобы включить трансляцию на Twitch.</p>
+        <div class="screen off" id="screen">
+          <div class="sc-layer" id="scTw" hidden></div>
+          <div class="sc-layer" id="scAlt" hidden></div>
+          <!-- заставка, пока эфира нет -->
+          <div class="lb-off" id="lbOff">
+            <div class="lb-eq" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+            <small>Следующий стрим</small>
+            <strong id="lbWhen">сегодня в 00:00</strong>
+            <span id="lbIn">по Москве</span>
+            <p id="lbAbout">Денис на гитаре, Ксюша на вокале. Споём любую песню на русском — даже ту, которую слышим впервые.</p>
+            <script>(function(){var t=["Денис на гитаре, Ксюша на вокале. Споём любую песню на русском — даже ту, которую слышим впервые.", "Музыкальная клиника открыта! Денис импровизирует на гитаре, Ксюша поёт — заказывай любую песню на русском.", "Гитарист, который играет всё с ходу, и вокалистка с потрясающим голосом. Любая песня на русском — прямо в эфире.", "Приём ведут доктор гитары Денис и доктор вокала Ксюша. Лечим любой песней на русском, даже незнакомой.", "Назови песню на русском — Денис подберёт её на гитаре, а Ксюша споёт. Даже если мы её ни разу не слышали.", "Добро пожаловать в музыкальную клинику! Живая гитара, живой вокал и любые песни на русском по твоему заказу.", "Денис и Ксюша: импровизация на гитаре и прекрасный вокал. Не знаем песню? Споём всё равно!", "Каждый вечер в музыкальной клинике: любая русская песня по заявке из чата — с ходу, вживую, вдвоём.", "Пиши в чат любую песню на русском — Денис сыграет, Ксюша споёт. Ждём на приём именно тебя!", "Гитара Дениса, голос Ксюши и твой заказ из чата. Споём любую песню на русском, даже если впервые её слышим."];var i=Math.floor(Math.random()*t.length);document.getElementById("lbAbout").textContent=t[i];var j=Math.floor(Math.random()*(t.length-1));if(j>=i)j++;document.getElementById("stAbout").textContent=t[j];})();</script>
+            <div class="lb-btns">
+              <button class="btn main" id="lbPlay" type="button" hidden>▶ Смотреть эфир</button>
+              <a class="btn main" id="lbSub" href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">💜 Подписаться на Twitch</a>
+              <a class="btn ghost" href="https://t.me/ditrihh" target="_blank" rel="noopener">Анонсы в Telegram</a>
+            </div>
           </div>
+          <div class="lb-badge" id="lbBadge"><i></i><span>Офлайн</span></div>
         </div>
         <aside class="dn" id="donors" aria-label="Топ донатеров">
           <div class="dn-h">Топ донатеров</div>
@@ -124,6 +105,20 @@
         <a href="https://www.youtube.com/@ditrihh/live" target="_blank" rel="noopener"><i style="background:#FF3B30"></i>YouTube<small>↗</small></a>
         <a href="https://live.vkvideo.ru/ditrihh" target="_blank" rel="noopener" data-p="vk"><i style="background:#0077FF"></i>VK Видео Live<small>↗</small></a>
       </div>
+    </div>
+  </section>
+
+  <section id="tabs" class="tabsec rnd">
+    <div class="wrap">
+      <div class="rnd-head">
+        <div>
+          <div class="kicker">Аккорды и табы</div>
+          <h2><span class="brandtxt">Что</span> сыграть сегодня?</h2>
+        </div>
+        <button class="btn ghost" id="rndMore" type="button">🎲 Другие песни</button>
+      </div>
+      <div class="rnd-list" id="rndList"><p class="lead">Загружаю песни…</p></div>
+      <div class="rnd-foot"><a class="btn ghost" href="songs.html?type=tab"><i class="bi" style="--ic:url(/brand/icons/tab.svg)"></i>Все табы</a><a class="btn ghost" href="songs.html?type=chords"><i class="bi" style="--ic:url(/brand/icons/chord.svg)"></i>Все аккорды</a></div>
     </div>
   </section>
 
@@ -183,7 +178,6 @@
 <script>
 const $=id=>document.getElementById(id);
 $('yr').textContent=new Date().getFullYear();
-let ytShown=false;
 let twLive=null; // идёт ли эфир на Twitch (null — пока неизвестно)
 const SC=['#F26B6F','#F0A830','#E8D44D','#6FBF73','#7CC4F2','#CFA6F7']; // 6 → 1
 
@@ -231,10 +225,13 @@ const inTxt=mins=>{const h=Math.floor(mins/60),m=mins%60;return h>=24?`${Math.fl
 function paintSched(){
   const n=nextStream();
   if(twLive===true)n.live=true; else if(twLive===false&&n.live){n.live=false;n.soon=true;}
-  if(typeof $('lbWhen')!=='undefined'&&$('lbWhen')){
-    if(n.soon){$('lbWhen').textContent='Скоро начнём';$('lbIn').textContent='эфир обычно с 00:00 по Москве';}
-    else if(!n.live){$('lbWhen').textContent=n.label;$('lbIn').textContent=`${n.moved?'сегодня без эфира · ':''}по Москве · через ${inTxt(n.mins)}`;}
-  }
+  // заставка в плеере: эфир по расписанию идёт, а Twitch-плеер не отозвался (заблокирован/не загрузился) — даём кнопку «Смотреть»
+  const ttl=$('lbOff').querySelector('small');
+  if(n.live){ttl.textContent='Стрим';$('lbWhen').textContent='Сейчас в эфире';$('lbIn').textContent='обычно с 00:00 до 05:00 по Москве';}
+  else if(n.soon){ttl.textContent='Следующий стрим';$('lbWhen').textContent='Скоро начнём';$('lbIn').textContent='эфир обычно с 00:00 по Москве';}
+  else{ttl.textContent='Следующий стрим';$('lbWhen').textContent=n.label;$('lbIn').textContent=`${n.moved?'сегодня без эфира · ':''}по Москве · через ${inTxt(n.mins)}`;}
+  $('lbPlay').hidden=!n.live;$('lbSub').hidden=!!n.live;
+  $('lbBadge').classList.toggle('on',!!n.live);$('lbBadge').querySelector('span').textContent=n.live?'В эфире':'Офлайн';
   paintOffBtn(n);
   if(n.soon){$('nextLive').textContent='скоро';$('nextIn').textContent='эфир обычно с 00:00 по Москве';$('navLiveText').textContent='Стрим скоро';$('navLive').style.background='';return;}
   if(n.live){$('nextLive').textContent='Сейчас идёт';$('nextIn').textContent='обычно с 00:00 до 05:00 по Москве';$('navLiveText').textContent='Сейчас в эфире';$('navLive').style.background='rgba(229,72,77,.18)';$('navLive').classList.add('on');}
@@ -255,16 +252,9 @@ if(ADM)$('offBtn').onclick=async()=>{const b=$('offBtn');const on=!!b.dataset.on
   try{await setOff(b.dataset.d,on);}catch(e){alert('Не получилось сохранить. Проверь, что вошёл как владелец.');}b.disabled=false;};
 paintSched();setInterval(paintSched,60e3);
 
-/* окно стрима на главной: Twitch-плеер без звука сообщает, идёт ли эфир */
+/* Twitch-плеер без звука сообщает, идёт ли эфир: идёт — плеер сразу виден, нет — заставка */
 let twPlayer=null;
-function setLive(on){
-  twLive=on;
-  $('liveBox').classList.toggle('on',on);
-  $('lbBadge').querySelector('span').textContent=on?'В эфире':'Офлайн';
-  $('lbPlayer').hidden=!on&&!ytShown;$('lbOff').hidden=on||ytShown;$('lbSound').hidden=!on;
-  $('lbBadge').style.display=$('lbPlayer').hidden?'':'none'; // у Twitch-плеера своя плашка «В эфире» — наша только когда плеер скрыт
-  paintSched();
-}
+function setLive(on){twLive=on;paintSched();render();}
 const API='https://functions.yandexcloud.net/d4epurfr35kcn0fl97up';
 // дни без эфира — с сервера; ссылка ditrihh.ru/#nostream (владелец) сразу отменяет ближайший эфир
 fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'sched'})}).then(r=>r.json()).then(j=>{OFF=j.off||[];paintSched();
@@ -288,18 +278,21 @@ function twShield(pl,sh){
     pl.addEventListener(Twitch.Player.OFFLINE,()=>{sh.style.display='none';});
   }catch(e){}
 }
-let twMuted=true;
-$('lbSound').onclick=()=>{twMuted=!twMuted;try{twPlayer.setMuted(twMuted);if(!twMuted)twPlayer.setVolume(.7);}catch(e){}$('lbSound').textContent=twMuted?'🔇':'🔊';};
 (function(){
+  if(!TW_OK)return;
   const sc=document.createElement('script');sc.src='https://player.twitch.tv/js/embed/v1.js';sc.async=true;
   sc.onload=()=>{
     try{
-      const holder=document.createElement('div');holder.id='twHero';holder.style.cssText='position:absolute;inset:0';$('lbPlayer').appendChild(holder);
-      const sh=document.createElement('div');sh.className='tw-shield';$('lbPlayer').appendChild(sh);
-      twPlayer=new Twitch.Player('twHero',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',muted:true,autoplay:true}); // без панелей Twitch (подписка, название, кнопки) — звук нашей кнопкой
-      twShield(twPlayer,sh);
-      twPlayer.addEventListener(Twitch.Player.ONLINE,()=>{if(!ytShown)setLive(true);});
+      const box=$('scTw');
+      box.innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><div class="tw-shield"></div><button class="lb-sound" id="scSound" type="button" aria-label="Звук" title="Включить / выключить звук">🔇</button>';
+      twPlayer=new Twitch.Player('twMain',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',muted:true,autoplay:true}); // со звуком браузер автозапуск блокирует — стартуем без звука, звук нашей кнопкой
+      twShield(twPlayer,box.querySelector('.tw-shield'));
+      let m=true;
+      $('scSound').onclick=()=>{m=!m;try{twPlayer.setMuted(m);if(!m)twPlayer.setVolume(.7);}catch(e){}$('scSound').textContent=m?'🔇':'🔊';};
+      twPlayer.addEventListener(Twitch.Player.PLAYING,()=>{try{m=twPlayer.getMuted();}catch(e){}$('scSound').textContent=m?'🔇':'🔊';});
+      twPlayer.addEventListener(Twitch.Player.ONLINE,()=>{if(twLive!==true)setLive(true);});
       twPlayer.addEventListener(Twitch.Player.OFFLINE,()=>{if(twLive!==false)setLive(false);});
+      render();
     }catch(e){}
   };
   document.head.appendChild(sc);
@@ -383,36 +376,31 @@ const P={
   // YouTube-плеер временно убран (в РФ встроенный плеер падает с ошибкой); вернуть: вкладка data-p="youtube" + embed/live_stream?channel=UCj3n2PaEJnJKxjEsVPcq4rw&autoplay=1
   vk:{video:`https://live.vkvideo.ru/app/embed/${VK_CHANNEL}?autoplay=true`,chat:null,text:'Нажми, чтобы включить трансляцию на VK Видео Live.',noChat:`Чат VK Видео Live — на <a href="https://live.vkvideo.ru/${VK_CHANNEL}" target="_blank" rel="noopener">странице канала</a>.`}
 };
-let cur='twitch',on=false;
-function poster(){
-  $('screen').innerHTML=`<div class="poster"><button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button><p>${P[cur].text}</p></div>`;
-  $('playBtn').onclick=start;
+let cur='twitch',twManual=false,vkOn=false,altKey='';
+/* что показать в окне: Twitch-плеер (эфир идёт), заставку (эфира нет) или VK Видео */
+function render(){
+  let mode;
+  if(cur==='twitch')mode=(twLive===true||twManual)?(twPlayer?'tw':'twframe'):'off';
+  else mode=vkOn?'vkframe':'vkposter';
+  $('scTw').hidden=mode!=='tw';$('lbOff').hidden=mode!=='off';$('lbBadge').hidden=mode!=='off';
+  $('scAlt').hidden=!['twframe','vkframe','vkposter'].includes(mode);
+  $('screen').classList.toggle('off',mode==='off');
+  if(twPlayer){try{mode==='tw'?twPlayer.play():twPlayer.pause();}catch(e){}}
+  if(altKey!==mode){altKey=mode;const alt=$('scAlt');
+    if(mode==='twframe')alt.innerHTML=TW_OK?`<iframe src="${P.twitch.video}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Трансляция ditrihh"></iframe>`
+      :`<div class="poster"><p>Twitch показывает плеер только на защищённых сайтах (https). Смотри эфир прямо на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
+    else if(mode==='vkframe')alt.innerHTML=`<iframe src="${P.vk.video}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Трансляция ditrihh"></iframe>`;
+    else if(mode==='vkposter'){alt.innerHTML=`<div class="poster"><button class="big" id="playBtn" aria-label="Включить трансляцию">▶</button><p>${P.vk.text}</p></div>`;$('playBtn').onclick=start;}
+    else alt.innerHTML='';}
 }
-function start(){
-  on=true;
-  if(cur==='twitch'&&!TW_OK){
-    $('screen').innerHTML=`<div class="poster"><p>Twitch показывает плеер только на защищённых сайтах (https). Смотри эфир прямо на <a href="https://www.twitch.tv/ditrihh" target="_blank" rel="noopener">twitch.tv/ditrihh</a>.</p></div>`;
-    return;
-  }
-  // Twitch — через JS-плеер без панелей (подписка, название, кнопки); звук — нашей кнопкой
-  if(cur==='twitch'&&window.Twitch&&Twitch.Player){
-    $('screen').innerHTML='<div id="twMain" style="position:absolute;inset:0"></div><div class="tw-shield"></div><button class="lb-sound" id="scSound" type="button" aria-label="Звук" title="Включить / выключить звук">🔇</button>';
-    try{
-      const pl=new Twitch.Player('twMain',{channel:'ditrihh',parent:TW_HOSTS,width:'100%',height:'100%',autoplay:true,muted:true}); // со звуком браузер автозапуск блокирует — стартуем без звука
-      let m=true;twShield(pl,$('screen').querySelector('.tw-shield'));
-      $('scSound').onclick=()=>{m=!m;try{pl.setMuted(m);if(!m)pl.setVolume(.7);}catch(e){}$('scSound').textContent=m?'🔇':'🔊';};
-      pl.addEventListener(Twitch.Player.PLAYING,()=>{try{m=pl.getMuted();}catch(e){}$('scSound').textContent=m?'🔇':'🔊';});
-      return;
-    }catch(e){}
-  }
-  $('screen').innerHTML=`<iframe src="${P[cur].video}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Трансляция ditrihh"></iframe>`;
-}
+function start(){if(cur==='twitch')twManual=true;else vkOn=true;render();}
+$('lbPlay').onclick=start;
 document.querySelectorAll('.tab[data-p]').forEach(b=>b.addEventListener('click',()=>{
   if(b.disabled)return;cur=b.dataset.p;
   document.querySelectorAll('.tab[data-p]').forEach(x=>x.setAttribute('aria-selected',x===b));
-  on?start():poster();
+  render();
 }));
-$('playBtn').onclick=start;
+render();
 /* «Смотреть …»: с компьютера — включаем плеер на сайте, с телефона/планшета — открываем приложение */
 (function(){
   const ua=navigator.userAgent;const touch=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1); // iPad с iPadOS выдаёт себя за Mac; ноутбук с сенсорным экраном — это ПК
@@ -423,7 +411,7 @@ $('playBtn').onclick=start;
     a.removeAttribute('target');const sm=a.querySelector('small');if(sm)sm.remove();
     a.addEventListener('click',e=>{e.preventDefault();
       const t=document.querySelector(`.tab[data-p="${a.dataset.p}"]`);if(t)t.click();
-      if(!on)start();
+      start();
       document.querySelector('#stream .player').scrollIntoView({behavior:'smooth',block:'center'});
     });
   });
