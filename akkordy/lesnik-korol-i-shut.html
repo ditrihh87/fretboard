@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/vendor/fonts/fonts.css">
 <link rel="stylesheet" href="site.css">
 <script src="auth.js" defer></script>
+<script src="riff.js" defer></script>
 <style>
   .nav nav a.on{color:var(--paper)}
   .editbtn{margin-left:4px;font-weight:800;font-size:12px;letter-spacing:.5px;padding:5px 12px;border-radius:999px;background:rgba(240,168,48,.18);color:var(--amber);text-decoration:none}.editbtn:hover{background:rgba(240,168,48,.3)}
@@ -566,6 +567,7 @@ function renderChordsPage(){
   $('scrollBtn').onclick=toggleScroll;
   drawSong();
   floatVid();
+  if(window.RIFF)RIFF.mount();   // «Как играть»: бой и перебор (riff.js)
 }
 /* видео с игрой — плавающее окно в правом нижнем углу (только компьютер); можно свернуть в кнопку «▶ Видео» */
 function floatVid(){
@@ -627,6 +629,7 @@ function drawSong(){
   });
   $('lyrics').innerHTML=html;
   fitLyrics();
+  window.RIFF_MAP=c=>vis(transposeChord(c,tr));if(window.RIFF)RIFF.update(window.RIFF_MAP);   // бой/перебор — под те же аккорды
 }
 /* строка песни не переносится (иначе аккорд уезжает с нужного слога): длинную строку чуть уменьшаем — до 75% размера;
    если и так не влезает, переносим её по аккордам (аккорд остаётся над своим слогом). Кнопки A−/A+ задают обычный размер. */
