@@ -119,18 +119,18 @@
     const hp=el.querySelector('[data-help]');if(hp)hp.onclick=e=>{e.stopPropagation();const sm=el.querySelector('.ab-code small');sm.hidden=!sm.hidden;};
   }
 
-  /* кнопка «▶ Стрим» в шапке: когда эфир идёт — «Стрим онлайн», мягко пульсирует (статус с Twitch, раз в 2 минуты) */
+  /* эфир в шапке: идёт — пункт меню «Стримы» становится красным «В эфире» (на телефоне — плашка LIVE), статус с Twitch раз в 2 минуты.
+     Отдельная кнопка «▶ Стрим» больше не показывается вне эфира. */
   (function(){
-    const btn=()=>document.querySelector('.nav a.btn[href*="#stream"]');
     async function check(){
-      const b=btn();if(!b)return;
+      const it=document.querySelector('.nav nav a[data-nav="stream"]'),b=document.querySelector('.nav a.btn[href*="#stream"]');
+      if(!it&&!b)return;
       let live=null;
       try{const c=JSON.parse(sessionStorage.getItem('dgc_live')||'null');if(c&&Date.now()-c.t<60e3)live=c.live;}catch(e){}
       if(live===null){try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'live'})});live=!!(await r.json()).live;
         try{sessionStorage.setItem('dgc_live',JSON.stringify({t:Date.now(),live}));}catch(e){}}catch(e){return;}}
-      b.classList.toggle('live',live);
-      b.innerHTML=live?'<i class="ld"></i>Стрим онлайн':'▶ Стрим';
-      b.title=live?'Сейчас в эфире — смотреть':'';
+      if(it){if(!it.dataset.t)it.dataset.t=it.textContent.trim();it.classList.toggle('live',live);it.textContent=live?'В эфире':it.dataset.t;it.title=live?'Сейчас в эфире — смотреть':'';}
+      if(b){b.classList.toggle('live',live);b.innerHTML=live?'<i class="ld"></i>LIVE':'▶ Стрим';b.title=live?'Сейчас в эфире — смотреть':'';}
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check);else check();
     setInterval(()=>{if(!document.hidden)check();},120e3);
@@ -234,7 +234,7 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     const b=document.createElement('button');b.id='navBurger';b.type='button';b.setAttribute('aria-label','Меню');b.setAttribute('aria-expanded','false');
     b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
     const m=document.createElement('div');m.id='navMenu';m.hidden=true;
-    const fill=()=>{m.innerHTML=[...nav.querySelectorAll('a')].map(a=>`<a href="${esc(a.href)}"${a.dataset.nav?` data-nav="${esc(a.dataset.nav)}"`:''}${a.classList.contains('on')?' class="on"':''}>${esc(a.textContent)}</a>`).join('');};
+    const fill=()=>{m.innerHTML=[...nav.querySelectorAll('a')].map(a=>`<a href="${esc(a.href)}"${a.dataset.nav?` data-nav="${esc(a.dataset.nav)}"`:''}${(c=>c?` class="${c}"`:'')(['on','live'].filter(k=>a.classList.contains(k)).join(' '))}>${esc(a.textContent)}</a>`).join('');};
     wrap.appendChild(b);document.body.appendChild(m);
     const set=o=>{m.hidden=!o;b.setAttribute('aria-expanded',String(o));b.innerHTML=o?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';};
     b.addEventListener('click',e=>{e.stopPropagation();if(m.hidden)fill();set(m.hidden);});
@@ -249,7 +249,7 @@ ${YA?'<button class="ab-go ab-ya" data-p="ya">Войти через Яндекс
     const css=document.createElement('style');
     css.textContent=`#navSearch{flex:none;width:40px;height:38px;border:none;border-radius:12px;background:#1C1848;color:#EFECFB;transition:color .15s,background .15s;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
 #navSearch:hover{background:#251F5E;color:#F0A830}#navSearch svg{width:19px;height:19px}
-@media (max-width:820px){#navSearch{margin-left:auto}.live-dot~#navSearch{margin-left:0}#navSearch~#authBox{margin-left:0!important}}
+@media (max-width:820px){#navSearch{margin-left:auto}.live-dot~#navSearch,.nav a.btn.live~#navSearch{margin-left:0}#navSearch~#authBox{margin-left:0!important}}
 @media (max-width:560px){.live-dot:not(.on)~#navSearch{margin-left:auto}}
 #srch{position:fixed;inset:0;z-index:60;background:rgba(7,6,26,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:flex-start;padding:72px 16px 16px;font-family:Manrope,system-ui,sans-serif}
 #srch[hidden]{display:none}
