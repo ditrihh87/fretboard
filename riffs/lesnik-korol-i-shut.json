@@ -42,6 +42,11 @@
       "type": "Бой",
       "where": "Куплет 3",
       "src": "riffs/lesnik-korol-i-shut-5.gp"
+    },
+    {
+      "type": "Бой",
+      "where": "Кода",
+      "src": "riffs/lesnik-korol-i-shut-6.gp"
     }
   ]
 }
