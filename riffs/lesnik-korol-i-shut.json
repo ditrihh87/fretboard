@@ -32,6 +32,16 @@
       "type": "Бой",
       "where": "Припев",
       "src": "riffs/lesnik-korol-i-shut-3.gp"
+    },
+    {
+      "type": "Бой",
+      "where": "Проигрыш",
+      "src": "riffs/lesnik-korol-i-shut-4.gp"
+    },
+    {
+      "type": "Бой",
+      "where": "Куплет",
+      "src": "riffs/lesnik-korol-i-shut-5.gp"
     }
   ]
 }
