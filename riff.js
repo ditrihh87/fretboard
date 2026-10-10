@@ -118,16 +118,25 @@ function seqOf(toks){
   }
   return out.slice(0,32);   // до 32 тактов
 }
-const seqLabel=seq=>seq.map(x=>(x.ro?'‖: ':'')+x.c.split('|')[0]+(x.rc?' :‖ ×'+x.rc:'')).join(' · ');
+// «Gm+Gm+A5+C5» — несколько аккордов в такте: делят такт поровну (Gm на 1–2, A5 на 3, C5 на 4)
+const subs=c=>String(c).split('+').filter(Boolean);
+const mapC=(c,map)=>subs(c).map(map).join('+');
+const barName=c=>{const a=subs(c).map(x=>x.split('|')[0]),o=[];a.forEach(x=>{if(o[o.length-1]!==x)o.push(x);});return o.length>1?'['+o.join(' ')+']':o[0];};
+const seqLabel=seq=>seq.map(x=>(x.ro?'‖: ':'')+barName(x.c)+(x.rc?' :‖ ×'+x.rc:'')).join(' · ');
 function buildTex(part,map){
   const P=PAT[part.pattern];if(!P)return null;
-  const seq=seqOf(part.chords&&part.chords.length?part.chords:sectionChords(part.where)).map(x=>Object.assign({},x,{c:map(x.c)})).filter(x=>x.c);
+  const seq=seqOf(part.chords&&part.chords.length?part.chords:sectionChords(part.where)).map(x=>Object.assign({},x,{c:mapC(x.c,map)})).filter(x=>x.c);
   if(!seq.length)return null;
   const ev=P.ev||gridEv(gridOf(part,P));
   const bars=[],used=[];
+  const slots=ev.reduce((t,[,d])=>t+d,0);
   for(const x of seq){
-    const v=voices(x.c);if(!v)continue;
-    bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+ev.map(([tok,d],i)=>beat(tok,v,d,i===0,x.c.split('|')[0])).join(' '));used.push(x);
+    // аккорды такта: делят такт поровну; лишние (не делят такт ровно) — отбрасываем до ближайшего делителя
+    let cs=subs(x.c);while(cs.length>1&&slots%cs.length)cs=cs.slice(0,-1);
+    const vs=cs.map(voices);if(vs.some(v=>!v))continue;
+    const per=slots/cs.length;let t=0,prev=-1;
+    bars.push((x.ro?'\\ro ':'')+(x.rc?`\\rc ${x.rc} `:'')+ev.map(([tok,d])=>{const k=Math.min(cs.length-1,Math.floor(t/per));t+=d;
+      const nm=cs[k].split('|')[0],show=k!==prev&&(prev<0||nm!==cs[prev].split('|')[0]);prev=k;return beat(tok,vs[k],d,show,nm);}).join(' '));used.push(x);
   }
   if(!bars.length)return null;
   return {tex:`\\tempo ${part.bpm||(P.kind==='b'?96:80)}\n.\n\\ts ${P.ts} 4 `+bars.join(' |\n'),chords:used.map(x=>x.c),label:seqLabel(used)};
@@ -243,7 +252,7 @@ function mount(){
 function draw(){
   const p=S.parts[S.cur],P=PAT[p.pattern],box=S.box;
   const gen=P?buildTex(p,S.map):null;
-  S.key=P?JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(S.map))+(p.grid||''):'';
+  S.key=P?JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(c=>mapC(c,S.map)))+(p.grid||''):'';
   const tabs=S.parts.length>1?`<div class="rtabs" role="tablist">${S.parts.map((x,i)=>`<button role="tab" data-i="${i}" aria-selected="${i===S.cur}">${H(title(x))}</button>`).join('')}</div>`:'';
   let scheme='';
   if(P&&P.kind==='b'){const g=gridOf(p,P),c=COUNT[P.ts];
@@ -321,7 +330,7 @@ function update(map){
   if(!S)return;S.map=map;
   if(!S.box||!S.parts.length)return;
   const p=S.parts[S.cur];if(!PAT[p.pattern])return;
-  const key=JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(map))+(p.grid||'');
+  const key=JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(c=>mapC(c,map)))+(p.grid||'');
   if(key===S.key)return;S.key=key;stop();draw();
 }
 
@@ -364,9 +373,12 @@ function ownerUI(panel){
       <tr><td><code>Am F C G x3</code></td><td>вся строка 3 раза (<code>×3</code> и русская «х3» тоже понимаются)</td></tr>
       <tr><td><code>Dm F Gm A x3 | Bb C</code></td><td>первая группа 3 раза, вторая один; « | » — отдельным словом, через пробелы</td></tr>
       <tr><td><code>(Dm F) x2 Gm A</code></td><td>повтор только того, что в скобках</td></tr>
+      <tr><td><code>Gm+A5</code></td><td>два аккорда в одном такте — по половине такта (на «1–2» и «3–4»)</td></tr>
+      <tr><td><code>Gm+Gm+A5+C5</code></td><td>Gm на «1–2», A5 на «3», C5 на «4»: аккорды через «+» делят такт поровну, повтор аккорда — дольше звучит</td></tr>
       <tr><td><code>Am|5x5553 C</code></td><td>аккорд со своей аппликатурой — как в тексте песни</td></tr>
       <tr><td>пусто</td><td>аккорды из раздела «Где играется»; раздел «Вступление ×4» сам даёт повтор ×4</td></tr></table>
-      <ul><li>До 32 тактов в части (8 строк по 4). Повтор x2…x8; на табе — знаки ‖: :‖ с «x3», звук повторяется нужное число раз.</li>
+      <ul><li>«+» без пробелов. В такте 4/4 можно 2, 4 или 8 аккордов, в 3/4 — 2, 3 или 6.</li>
+      <li>До 32 тактов в части (8 строк по 4). Повтор x2…x8; на табе — знаки ‖: :‖ с «x3», звук повторяется нужное число раз.</li>
       <li>Аккорды пиши в тональности оригинала — тон посетителя и «Простые аккорды» применятся сами.</li></ul></div>
     <div class="rh1"><b>Свой бой</b><ul>
       <li>Выбери любой бой из списка — под строкой появятся доли «1 и 2 и 3 и 4 и». Нажимай на долю — удар меняется по кругу: <b>↓ → ↑ → ✕ → Б → ·</b>. Первая доля не может быть паузой.</li>

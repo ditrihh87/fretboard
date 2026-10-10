@@ -776,7 +776,7 @@ async function handleRiff(body, token) {
     const where = String(p.where || '').replace(/[\u0000-\u001F]/g, ' ').trim().slice(0, 40); if (where) o.where = where;
     if (typeof p.pattern === 'string' && /^[a-z0-9]{2,4}$/.test(p.pattern)) {
       o.pattern = p.pattern;
-      if (Array.isArray(p.chords)) { const c = p.chords.map(String).filter(x => /^([A-H][^\s]{0,14}|\||\(|\)|x[2-8])$/.test(x)).slice(0, 96); if (c.length) o.chords = c; }   // аккорды + повторы: x3, ( ), |
+      if (Array.isArray(p.chords)) { const c = p.chords.map(String).filter(x => /^([A-H][^\s]{0,60}|\||\(|\)|x[2-8])$/.test(x)).slice(0, 96); if (c.length) o.chords = c; }   // аккорды + повторы: x3, ( ), |
       if (+p.bpm >= 40 && +p.bpm <= 240) o.bpm = Math.round(+p.bpm);
       if (typeof p.grid === 'string' && /^[DUXB][DUXB-]{5,7}$/.test(p.grid)) o.grid = p.grid;   // свой рисунок боя по долям
     } else if (p.file) {
