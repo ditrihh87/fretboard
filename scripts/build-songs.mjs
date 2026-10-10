@@ -43,6 +43,10 @@ const riffOf = s => {
       } else if (typeof p.src === 'string' && /^riffs\/[a-z0-9-]{1,90}\.(gp|gp3|gp4|gp5|gpx)$/.test(p.src) && fs.existsSync(path.join(ROOT, p.src))) o.src = p.src;
       else if (typeof p.tex === 'string' && p.tex.trim()) o.tex = p.tex.slice(0, 20000);
       else return null;
+      if (!o.pattern && p.labels && typeof p.labels === 'object') {   // свои подписи аккордов по тактам: {"3": "Gm A5@3"}
+        const L = {}; for (const [k, v] of Object.entries(p.labels).slice(0, 200)) if (/^\d{1,3}$/.test(k) && typeof v === 'string') L[k] = v.replace(/[\u0000-\u001F<>"]/g, '').slice(0, 80);
+        if (Object.keys(L).length) o.labels = L;
+      }
       return o;
     }).filter(Boolean);
     return parts.length ? { parts } : null;

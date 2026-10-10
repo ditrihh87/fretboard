@@ -789,6 +789,10 @@ async function handleRiff(body, token) {
     } else if (typeof p.src === 'string' && oldFiles.includes(p.src)) { o.src = p.src; keep.add(p.src); }
     else if (typeof p.tex === 'string' && p.tex.trim() && p.tex.length <= 20000) o.tex = p.tex.replace(/\r/g, '');
     else continue;
+    if (!o.pattern && p.labels && typeof p.labels === 'object') {   // свои подписи аккордов по тактам
+      const L = {}; for (const [k, v] of Object.entries(p.labels).slice(0, 200)) if (/^\d{1,3}$/.test(k) && typeof v === 'string') L[k] = v.replace(/[\u0000-\u001F<>"]/g, '').slice(0, 80);
+      if (Object.keys(L).length) o.labels = L;
+    }
     parts.push(o);
   }
   for (const f of oldFiles) if (!keep.has(f)) await ghDel(f, `Как играть: ${id} — убран файл`);

@@ -245,6 +245,13 @@ const CSS=`
 .rform .rfile{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .rform .rfbtn{display:inline-flex!important;align-items:center;gap:6px;padding:10px 14px;border-radius:11px;background:var(--amber);color:#1b1b1b!important;font:800 14px var(--body)!important;cursor:pointer}
 .rform .rfile span{font-weight:600;font-size:13px;color:#CFCCF2}.rform .rfile b{color:var(--paper)}
+.rform .rlab{display:grid;gap:8px}
+.rform .rlab code{font:700 12px ui-monospace,Menlo,monospace;background:rgba(239,236,251,.08);border-radius:6px;padding:1px 5px;color:#F3C06A}
+.rform .rlb{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.rform .rlb label{display:flex!important;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:10px;background:rgba(12,10,36,.6);box-shadow:inset 0 0 0 1px rgba(110,123,255,.2)}
+.rform .rlb label.own{box-shadow:inset 0 0 0 1.5px var(--amber)}
+.rform .rlb small{flex:none;min-width:18px;color:var(--muted);font-weight:800;font-size:11px}
+.rform .rlb input{flex:1;min-width:0;padding:6px 8px;font:700 14px var(--body);background:transparent;box-shadow:none}
 .rform .rx{border:none;border-radius:10px;width:38px;height:38px;background:rgba(242,107,111,.18);color:#FF9CA0;font:800 16px var(--body);cursor:pointer}
 .rform .rb{display:flex;flex-wrap:wrap;gap:8px}
 .rform .rb button{border:none;border-radius:11px;padding:10px 14px;font:800 14px var(--body);cursor:pointer;background:var(--card2);color:var(--paper)}
@@ -359,23 +366,44 @@ function fromVocab(midis,V,prev,simple){
     if(!best||sc>best.sc)best={sc,name};}
   return best&&best.sc>1?best.name:null;
 }
-function autoChords(score,V){
-  const tr=score.tracks[0];if(!tr)return [];
-  const st=tr.staves[0];if(!st)return [];
+/* подписи аккордов по тактам: {"3":"Gm A5@3 C5@4"} — номер такта (с 1) → аккорды через пробел;
+   «@3» — на 3-ю долю, «@2и» или «@2.5» — на «2 и»; без «@» — первый на 1-ю долю, остальные поровну по такту; пусто — без подписей */
+const Q=960;   // тиков в четверти
+const posTxt=t=>{const q=1+t/Q;return Math.abs(q-Math.round(q))<.01?String(Math.round(q)):Math.abs(q-Math.floor(q)-.5)<.01?Math.floor(q)+'и':q.toFixed(2);};
+function parseBarLabels(str,barLen){
+  const tk=String(str||'').trim().split(/\s+/).filter(Boolean).slice(0,16);if(!tk.length)return [];
+  const free=tk.filter(t=>!t.includes('@')).length;let k=0;
+  return tk.map(t=>{const [nm,ps]=t.split('@');let at;
+    if(ps!=null){const m=ps.replace(',','.').match(/^(\d+(?:\.\d+)?)(и)?$/i);at=m?(+m[1]-1+(m[2]?.5:0))*Q:0;}
+    else at=free>1&&barLen?Math.round(k++*barLen/free/Q*2)/2*Q:(k++,0);
+    return {name:nm,at};}).filter(x=>/^[A-H]/.test(x.name));
+}
+function autoChords(score,V,labels){
+  const tr=score.tracks[0];if(!tr)return null;
+  const st=tr.staves[0];if(!st)return null;
   let has=false;st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{if(bt.chordId)has=true;})));
   if(has)return null;                                             // в файле уже есть аккорды автора — не трогаем
   const live=bt=>bt.notes.filter(n=>!n.isDead&&!n.isTieDestination&&n.realValue!=null).map(n=>n.realValue);
-  const names=[];let prev=null,id=0;
-  const put=(bt,name)=>{if(!bt||!name||name===prev)return;prev=name;names.push(name);
-    const c=new alphaTab.model.Chord();c.name=name;c.showDiagram=false;c.showFingering=false;const key='auto'+(id++);st.addChord(key,c);bt.chordId=key;};
-  st.bars.forEach(bar=>{
-    const beats=[];bar.voices.forEach(v=>v.beats.forEach(bt=>{if(!bt.isRest&&bt.notes.length)beats.push(bt);}));
-    if(!beats.length)return;beats.sort((a,b)=>a.playbackStart-b.playbackStart);
+  const names=[],bars={};let prev=null,id=0,cur=null;
+  const mark=(bt,name)=>{const c=new alphaTab.model.Chord();c.name=name;c.showDiagram=false;c.showFingering=false;const key='auto'+(id++);st.addChord(key,c);bt.chordId=key;};
+  const put=(bt,name)=>{if(!bt||!name||name===prev)return;prev=name;names.push(name);mark(bt,name);
+    (bars[cur]=bars[cur]||[]).push(bt.playbackStart?name+'@'+posTxt(bt.playbackStart):name);};
+  st.bars.forEach((bar,bi)=>{
+    cur=bi+1;
+    const all=[];bar.voices.forEach(v=>v.beats.forEach(bt=>all.push(bt)));all.sort((a,b)=>a.playbackStart-b.playbackStart);
+    const beats=all.filter(bt=>!bt.isRest&&bt.notes.length);
+    let len=0;try{len=bar.masterBar.calculateDuration();}catch(e){}
+    // свои подписи владельца для этого такта
+    if(labels&&Object.prototype.hasOwnProperty.call(labels,String(cur))){
+      parseBarLabels(labels[cur],len).forEach(({name,at})=>{const bt=all.find(b=>b.playbackStart>=at-1)||all[all.length-1];if(!bt)return;
+        if(bt.chordId){const c=st.getChord(bt.chordId);if(c)c.name+=' '+name;}else mark(bt,name);prev=name;names.push(name);});
+      bars[cur]=String(labels[cur]).trim().split(/\s+/).filter(Boolean);
+      return;}
+    if(!beats.length)return;
     const pick=(m,simple,pv)=>fromVocab(m,V,pv,simple)||chordOf(m,simple,pv);
     const strums=beats.filter(bt=>live(bt).length>=3);
     if(strums.length>=Math.max(1,beats.length/2)){strums.forEach(bt=>put(bt,pick(live(bt),false,prev)));return;}
     // перебор: куски по половинам такта; удар (3+ струны) посреди перебора — подписываем отдельно
-    let len=0;try{len=bar.masterBar.calculateDuration();}catch(e){}
     const half=len?len/2:beats[beats.length-1].playbackStart+1;
     let grp=[],gh=-1;
     const flush=()=>{if(!grp.length)return;const n=pick(grp.flatMap(live),true,prev);if(n)put(grp[0],n);grp=[];};
@@ -384,7 +412,8 @@ function autoChords(score,V){
       const h=bt.playbackStart<half?0:1;if(h!==gh){flush();gh=h;}grp.push(bt);});
     flush();
   });
-  return names;
+  const out={};for(let k=1;k<=st.bars.length;k++)out[k]=(bars[k]||[]).join(' ');
+  return {names,bars:out,count:st.bars.length};
 }
 /* обозначения под схемой — только те, что встречаются в рисунке */
 function legend(P,p){
@@ -415,7 +444,7 @@ function render(p,gen){
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
-      if(!gen){try{const n=autoChords(sc,songVocab(p.where));const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
+      if(!gen){try{const r=autoChords(sc,songVocab(p.where),p.labels),n=r&&r.names;const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
       sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
         t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
@@ -479,7 +508,8 @@ function ownerUI(panel){
     ${p.pattern?'':'<!--'}<label class="wide">Аккорды (необязательно — иначе из раздела «${H(p.where||'…')}»). Повтор: x3 после группы, группы через « | »<input data-k="chords" value="${H((p.chords||[]).join(' ').replace(/\( /g,'(').replace(/ \)/g,')'))}" placeholder="${H(sectionChords(p.where).join(' '))}"></label>${p.pattern?'':'-->'}
     ${p.pattern?'':`<div class="wide rfile"><label class="rfbtn">📁 ${p._file||p.src?'Заменить файл':'Выбрать файл Guitar Pro'}<input type="file" data-k="file" accept=".gp,.gp3,.gp4,.gp5,.gpx" hidden></label>
       <span>${p._file?`Выбран: <b>${H(p._file.name)}</b> — нажми «Показать на странице», чтобы проверить`:p.src?`Сейчас: <b>${H(p.src.split('/').pop())}</b>`:'gp, gp3, gp4, gp5, gpx — до 2 МБ'}</span></div>
-    <label class="wide">…или текст alphaTex<textarea data-k="tex" spellcheck="false">${H(p.tex||'')}</textarea></label>`}
+    <label class="wide">…или текст alphaTex<textarea data-k="tex" spellcheck="false">${H(p.tex||'')}</textarea></label>
+    ${p._file||p.src||p.tex?`<div class="wide rlab" data-lab="${i}"><span class="rgl">Аккорды над табом — загружаю…</span></div>`:''}`}
   </div>`;
   const SYM={D:'↓',U:'↑',X:'✕',B:'Б','-':'·'},NEXT={D:'U',U:'X',X:'B',B:'-','-':'D'};
   const gridRow=(p,i)=>{const P=PAT[p.pattern],g=gridOf(p,P),c=COUNT[P.ts],own=g!==P.grid;
@@ -526,6 +556,7 @@ function ownerUI(panel){
     <div class="rh1"><b>Своя партия</b> — рисунок «свой (файл GP / alphaTex)»:<ul>
       <li><b>Как загрузить:</b> кнопка <b>«📁 Загрузить свой таб»</b> внизу формы → выбери файл → укажи «Что» и «Где играется» → «Показать на странице» (проверить) → «Опубликовать». Заменить файл — «📁 Заменить файл» в этой части.</li>
       <li><b>Guitar Pro</b>: одна гитарная дорожка, до 2 МБ (gp, gp3, gp4, gp5, gpx). Свою партию тон посетителя не меняет.</li>
+      <li><b>Поправить аккорды</b>: в части со своим табом есть блок «Аккорды над табом» — поле на каждый такт с тем, что распознал сайт. Пиши <code>Dm</code>, <code>Gm A5@3 C5@4</code> (@3 — на 3-ю долю, @2и — на «2 и»), стёр — без подписи. «Как распознал» — вернуть всё.</li>
       <li><b>Аккорды над табом</b> сайт подпишет сам — берёт аккорды из текста песни (сначала из раздела «Где играется», потом из всей песни) и по нотам каждого такта выбирает, какой звучит; если ни один не подходит — распознаёт по нотам (удар из 3+ струн — по нему, перебор — по басу половины такта) и покажет только там, где аккорд меняется. Если в файле аккорды уже подписаны (Guitar Pro: Текст аккорда), берутся твои. Распознавание примерное: в сложной аранжировке с мелодией лучше подписать аккорды в Guitar Pro.</li>
       <li><b>alphaTex</b> — таб текстом: <code>лад.струна</code> — нота (<code>0.1</code> — открытая 1-я); <code>(0.1 1.2 0.3)</code> — несколько струн сразу; <code>:8</code> — дальше восьмые (<code>:4</code> четверти, <code>:2</code> половинные, <code>:16</code> шестнадцатые); <code>{d}</code> — с точкой; <code>r</code> — пауза; <code>|</code> — новый такт; <code>{ch "Am"}</code> — название аккорда; <code>x.3</code> — глушёная струна; <code>{bd}</code> / <code>{bu}</code> — удар вниз / вверх; <code>\\ts 3 4</code> — размер 3/4; <code>\\ro</code> … <code>\\rc 3</code> в начале тактов — повтор 3 раза.</li>
       <li>Пример (перебор Am и E, восьмые, 2 раза):<pre>\\tempo 80
@@ -538,13 +569,32 @@ function ownerUI(panel){
       <li>Опубликовал, а на странице старое — подожди 1–2 минуты и обнови Ctrl+F5.</li>
       <li>Можно просто написать Claude: «Кукла колдуна: вступление — перебор восьмёрка, куплет — бой шестёрка x2» — добавит сам.</li></ul></div>
   </details>`;
+  /* «Аккорды над табом»: поле на каждый такт — то, что распознал сайт; правки сохраняются в part.labels */
+  const loadScore=async p=>{await loadAlphaTab();const set=new alphaTab.Settings();
+    if(p.tex&&!p._file){const t=new alphaTab.importer.AlphaTexImporter();t.initFromString(p.tex,set);return t.readScore();}
+    const buf=p._file?await p._file.arrayBuffer():await (await fetch(new URL(p.src,document.baseURI).href)).arrayBuffer();
+    return alphaTab.importer.ScoreLoader.loadScoreFromBytes(new Uint8Array(buf),set);};
+  async function labEditor(el,p){
+    try{
+      if(!p._auto){const sc=await loadScore(p);const r=autoChords(sc,songVocab(p.where));
+        if(!r){el.innerHTML='<span class="rgl">В файле уже подписаны аккорды (Guitar Pro) — показываются они. Чтобы править здесь, убери их в Guitar Pro.</span>';return;}
+        p._auto=r.bars;p._count=r.count;}
+      const L=p.labels||{},n=Math.min(p._count,64);
+      el.innerHTML=`<span class="rgl">Аккорды над табом — по тактам. Можно править: <code>Dm</code>, <code>Gm A5@3 C5@4</code> (@3 — 3-я доля, @2и — «2 и»). «—» — аккорд тянется с прошлого такта; стереть — без подписи. Правленые такты в оранжевой рамке, «Показать на странице» — проверить.${Object.keys(L).length?' · <button type="button" class="rgr" data-lreset>Как распознал</button>':''}</span>
+        <div class="rlb">${Array.from({length:n},(_,k)=>{const b=k+1,v=Object.prototype.hasOwnProperty.call(L,b)?L[b]:p._auto[b]||'';
+          return `<label class="${Object.prototype.hasOwnProperty.call(L,b)?'own':''}"><small>${b}</small><input data-bar="${b}" value="${H(v)}" placeholder="${H(p._auto[b]||'—')}" spellcheck="false"></label>`;}).join('')}</div>`;
+      el.querySelectorAll('[data-bar]').forEach(inp=>inp.addEventListener('input',()=>{const b=inp.dataset.bar,v=inp.value.trim().replace(/\s+/g,' ');p.labels=p.labels||{};
+        if(v===(p._auto[b]||''))delete p.labels[b];else p.labels[b]=v;inp.parentElement.classList.toggle('own',b in p.labels);}));
+      const rs=el.querySelector('[data-lreset]');if(rs)rs.onclick=()=>{delete p.labels;labEditor(el,p);};
+    }catch(e){el.innerHTML='<span class="rgl">Не удалось прочитать таб, чтобы показать аккорды.</span>';console.warn(e);}
+  }
   const paint=()=>{f.innerHTML=`<h3>Как играть</h3>${help()}<datalist id="rSecs">${secs.map(s=>`<option value="${H(s)}">`).join('')}</datalist>
     <div class="rpl">${list.map(row).join('')||'<small>Пока пусто — добавь часть: например «Перебор · Куплет · восьмёрка» и «Бой · Припев · шестёрка».</small>'}</div>
     <div class="rb"><button type="button" id="rAdd">＋ Часть</button><button type="button" id="rUp">📁 Загрузить свой таб</button><button type="button" id="rPrev">Показать на странице</button><button class="go" type="submit">Опубликовать</button><button type="button" id="rX">Закрыть</button></div>
     <small>Аккорды берутся из раздела песни с тем же названием, что в «Где играется». Рисунок «свой» — для уникальной партии из Guitar Pro. «Показать на странице» — проверить у себя до публикации; посетители увидят через 1–2 минуты после «Опубликовать».</small>
     <div class="rmsg" id="rM"></div>`;
     f.querySelectorAll('[data-k]').forEach(el=>{el.addEventListener(el.type==='file'?'change':'input',()=>{const i=+el.closest('.rpi').dataset.i,k=el.dataset.k;
-      if(k==='file'){list[i]._file=el.files[0]||null;if(list[i]._file)delete list[i].tex;paint();return;}
+      if(k==='file'){list[i]._file=el.files[0]||null;if(list[i]._file)delete list[i].tex;delete list[i]._auto;delete list[i].labels;paint();return;}
       if(k==='chords'){list[i].chords=el.value.trim()?chordTokens(el.value):undefined;
         // подсказка: ритм такта после «=» должен быть ровно на весь такт
         const P=PAT[list[i].pattern],bad=[];
@@ -554,9 +604,11 @@ function ownerUI(panel){
       else if(k==='bpm')list[i].bpm=+el.value||undefined;
       else list[i][k]=el.value;
       if(k==='pattern'){delete list[i].grid;}
+      if(k==='where'||k==='tex')delete list[i]._auto;
       if(k==='pattern'||k==='where')paint();});});
     const hp=f.querySelector('.rhelp');if(hp)hp.ontoggle=()=>{helpOpen=hp.open;};
     f.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{list.splice(+b.dataset.del,1);paint();});
+    f.querySelectorAll('[data-lab]').forEach(el=>labEditor(el,list[+el.dataset.lab]));
     f.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.row],P=PAT[p.pattern],g=[...gridOf(p,P)],k=+b.dataset.slot;
       g[k]=NEXT[g[k]];if(k===0&&g[0]==='-')g[0]='D';p.grid=g.join('');if(p.grid===P.grid)delete p.grid;paint();});
     f.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{delete list[+b.dataset.reset].grid;paint();});
@@ -568,7 +620,7 @@ function ownerUI(panel){
   };
   const clean=(l,local)=>l.map(p=>{const o={type:TYPES.includes(p.type)?p.type:'Перебор'};if(p.where)o.where=String(p.where).slice(0,40);
     if(p.pattern&&PAT[p.pattern]){o.pattern=p.pattern;if(p.chords&&p.chords.length)o.chords=p.chords.slice(0,96);if(p.bpm)o.bpm=p.bpm;if(okGrid(p.grid,PAT[p.pattern])&&p.grid!==PAT[p.pattern].grid)o.grid=p.grid;}
-    else{if(p.tex)o.tex=p.tex;if(p.src)o.src=p.src;if(local&&p._file)o._file=p._file;}
+    else{if(p.tex)o.tex=p.tex;if(p.src)o.src=p.src;if(local&&p._file)o._file=p._file;if(p.labels&&Object.keys(p.labels).length)o.labels=Object.assign({},p.labels);}
     return o;}).filter(o=>o.pattern||o.tex||o.src||o._file);
   const msg=(t,bad)=>{const m=$('rM');if(m){m.textContent=t;m.className='rmsg'+(bad?' bad':'');}};
   const tok=()=>{try{return (JSON.parse(localStorage.getItem('dgc_link')||'null')||{}).token;}catch(e){return null;}};
