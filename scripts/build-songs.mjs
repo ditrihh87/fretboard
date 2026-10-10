@@ -39,6 +39,7 @@ const riffOf = s => {
         o.pattern = p.pattern;
         if (Array.isArray(p.chords)) o.chords = p.chords.map(String).filter(c => /^[A-H][^\s]{0,14}$/.test(c)).slice(0, 8);
         if (p.bpm >= 40 && p.bpm <= 240) o.bpm = Math.round(p.bpm);
+        if (typeof p.grid === 'string' && /^[DUXB][DUXB-]{5,7}$/.test(p.grid)) o.grid = p.grid;   // свой рисунок боя по долям
       } else if (typeof p.src === 'string' && /^riffs\/[a-z0-9-]{1,90}\.(gp|gp3|gp4|gp5|gpx)$/.test(p.src) && fs.existsSync(path.join(ROOT, p.src))) o.src = p.src;
       else if (typeof p.tex === 'string' && p.tex.trim()) o.tex = p.tex.slice(0, 20000);
       else return null;

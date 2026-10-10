@@ -778,6 +778,7 @@ async function handleRiff(body, token) {
       o.pattern = p.pattern;
       if (Array.isArray(p.chords)) { const c = p.chords.map(String).filter(x => /^[A-H][^\s]{0,14}$/.test(x)).slice(0, 8); if (c.length) o.chords = c; }
       if (+p.bpm >= 40 && +p.bpm <= 240) o.bpm = Math.round(+p.bpm);
+      if (typeof p.grid === 'string' && /^[DUXB][DUXB-]{5,7}$/.test(p.grid)) o.grid = p.grid;   // свой рисунок боя по долям
     } else if (p.file) {
       const f = p.file;
       if (typeof f.ext !== 'string' || !TAB_EXT.test(f.ext) || typeof f.data !== 'string' || f.data.length > 2.8e6) return reply(400, { error: 'файл не подходит (gp, gp3, gp4, gp5, gpx, до 2 МБ)' });

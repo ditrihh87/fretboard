@@ -85,13 +85,15 @@ function beat(tok,v,d,first,chName){
   else if(tok==='X'){core=`(${v.all.map(x=>'x.'+x.s).join(' ')})`;fx.push('bd');}
   return core+DUR[d]+(fx.length?`{${fx.join(' ')}}`:'');
 }
+const okGrid=(g,P)=>P&&P.kind==='b'&&typeof g==='string'&&g.length===P.grid.length&&/^[DUXB-]+$/.test(g)&&g[0]!=='-';
+const gridOf=(p,P)=>okGrid(p.grid,P)?p.grid:P&&P.grid;
 const gridEv=g=>{const ev=[];for(let i=0;i<g.length;i++){if(g[i]==='-')continue;let d=1;while(g[i+d]==='-')d++;ev.push([g[i],d]);}return ev;};
 function buildTex(part,map){
   const P=PAT[part.pattern];if(!P)return null;
   const src=(part.chords&&part.chords.length?part.chords:sectionChords(part.where)).slice(0,8);
   const chords=src.map(c=>map(c)).filter(Boolean);
   if(!chords.length)return null;
-  const ev=P.ev||gridEv(P.grid);
+  const ev=P.ev||gridEv(gridOf(part,P));
   const bars=[];
   for(const c of chords){
     const v=voices(c);if(!v)continue;
@@ -151,6 +153,14 @@ const CSS=`
 .rform input,.rform select,.rform textarea{width:100%;box-sizing:border-box;background:rgba(12,10,36,.75);border:none;box-shadow:inset 0 0 0 1px rgba(110,123,255,.25);border-radius:10px;padding:9px 10px;color:var(--paper);font:600 14px var(--body)}
 .rform textarea{min-height:90px;font:600 13px ui-monospace,Menlo,monospace}
 .rform .wide{grid-column:1/-2}
+.rform .rge{display:grid;gap:6px}
+.rform .rgl{font-weight:800;font-size:12px;color:#CFCCF2}
+.rform .rgr{border:none;background:none;color:var(--amber);font:800 12px var(--body);cursor:pointer;padding:0;text-decoration:underline}
+.rform .rgb{display:flex;flex-wrap:wrap;gap:6px}
+.rform .rgb button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:44px;padding:8px 6px 6px;border:none;border-radius:12px;background:rgba(12,10,36,.75);box-shadow:inset 0 0 0 1px rgba(110,123,255,.3);color:var(--paper);cursor:pointer}
+.rform .rgb button:hover{box-shadow:inset 0 0 0 2px var(--amber)}
+.rform .rgb b{font-size:22px;line-height:1;font-weight:800}.rform .rgb small{font-weight:800;font-size:11px;color:var(--muted)}
+.rform .rgb button.x b{color:#FF7A7E}.rform .rgb button.h b{color:rgba(239,236,251,.3)}
 .rform .rx{border:none;border-radius:10px;width:38px;height:38px;background:rgba(242,107,111,.18);color:#FF9CA0;font:800 16px var(--body);cursor:pointer}
 .rform .rb{display:flex;flex-wrap:wrap;gap:8px}
 .rform .rb button{border:none;border-radius:11px;padding:10px 14px;font:800 14px var(--body);cursor:pointer;background:var(--card2);color:var(--paper)}
@@ -182,15 +192,16 @@ function mount(){
 function draw(){
   const p=S.parts[S.cur],P=PAT[p.pattern],box=S.box;
   const gen=P?buildTex(p,S.map):null;
-  S.key=P?JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(S.map)):'';
+  S.key=P?JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(S.map))+(p.grid||''):'';
   const tabs=S.parts.length>1?`<div class="rtabs" role="tablist">${S.parts.map((x,i)=>`<button role="tab" data-i="${i}" aria-selected="${i===S.cur}">${H(title(x))}</button>`).join('')}</div>`:'';
   let scheme='';
-  if(P&&P.kind==='b'){const g=P.grid,c=COUNT[P.ts];
+  if(P&&P.kind==='b'){const g=gridOf(p,P),c=COUNT[P.ts];
     scheme=`<div class="rgrid" aria-label="Схема боя">${[...g].map((ch,i)=>`<span class="${i%2?'':'st'}"><b class="${ch==='X'?'x':ch==='-'?'h':ch==='B'?'bs':''}">${ch==='D'?'↓':ch==='U'?'↑':ch==='X'?'✕':ch==='B'?'Б':'·'}</b><small>${c[i]}</small></span>`).join('')}</div>`;}
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
-  const head=P?`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`:p.type;
+  const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
+  const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
   box.innerHTML=`${tabs}<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip">${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.chords.map(c=>c.split('|')[0]).join(' · '))}</span>`:''}<h2>${H(head)}</h2></div>
-    ${P?`<p class="rdesc">${H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
+    ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}${P.kind==='b'?' ↓ — вниз, ↑ — вверх, ✕ — вниз с глушением.':' Б — бас аккорда (большой палец), цифры — струны.'}</p>`:''}${scheme}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><button class="b" id="rView" aria-pressed="false">Показать ноты</button><span class="sp">Слушай, замедляй и играй вместе</span></div>`;
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
@@ -219,11 +230,16 @@ function render(p,gen){
     api.isLooping=true;api.playbackSpeed=SPEED;
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
-    api.scoreLoaded.on(sc=>sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;}));   // нейлон → сталь, как в табах
+    api.scoreLoaded.on(sc=>{
+      const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
+      sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
+        t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
+          [BS.GuitarTabStem,BS.GuitarTabFlags,BS.GuitarTabBeams,BS.StandardNotationStem,BS.StandardNotationFlags,BS.StandardNotationBeams].forEach(k=>{if(k!=null)bt.style.colors.set(k,dim);});}catch(e){}}))));});
+    });
     api.renderFinished.on(()=>{const l=$('rLoad');if(l)l.hidden=true;});
     api.postRenderFinished.on(hideMark);
     // во время игры подсвечиваем стрелку боя / струну перебора, которая звучит сейчас
-    const P=PAT[p.pattern],ev=P?(P.ev||gridEv(P.grid)):null,starts=[];if(ev){let t=0;ev.forEach(([,d])=>{starts.push(t);t+=d;});}
+    const P=PAT[p.pattern],ev=P?(P.ev||gridEv(gridOf(p,P))):null,starts=[];if(ev){let t=0;ev.forEach(([,d])=>{starts.push(t);t+=d;});}
     const cells=()=>S.box.querySelectorAll(P&&P.kind==='b'?'.rgrid span':'.rseq i');
     const lit=i=>cells().forEach((c,k)=>c.classList.toggle('now',k===i));
     if(ev)api.playedBeatChanged.on(b=>{if(!b)return;const i=b.index;lit(P.kind==='b'?starts[i]:i);});
@@ -249,7 +265,7 @@ function update(map){
   if(!S)return;S.map=map;
   if(!S.box||!S.parts.length)return;
   const p=S.parts[S.cur];if(!PAT[p.pattern])return;
-  const key=JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(map));
+  const key=JSON.stringify((p.chords&&p.chords.length?p.chords:sectionChords(p.where)).map(map))+(p.grid||'');
   if(key===S.key)return;S.key=key;stop();draw();
 }
 
@@ -268,10 +284,15 @@ function ownerUI(panel){
     <label>Рисунок<select data-k="pattern"><option value="">свой (файл GP / alphaTex)</option>${pOpts(p.pattern)}</select></label>
     <label>Темп, уд/мин<input data-k="bpm" type="number" min="40" max="240" value="${H(p.bpm||'')}" placeholder="авто"></label>
     <button type="button" class="rx" data-del="${i}" title="Убрать часть">✕</button>
+    ${PAT[p.pattern]&&PAT[p.pattern].kind==='b'?gridRow(p,i):''}
     <label class="wide">Аккорды (необязательно — иначе из раздела «${H(p.where||'…')}»)<input data-k="chords" value="${H((p.chords||[]).join(' '))}" placeholder="${H(sectionChords(p.where).join(' '))}"></label>
     ${p.pattern?'':`<label class="wide">Файл Guitar Pro<input type="file" data-k="file" accept=".gp,.gp3,.gp4,.gp5,.gpx">${p.src?`<small>Сейчас: ${H(p.src.split('/').pop())}</small>`:''}</label>
     <label class="wide">…или текст alphaTex<textarea data-k="tex" spellcheck="false">${H(p.tex||'')}</textarea></label>`}
   </div>`;
+  const SYM={D:'↓',U:'↑',X:'✕',B:'Б','-':'·'},NEXT={D:'U',U:'X',X:'B',B:'-','-':'D'};
+  const gridRow=(p,i)=>{const P=PAT[p.pattern],g=gridOf(p,P),c=COUNT[P.ts],own=g!==P.grid;
+    return `<div class="wide rge"><span class="rgl">Удары по долям — нажми, чтобы сменить: ↓ → ↑ → ✕ глушение → Б бас → · пауза${own?' · <button type="button" class="rgr" data-reset="'+i+'">Как было</button>':''}</span>
+      <div class="rgb">${[...g].map((ch,k)=>`<button type="button" data-slot="${k}" data-row="${i}" class="${ch==='X'?'x':ch==='-'?'h':''}"><b>${SYM[ch]}</b><small>${c[k]}</small></button>`).join('')}</div></div>`;};
   const paint=()=>{f.innerHTML=`<h3>Как играть</h3><datalist id="rSecs">${secs.map(s=>`<option value="${H(s)}">`).join('')}</datalist>
     <div class="rpl">${list.map(row).join('')||'<small>Пока пусто — добавь часть: например «Перебор · Куплет · восьмёрка» и «Бой · Припев · шестёрка».</small>'}</div>
     <div class="rb"><button type="button" id="rAdd">＋ Часть</button><button type="button" id="rPrev">Показать на странице</button><button class="go" type="submit">Опубликовать</button><button type="button" id="rX">Закрыть</button></div>
@@ -282,14 +303,18 @@ function ownerUI(panel){
       if(k==='chords')list[i].chords=el.value.trim()?el.value.trim().split(/[\s,]+/):undefined;
       else if(k==='bpm')list[i].bpm=+el.value||undefined;
       else list[i][k]=el.value;
+      if(k==='pattern'){delete list[i].grid;}
       if(k==='pattern'||k==='where')paint();});});
     f.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{list.splice(+b.dataset.del,1);paint();});
+    f.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.row],P=PAT[p.pattern],g=[...gridOf(p,P)],k=+b.dataset.slot;
+      g[k]=NEXT[g[k]];if(k===0&&g[0]==='-')g[0]='D';p.grid=g.join('');if(p.grid===P.grid)delete p.grid;paint();});
+    f.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{delete list[+b.dataset.reset].grid;paint();});
     $('rAdd').onclick=()=>{list.push({type:list.length?'Бой':'Перебор',where:secs[list.length]||secs[0]||'',pattern:list.length?'b6':'p8'});paint();};
     $('rPrev').onclick=()=>{window.SONG_RIFF={parts:clean(list,true)};const keep=list;mount();list=keep;$('rEdit').click();msg('Так это увидят посетители (пока только у тебя). Не забудь «Опубликовать».');};
     $('rX').onclick=()=>{f.hidden=true;};
   };
   const clean=(l,local)=>l.map(p=>{const o={type:TYPES.includes(p.type)?p.type:'Перебор'};if(p.where)o.where=String(p.where).slice(0,40);
-    if(p.pattern&&PAT[p.pattern]){o.pattern=p.pattern;if(p.chords&&p.chords.length)o.chords=p.chords.slice(0,8);if(p.bpm)o.bpm=p.bpm;}
+    if(p.pattern&&PAT[p.pattern]){o.pattern=p.pattern;if(p.chords&&p.chords.length)o.chords=p.chords.slice(0,8);if(p.bpm)o.bpm=p.bpm;if(okGrid(p.grid,PAT[p.pattern])&&p.grid!==PAT[p.pattern].grid)o.grid=p.grid;}
     else{if(p.tex)o.tex=p.tex;if(p.src)o.src=p.src;if(local&&p._file)o._file=p._file;}
     return o;}).filter(o=>o.pattern||o.tex||o.src||o._file);
   const msg=(t,bad)=>{const m=$('rM');if(m){m.textContent=t;m.className='rmsg'+(bad?' bad':'');}};
