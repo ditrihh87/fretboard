@@ -290,7 +290,7 @@ function draw(){
   else if(P)scheme=`<div class="rseq" aria-label="Порядок струн">${P.schema.split(' ').map(x=>`<i class="${/Б/.test(x)?'bs':''}">${H(x)}</i>`).join('')}</div>`;
   const own=P&&okGrid(p.grid,P)&&p.grid!==P.grid;
   const head=P?(own?`${p.type==='Бой'?'Бой':p.type+': бой'} — свой рисунок`:`${p.type==='Бой'||p.type==='Перебор'?p.type+' «'+P.name+'»':p.type+': '+(P.kind==='b'?'бой':'перебор')+' «'+P.name+'»'}`):p.type;
-  box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:''}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
+  box.innerHTML=`<div class="rh"><span class="rk">Как играть</span>${p.where?`<span class="chip sec"${sc(p)}>${H(p.where)}</span>`:''}${P?`<span class="chip">${P.ts===3?'3/4':'4/4'}</span>`:''}${gen?`<span class="chip">${H(gen.label)}</span>`:'<span class="chip" id="rAuto" hidden></span>'}${S.own?`<button type="button" class="redit" id="rEditIn">✎ Редактировать</button>`:''}<h2>${H(head)}</h2></div>
     ${P?`<p class="rdesc">${own?'Свой вариант на основе боя «'+H(P.name)+'».':H(P.desc)}</p>`:''}${scheme}${P?legend(P,p):''}
     <div class="rv"><div class="rload" id="rLoad">Загружаю таб…</div><div id="riffAt"></div></div>${tabs}
     <div class="rc"><button class="pl" id="rPlay" disabled aria-label="Играть">▶</button><button class="b" id="rSpd">Скорость 100%</button><button class="b on" id="rLoop" aria-pressed="true">🔁 Повтор</button><span class="sp">Пробел — играть / пауза</span></div>`;
@@ -305,6 +305,57 @@ function hideMark(){const surf=$('riffAt')&&$('riffAt').querySelector('.at-surfa
   // окно — не выше двух строк таба; длиннее — прокрутка внутри окна
   const rv=$('riffAt').parentElement,rows=[...surf.children].filter(d=>d.tagName==='DIV'&&d.style.display!=='none');
   if(rows.length>2){rv.style.maxHeight=(parseFloat(rows[2].style.top)||rows[2].offsetTop)+10+'px';rv.classList.add('long');}else{rv.style.maxHeight='';rv.classList.remove('long');}}   // слой курсора — не выше таба, иначе в рамке появляется прокрутка
+/* ===== свой таб (Guitar Pro / alphaTex): аккорды по нотам =====
+   Если в файле аккорды не подписаны — определяем по звучащим нотам и подписываем над табом, как в наших табах:
+   удар/щипок из 3+ струн — свой аккорд; перебор — по нотам половины такта. Подпись — только там, где аккорд меняется. */
+const CH_TPL=[['',[0,4,7]],['m',[0,3,7]],['7',[0,4,7,10]],['m7',[0,3,7,10]],['maj7',[0,4,7,11]],['6',[0,4,7,9]],['m6',[0,3,7,9]],
+  ['sus4',[0,5,7]],['sus2',[0,2,7]],['dim',[0,3,6]],['aug',[0,4,8]],['add9',[0,2,4,7]],['5',[0,7]]];
+/* midis — звучащие ноты; simple — перебор с мелодией: только простые аккорды, бас решает, лишние ноты (мелодия) почти не мешают;
+   prev — прошлая подпись: оставляем её, если она объясняет ноты почти так же хорошо (без лишнего мельтешения) */
+const CH_SIMPLE=new Set(['','m','7','m7','5']);
+function chordOf(midis,simple,prev){
+  if(midis.length<2)return null;
+  const w=new Array(12).fill(0);midis.forEach(m=>{w[((m%12)+12)%12]+=1;});
+  const bass=((Math.min(...midis)%12)+12)%12,pcs=w.map((x,i)=>x?i:-1).filter(i=>i>=0);
+  if(pcs.length<2)return null;
+  const score=(r,q,t)=>{const set=t.map(i=>(i+r)%12);
+    if(q!=='5'&&!w[set[1]])return null;                          // без терции (или кварты/секунды у sus) — не этот аккорд
+    if(q==='5'&&pcs.some(pc=>[3,4].includes((pc-r+12)%12)))return null;
+    const hit=set.reduce((a,pc)=>a+(w[pc]?Math.min(w[pc],2):0),0),miss=set.filter(pc=>!w[pc]).length,extra=pcs.filter(pc=>!set.includes(pc)).reduce((a,pc)=>a+w[pc],0);
+    return hit-1.3*miss-(simple?0.35:0.9)*extra+(r===bass?(simple?3:1.6):0)-t.length*(simple?0.3:0.04);};
+  let best=null;
+  for(let r=0;r<12;r++){if(!w[r])continue;
+    for(const [q,t] of CH_TPL){if(simple&&!CH_SIMPLE.has(q))continue;const sc=score(r,q,t);if(sc!=null&&(!best||sc>best.sc))best={sc,name:SHARP[r]+q};}}
+  if(!best||best.sc<=1)return null;
+  // квинта без терции (A5) при том же корне, что у прошлого аккорда (Am / A), — это он же, терцию просто не сыграли
+  if(prev&&/5$/.test(best.name)&&prev.replace(/(m7|maj7|m6|m|7|6|5)$/,'')===best.name.slice(0,-1))return prev;
+  if(prev&&prev!==best.name){const m=prev.match(/^([A-G][#b]?)(.*)$/),r=m&&SHARP.indexOf(m[1]),t=m&&CH_TPL.find(([q])=>q===m[2]);
+    if(r>=0&&t){const sc=score(r,t[0],t[1]);if(sc!=null&&sc>=best.sc-(simple?1.2:0.4))return prev;}}
+  return best.name;
+}
+function autoChords(score){
+  const tr=score.tracks[0];if(!tr)return [];
+  const st=tr.staves[0];if(!st)return [];
+  let has=false;st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{if(bt.chordId)has=true;})));
+  if(has)return null;                                             // в файле уже есть аккорды автора — не трогаем
+  const live=bt=>bt.notes.filter(n=>!n.isDead&&!n.isTieDestination&&n.realValue!=null).map(n=>n.realValue);
+  const names=[];let prev=null,id=0;
+  const put=(bt,name)=>{if(!bt||!name||name===prev)return;prev=name;names.push(name);
+    const c=new alphaTab.model.Chord();c.name=name;c.showDiagram=false;c.showFingering=false;const key='auto'+(id++);st.addChord(key,c);bt.chordId=key;};
+  st.bars.forEach(bar=>{
+    const beats=[];bar.voices.forEach(v=>v.beats.forEach(bt=>{if(!bt.isRest&&bt.notes.length)beats.push(bt);}));
+    if(!beats.length)return;beats.sort((a,b)=>a.playbackStart-b.playbackStart);
+    const strums=beats.filter(bt=>live(bt).length>=3);
+    if(strums.length>=Math.max(1,beats.length/2)){strums.forEach(bt=>put(bt,chordOf(live(bt),false,prev)));return;}
+    // перебор: по половинам такта
+    let len=0;try{len=bar.masterBar.calculateDuration();}catch(e){}
+    const half=len?len/2:beats[beats.length-1].playbackStart+1;
+    const A=beats.filter(bt=>bt.playbackStart<half),B=beats.filter(bt=>bt.playbackStart>=half);
+    const nA=chordOf(A.flatMap(live),true,prev),nB=chordOf(B.flatMap(live),true,nA||prev),nAll=chordOf(beats.flatMap(live),true,prev);
+    if(nA&&nB&&nA!==nB){put(A[0],nA);put(B[0],nB);}else put(beats[0],nAll||nA||nB);
+  });
+  return names;
+}
 /* обозначения под схемой — только те, что встречаются в рисунке */
 function legend(P,p){
   let it;
@@ -327,13 +378,14 @@ function render(p,gen){
       core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
       display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
         resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif',barNumberFont:'600 11px Manrope, Arial, sans-serif',markerFont:'800 14px Manrope, Arial, sans-serif'}},
-      notation:{rhythmMode:'ShowWithBars',rhythmHeight:34,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
+      notation:{rhythmMode:'ShowWithBars',rhythmHeight:34,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false,chordDiagrams:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true,scrollMode:'Continuous',scrollElement:$('riffAt').parentElement,scrollOffsetY:-12}   // длинный таб едет внутри окна (не выше двух строк), страница стоит на месте
     });
     api.isLooping=true;api.playbackSpeed=SPEED;
     // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
     try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>{
+      if(!gen){try{const n=autoChords(sc);const c=$('rAuto');if(c&&n&&n.length){const u=[];n.forEach(x=>{if(!u.includes(x))u.push(x);});c.textContent=u.slice(0,8).join(' · ');c.hidden=false;}}catch(e){console.warn('autoChords',e);}}
       const dim=alphaTab.model.Color.fromJson('rgba(150,144,210,0.32)'),BS=alphaTab.model.BeatSubElement;
       sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;   // нейлон → сталь, как в табах
         t.staves.forEach(st=>st.bars.forEach(b=>b.voices.forEach(v=>v.beats.forEach(bt=>{try{if(!bt.style)bt.style=new alphaTab.model.BeatStyle();
@@ -444,6 +496,7 @@ function ownerUI(panel){
     <div class="rh1"><b>Своя партия</b> — рисунок «свой (файл GP / alphaTex)»:<ul>
       <li><b>Как загрузить:</b> кнопка <b>«📁 Загрузить свой таб»</b> внизу формы → выбери файл → укажи «Что» и «Где играется» → «Показать на странице» (проверить) → «Опубликовать». Заменить файл — «📁 Заменить файл» в этой части.</li>
       <li><b>Guitar Pro</b>: одна гитарная дорожка, до 2 МБ (gp, gp3, gp4, gp5, gpx). Свою партию тон посетителя не меняет.</li>
+      <li><b>Аккорды над табом</b> сайт подпишет сам — распознает по нотам (удар из 3+ струн — по нему, перебор — по басу половины такта) и покажет только там, где аккорд меняется. Если в файле аккорды уже подписаны (Guitar Pro: Текст аккорда), берутся твои. Распознавание примерное: в сложной аранжировке с мелодией лучше подписать аккорды в Guitar Pro.</li>
       <li><b>alphaTex</b> — таб текстом: <code>лад.струна</code> — нота (<code>0.1</code> — открытая 1-я); <code>(0.1 1.2 0.3)</code> — несколько струн сразу; <code>:8</code> — дальше восьмые (<code>:4</code> четверти, <code>:2</code> половинные, <code>:16</code> шестнадцатые); <code>{d}</code> — с точкой; <code>r</code> — пауза; <code>|</code> — новый такт; <code>{ch "Am"}</code> — название аккорда; <code>x.3</code> — глушёная струна; <code>{bd}</code> / <code>{bu}</code> — удар вниз / вверх; <code>\\ts 3 4</code> — размер 3/4; <code>\\ro</code> … <code>\\rc 3</code> в начале тактов — повтор 3 раза.</li>
       <li>Пример (перебор Am и E, восьмые, 2 раза):<pre>\\tempo 80
 .
