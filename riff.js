@@ -118,6 +118,10 @@ const CSS=`
 .riff .rgrid b.x{color:#FF7A7E}.riff .rgrid b.h{color:rgba(239,236,251,.25)}.riff .rgrid b.bs{color:#F3C06A;font-size:17px}
 .riff .rgrid small{font-weight:800;font-size:11px;color:var(--muted)}
 .riff .rgrid span.st small{color:#B3AEE8}
+.riff .rgrid span,.riff .rseq i{transition:background .08s,box-shadow .08s,transform .08s}
+.riff .rgrid span.now{background:rgba(240,168,48,.22);box-shadow:inset 0 0 0 2px var(--amber),0 0 14px rgba(240,168,48,.45);transform:translateY(-2px)}
+.riff .rgrid span.now b{color:var(--amber)}.riff .rgrid span.now b.x{color:#FF7A7E}
+.riff .rseq i.now{background:rgba(240,168,48,.22);box-shadow:inset 0 0 0 2px var(--amber),0 0 14px rgba(240,168,48,.45);color:var(--amber);transform:translateY(-2px)}
 .riff .rseq{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .riff .rseq i{font-style:normal;min-width:34px;text-align:center;padding:7px 9px;border-radius:10px;background:rgba(7,6,26,.5);font-weight:800;font-size:16px;color:var(--paper)}
 .riff .rseq i.bs{color:#F3C06A}
@@ -192,6 +196,9 @@ function draw(){
   box.querySelectorAll('.rtabs button').forEach(b=>b.onclick=()=>{S.cur=+b.dataset.i;stop();draw();});
   render(p,gen);
 }
+/* подпись «rendered by alphaTab» в самом низу — прячем, как на страницах табов */
+function hideMark(){const surf=$('riffAt')&&$('riffAt').querySelector('.at-surface');if(!surf)return;const last=surf.lastElementChild;
+  if(last&&last.tagName==='DIV'&&(parseFloat(last.style.height)||99)<24&&surf.children.length>1){last.style.display='none';const top=parseFloat(last.style.top);if(top>0)surf.style.height=top+'px';}}
 function stop(){try{S.api&&S.api.stop();}catch(e){}}
 let SPEED=1;
 function render(p,gen){
@@ -205,13 +212,22 @@ function render(p,gen){
     const api=S.api=new alphaTab.AlphaTabApi($('riffAt'),{
       core:{fontDirectory:AT_DIR+'font/',scriptFile:AT_DIR+'alphaTab.min.js',useWorkers:true},
       display:{staveProfile:'Tab',scale:narrow()?.85:1,layoutMode:'Page',barsPerRow:narrow()?2:4,
-        resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif'}},
+        resources:{engravingSettings:{tabLineSpacing:14},staffLineColor:'rgba(138,132,214,0.38)',barSeparatorColor:'rgba(169,163,230,0.6)',mainGlyphColor:'rgba(225,220,255,0.85)',secondaryGlyphColor:'#A4A1D8',barNumberColor:'#A4A1D8',tablatureFont:'bold 15px Manrope, Arial, sans-serif',barNumberFont:'600 11px Manrope, Arial, sans-serif',markerFont:'800 14px Manrope, Arial, sans-serif'}},
       notation:{rhythmMode:'ShowWithBars',rhythmHeight:20,elements:{scoreTitle:false,scoreSubTitle:false,scoreArtist:false,scoreAlbum:false,scoreWords:false,scoreMusic:false,scoreWordsAndMusic:false,scoreCopyright:false,guitarTuning:false,trackNames:false,effectDynamics:false,effectCapo:false,effectTempo:false}},
       player:{playerMode:'EnabledSynthesizer',soundFont:AT_DIR+'soundfont/sonivox.sf3',enableCursor:true,enableUserInteraction:true}
     });
     api.isLooping=true;api.playbackSpeed=SPEED;
+    // названия аккордов над табом — шрифтом сайта, а не наклонным с засечками
+    try{const r=api.settings.display.resources,F=alphaTab.model.Font.fromJson('800 16px Manrope, Arial, sans-serif');if(F){r.elementFonts.set(alphaTab.NotationElement.EffectChordNames,F);api.updateSettings();}}catch(e){}
     api.scoreLoaded.on(sc=>sc.tracks.forEach(t=>{if(t.playbackInfo&&t.playbackInfo.program===24)t.playbackInfo.program=25;}));   // нейлон → сталь, как в табах
     api.renderFinished.on(()=>{const l=$('rLoad');if(l)l.hidden=true;});
+    api.postRenderFinished.on(hideMark);
+    // во время игры подсвечиваем стрелку боя / струну перебора, которая звучит сейчас
+    const P=PAT[p.pattern],ev=P?(P.ev||gridEv(P.grid)):null,starts=[];if(ev){let t=0;ev.forEach(([,d])=>{starts.push(t);t+=d;});}
+    const cells=()=>S.box.querySelectorAll(P&&P.kind==='b'?'.rgrid span':'.rseq i');
+    const lit=i=>cells().forEach((c,k)=>c.classList.toggle('now',k===i));
+    if(ev)api.playedBeatChanged.on(b=>{if(!b)return;const i=b.index;lit(P.kind==='b'?starts[i]:i);});
+    api.playerStateChanged.on(e=>{if(e.state!==1)lit(-1);});
     api.playerReady.on(()=>{S.ready=true;const b=$('rPlay');if(b)b.disabled=false;});
     api.playerStateChanged.on(e=>{const b=$('rPlay');if(!b)return;const on=e.state===1;b.textContent=on?'❚❚':'▶';b.classList.toggle('pause',on);});
     api.error.on(e=>{const l=$('rLoad');if(l){l.hidden=false;l.textContent='Не удалось открыть таб.';}console.error('riff',e);});
